@@ -1,3 +1,3 @@
 <?php
 
-error_log('hello');
+error_log(var_export($_POST, true));
