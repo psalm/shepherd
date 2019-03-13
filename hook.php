@@ -1,3 +1,5 @@
 <?php
 
-error_log(var_export($_POST, true));
+$payload = json_decode($_POST['payload']);
+
+error_log(var_export($payload, true));
