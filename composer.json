@@ -1,0 +1,17 @@
+{
+    "name": "psalm/spirit",
+    "description": "What runs on spirit.psalm.dev",
+    "type": "project",
+    "require": {
+        "vimeo/psalm": "dev-master",
+        "knplabs/github-api": "^2.11",
+        "php-http/guzzle6-adapter": "^1.0"
+    },
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Matt Brown",
+            "email": "github@muglug.com"
+        }
+    ]
+}
