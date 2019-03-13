@@ -1,0 +1,5 @@
+Options -Indexes
+RewriteEngine on
+RewriteBase /
+
+RewriteRule ^hook$ hook.php [L,QSA]
