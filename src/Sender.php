@@ -32,35 +32,33 @@ class Sender
 			. $repository . '/compare/'
 			. substr($base_sha, 0, 8) . '...' . substr($head_sha, 0, 8) . '.diff';
 
-		var_dump($diff_url);
-
 		// Prepare new cURL resource
-        $ch = curl_init($diff_url);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLINFO_HEADER_OUT, true);
+		$ch = curl_init($diff_url);
+		curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+		curl_setopt($ch, CURLINFO_HEADER_OUT, true);
 
-        // Set HTTP Header for POST request
-        curl_setopt(
-            $ch,
-            CURLOPT_HTTPHEADER,
-            [
-                'Accept: application/vnd.github.v3.diff'
-            ]
-        );
+		// Set HTTP Header for POST request
+		curl_setopt(
+			$ch,
+			CURLOPT_HTTPHEADER,
+			[
+				'Accept: application/vnd.github.v3.diff'
+			]
+		);
 
-        // Submit the POST request
-        $diff_string = curl_exec($ch);
+		// Submit the POST request
+		$diff_string = curl_exec($ch);
 
-        // Close cURL session handle
-        curl_close($ch);
+		// Close cURL session handle
+		curl_close($ch);
 
-        $diff_parser = new \SebastianBergmann\Diff\Parser();
-        $diffs = $diff_parser->parse($diff_string);
+		$diff_parser = new \SebastianBergmann\Diff\Parser();
+		$diffs = $diff_parser->parse($diff_string);
 
 		/** @var array<int, array{severity: string, line_from: int, line_to: int, type: string, message: string,
-	     * 		file_name: string, file_path: string, snippet: string, from: int, to: int,
-	     * 		snippet_from: int, snippet_to: int, column_from: int, column_to: int, selected_text: string}>
-	     */
+		 * 		file_name: string, file_path: string, snippet: string, from: int, to: int,
+		 * 		snippet_from: int, snippet_to: int, column_from: int, column_to: int, selected_text: string}>
+		 */
 		$issues = $psalm_data['issues'];
 
 		$file_comments = [];
@@ -91,7 +89,7 @@ class Sender
 									if ($issue['line_from'] === $line_offset + $chunk_end) {
 										$file_comments[] = [
 											'path' => $file_name,
-											'position' => $issue['line_from'],
+											'position' => $diff_file_offset,
 											'body' => $issue['message'],
 										];
 										break 3;
