@@ -36,7 +36,10 @@ class Sender
 		$head_sha = $github_data['pull_request']['head']['sha'];
 		$base_sha = $github_data['pull_request']['base']['sha'];
 
-		$diff_url = 'http://github.com/' . $repository_owner . '/' . $repository . '/compare/' . $base_sha . '...' . $head_sha . '.diff';
+		$diff_url = 'https://github.com/'
+			. $repository_owner . '/'
+			. $repository . '/compare/'
+			. substr($base_sha, 0, 8) . '...' . substr($head_sha, 0, 8) . '.diff';
 
 		var_dump($diff_url);
 
