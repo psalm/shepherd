@@ -82,7 +82,11 @@ class Sender
 								foreach ($chunk->getLines() as $i => $chunk_line) {
 									$diff_file_offset++;
 
-									if ($issue['line_from'] === $line_offset + $chunk_end) {
+									if ($chunk_line->getType() !== \SebastianBergmann\Diff\Line::REMOVED) {
+										$line_offset++;
+									}
+
+									if ($issue['line_from'] === $line_offset + $chunk_end + 1) {
 										$file_comments[] = [
 											'path' => $file_name,
 											'position' => $diff_file_offset,
@@ -90,10 +94,6 @@ class Sender
 										];
 										break 3;
 									}
-
-                                    if ($chunk_line->getType() !== \SebastianBergmann\Diff\Line::REMOVED) {
-                                        $line_offset++;
-                                    }
 								}
 							} else {
 								$diff_file_offset += count($chunk->getLines());
