@@ -75,18 +75,12 @@ class Sender
 							$chunk_end = $chunk->getEnd();
 							$chunk_end_range = $chunk->getEndRange();
 
-                            var_dump($chunk_end, $chunk_end_range);
-
-							if ($issue['line_from'] >= $chunk_end
+                            if ($issue['line_from'] >= $chunk_end
 								&& $issue['line_from'] < $chunk_end + $chunk_end_range
 							) {
 								$line_offset = 0;
 								foreach ($chunk->getLines() as $i => $chunk_line) {
 									$diff_file_offset++;
-
-									if ($chunk_line->getType() !== \SebastianBergmann\Diff\Line::REMOVED) {
-										$line_offset++;
-									}
 
 									if ($issue['line_from'] === $line_offset + $chunk_end) {
 										$file_comments[] = [
@@ -96,6 +90,10 @@ class Sender
 										];
 										break 3;
 									}
+
+                                    if ($chunk_line->getType() !== \SebastianBergmann\Diff\Line::REMOVED) {
+                                        $line_offset++;
+                                    }
 								}
 							} else {
 								$diff_file_offset += count($chunk->getLines());
