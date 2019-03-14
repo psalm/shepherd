@@ -36,16 +36,22 @@ class Sender
 
             var_dump($review);
 
-            $client
+            $comments = $client
                 ->api('pull_request')
                 ->reviews()
-                ->remove(
+                ->comments(
                     $repository_owner,
                     $repository,
                     $pull_request_number,
-                    $review['id'],
-                    'Outdated'
+                    $review['id']
                 );
+
+            var_dump($comments);
+
+            if (is_array($comments)) {
+                foreach ($comments as $comment) {
+                }
+            }
         }
 
 		$diff_url = 'https://github.com/'
@@ -136,21 +142,9 @@ class Sender
 					'commit_id' => $head_sha,
 					'body' => 'Psalm has thoughts',
 					'comments' => $file_comments,
+                    'event' => 'REQUEST_CHANGES',
 				]
 			);
-
-        $review = $client
-            ->api('pull_request')
-            ->reviews()
-            ->submit(
-                $repository_owner,
-                $repository,
-                $pull_request_number,
-                $review['id'],
-                [
-                    'event' => 'REQUEST_CHANGES',
-                ]
-            );
 
         $pr_path_dir = dirname($pr_path);
 
