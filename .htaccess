@@ -3,3 +3,4 @@ RewriteEngine on
 RewriteBase /
 
 RewriteRule ^hook$ hook.php [L,QSA]
+RewriteRule ^telemetry$ telemetry.php [L,QSA]
