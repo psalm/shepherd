@@ -41,6 +41,8 @@ class Sender
 			}
 		}
 
+		var_dump($file_comments);
+
 		$client = new \Github\Client();
 		$client->authenticate($config['reviewer']['user'], $config['reviewer']['password'], \Github\Client::AUTH_HTTP_PASSWORD);
 
