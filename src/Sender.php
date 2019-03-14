@@ -46,13 +46,13 @@ class Sender
 
             if (is_array($comments)) {
                 foreach ($comments as $comment) {
-                    $comments = $client
+                    $client
                         ->api('pull_request')
                         ->comments()
                         ->remove(
                             $repository_owner,
                             $repository,
-                            $review['id']
+                            $comment['id']
                         );
                 }
             }
