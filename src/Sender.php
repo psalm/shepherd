@@ -138,6 +138,6 @@ class Sender
 
         mkdir($pr_path_dir, 0777, true);
 
-        file_put_contents($pr_path, $comment);
+        file_put_contents($pr_path, json_encode($comment));
 	}
 }
