@@ -13,5 +13,10 @@
             "name": "Matt Brown",
             "email": "github@muglug.com"
         }
-    ]
+    ],
+    "autoload": {
+        "psr-4": {
+            "Psalm\\Spirit\\": "src"
+        }
+    }
 }

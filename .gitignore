@@ -2,4 +2,5 @@ composer.phar
 /vendor/
 composer.lock
 .DS_Store
-database/commits/*.json
+database/github_data/*.json
+database/psalm_data/*.json
