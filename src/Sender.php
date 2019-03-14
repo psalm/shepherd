@@ -41,7 +41,8 @@ class Sender
                     $repository_owner,
                     $repository,
                     $pull_request_number,
-                    $review['id']
+                    $review['id'],
+                    'Outdated'
                 );
         }
 
