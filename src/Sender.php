@@ -75,6 +75,8 @@ class Sender
 							$chunk_end = $chunk->getEnd();
 							$chunk_end_range = $chunk->getEndRange();
 
+                            var_dump($chunk_end, $chunk_end_range);
+
 							if ($issue['line_from'] >= $chunk_end
 								&& $issue['line_from'] < $chunk_end + $chunk_end_range
 							) {
