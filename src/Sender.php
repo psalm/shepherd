@@ -17,7 +17,8 @@ class Sender
 		 */
 		$config = json_decode(file_get_contents($config_path), true);
 
-		$repository = $github_data['repository']['full_name'];
+		$repository = $github_data['repository']['name'];
+		$repository_owner = $github_data['repository']['owner']['login'];
 		$pull_request_number = $github_data['pull_request']['number'];
 
 		$git_hash = $psalm_data['git']['head']['id'];
@@ -47,7 +48,7 @@ class Sender
 			->api('pull_request')
 			->reviews()
 			->create(
-				$config['reviewer']['user'],
+				$repository_owner,
 				$repository,
 				$pull_request_number,
 				[
