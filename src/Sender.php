@@ -142,7 +142,7 @@ class Sender
         $review = $client
             ->api('pull_request')
             ->reviews()
-            ->submmit(
+            ->submit(
                 $repository_owner,
                 $repository,
                 $pull_request_number,
