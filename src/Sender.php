@@ -24,15 +24,6 @@ class Sender
 		$repository_owner = $github_data['repository']['owner']['login'];
 		$pull_request_number = $github_data['pull_request']['number'];
 
-		$diff = $client
-			->api('pull_request')
-			->configure('diff', 'v3')
-			->show(
-				$repository_owner,
-				$repository,
-				$pull_request_number
-			);
-
 		$head_sha = $github_data['pull_request']['head']['sha'];
 		$base_sha = $github_data['pull_request']['base']['sha'];
 
@@ -58,12 +49,13 @@ class Sender
         );
 
         // Submit the POST request
-        $diff = curl_exec($ch);
+        $diff_string = curl_exec($ch);
 
         // Close cURL session handle
         curl_close($ch);
 
-        var_dump($diff);
+        $diff_parser = new \SebastianBergmann\Diff\Parser();
+        $diffs = $diff_parser->parse($diff_string);
 
 		/** @var array<int, array{severity: string, line_from: int, line_to: int, type: string, message: string,
 	     * 		file_name: string, file_path: string, snippet: string, from: int, to: int,
@@ -75,11 +67,42 @@ class Sender
 
 		foreach ($issues as $issue) {
 			if ($issue['severity'] === 'error') {
-				$file_comments[] = [
-					'path' => $issue['file_name'],
-					'position' => $issue['line_from'],
-					'body' => $issue['message'],
-				];
+				$file_name = $issue['file_name'];
+
+				foreach ($diffs as $diff) {
+					if ($diff->getTo() === 'b/' . $file_name) {
+						$diff_file_offset = 0;
+
+						foreach ($diff->getChunks() as $chunk) {
+							$chunk_end = $chunk->getEnd();
+							$chunk_end_range = $chunk->getEndRange();
+
+							if ($issue['line_from'] >= $chunk_end
+								&& $issue['line_from'] < $chunk_end + $chunk_end_range
+							) {
+								$line_offset = 0;
+								foreach ($chunk->getLines() as $i => $chunk_line) {
+									$diff_file_offset++;
+
+									if ($chunk_line->getType() !== \SebastianBergmann\Diff\Line::REMOVED) {
+										$line_offset++;
+									}
+
+									if ($issue['line_from'] === $line_offset + $chunk_end) {
+										$file_comments[] = [
+											'path' => $file_name,
+											'position' => $issue['line_from'],
+											'body' => $issue['message'],
+										];
+										break 3;
+									}
+								}
+							} else {
+								$diff_file_offset += count($chunk->getLines());
+							}
+						}
+					}
+				}
 			}
 		}
 
