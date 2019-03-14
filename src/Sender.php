@@ -134,9 +134,9 @@ class Sender
 				$pull_request_number,
 				[
 					'commit_id' => $head_sha,
-					'event' => 'COMMENT',
 					'body' => 'Psalm has thoughts',
 					'comments' => $file_comments,
+                    'event' => 'REQUEST_CHANGES',
 				]
 			);
 
