@@ -14,6 +14,10 @@ if (!$git_commit_hash) {
 	return;
 }
 
+if (!preg_match('/^[a-f0-9]+$/', $git_commit_hash)) {
+	throw new \UnexpectedValueException('Bad git commit hash given');
+}
+
 $github_storage_path = __DIR__ . '/database/github_data/' . $git_commit_hash . '.json';
 
 if (file_exists($github_storage_path)) {

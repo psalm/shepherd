@@ -10,6 +10,10 @@ if (!$git_commit_hash) {
 	throw new \UnexpectedValueException('No git commit hash given');
 }
 
+if (!preg_match('/^[a-f0-9]+$/', $git_commit_hash)) {
+	throw new \UnexpectedValueException('Bad git commit hash given');
+}
+
 $psalm_storage_path = __DIR__ . '/database/psalm_data/' . $git_commit_hash . '.json';
 
 if (file_exists($psalm_storage_path)) {
