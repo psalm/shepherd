@@ -6,7 +6,7 @@ class Sender
 {
 	public static function send(array $github_data, array $psalm_data) : void
 	{
-		$config_path = '../config.json';
+		$config_path = __DIR__ . '/../config.json';
 
 		if (!file_exists($config_path)) {
 			throw new \UnexpectedValueException('Missing config');
@@ -39,7 +39,7 @@ class Sender
 
 		$client = new \Github\Client();
 		$client->authenticate($config['user'], $config['password'], \Github\Client::AUTH_HTTP_PASSWORD);
-		
+
 		$repositories = $client
 			->api('pull_request')
 			->reviews()
