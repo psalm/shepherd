@@ -125,7 +125,7 @@ class Sender
 			}
 		}
 
-		$comment = $client
+		$review = $client
 			->api('pull_request')
 			->reviews()
 			->create(
@@ -136,14 +136,26 @@ class Sender
 					'commit_id' => $head_sha,
 					'body' => 'Psalm has thoughts',
 					'comments' => $file_comments,
-                    'event' => 'REQUEST_CHANGES',
 				]
 			);
+
+        $review = $client
+            ->api('pull_request')
+            ->reviews()
+            ->submmit(
+                $repository_owner,
+                $repository,
+                $pull_request_number,
+                $review['id'],
+                [
+                    'event' => 'REQUEST_CHANGES',
+                ]
+            );
 
         $pr_path_dir = dirname($pr_path);
 
         mkdir($pr_path_dir, 0777, true);
 
-        file_put_contents($pr_path, json_encode($comment));
+        file_put_contents($pr_path, json_encode($review));
 	}
 }
