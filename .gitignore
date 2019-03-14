@@ -4,3 +4,4 @@ composer.lock
 .DS_Store
 database/github_data/*.json
 database/psalm_data/*.json
+config.json
