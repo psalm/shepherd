@@ -38,6 +38,8 @@ class Sender
 
 		$diff_url = 'http://github.com/' . $repository_owner . '/' . $repository . '/compare/' . $base_sha . '...' . $head_sha . '.diff';
 
+		var_dump($diff_url);
+
 		// Prepare new cURL resource
         $ch = curl_init($diff_url);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
