@@ -34,10 +34,11 @@ class Sender
 
             $client
                 ->api('pull_request')
-                ->comments()
+                ->reviews()
                 ->remove(
                     $repository_owner,
                     $repository,
+                    $pull_request_number,
                     $comment['id']
                 );
         }
