@@ -27,6 +27,21 @@ class Sender
 		$head_sha = $github_data['pull_request']['head']['sha'];
 		$base_sha = $github_data['pull_request']['base']['sha'];
 
+        $pr_path = dirname(__DIR__) . '/database/pr_comments/' . parse_url($github_data['pull_request']['html_url'], PHP_URL_PATH);
+
+        if (file_exists($pr_path)) {
+            $comment = json_decode(file_get_contents($pr_path), true);
+
+            $client
+                ->api('pull_request')
+                ->comments()
+                ->remove(
+                    $repository_owner,
+                    $repository,
+                    $comment['id']
+                );
+        }
+
 		$diff_url = 'https://github.com/'
 			. $repository_owner . '/'
 			. $repository . '/compare/'
@@ -104,9 +119,7 @@ class Sender
 			}
 		}
 
-		var_dump($file_comments);
-
-		$client
+		$comment = $client
 			->api('pull_request')
 			->reviews()
 			->create(
@@ -120,5 +133,11 @@ class Sender
 					'comments' => $file_comments,
 				]
 			);
+
+        $pr_path_dir = dirname($pr_path);
+
+        mkdir($pr_path_dir, 0777, true);
+
+        file_put_contents($pr_path, $comment);
 	}
 }
