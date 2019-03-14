@@ -86,7 +86,7 @@ class Sender
 										$line_offset++;
 									}
 
-									if ($issue['line_from'] === $line_offset + $chunk_end + 1) {
+									if ($issue['line_from'] === $line_offset + $chunk_end - 1) {
 										$file_comments[] = [
 											'path' => $file_name,
 											'position' => $diff_file_offset,
