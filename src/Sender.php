@@ -12,6 +12,9 @@ class Sender
 			throw new \UnexpectedValueException('Missing config');
 		}
 
+		/**
+		 * @var array{reviewer: array{user: string, password: string}}
+		 */
 		$config = json_decode(file_get_contents($config_path), true);
 
 		$repository = $github_data['repository']['full_name'];
@@ -38,13 +41,13 @@ class Sender
 		}
 
 		$client = new \Github\Client();
-		$client->authenticate($config['user'], $config['password'], \Github\Client::AUTH_HTTP_PASSWORD);
+		$client->authenticate($config['reviewer']['user'], $config['reviewer']['password'], \Github\Client::AUTH_HTTP_PASSWORD);
 
 		$repositories = $client
 			->api('pull_request')
 			->reviews()
 			->create(
-				$config['user'],
+				$config['reviewer']['user'],
 				$repository,
 				$pull_request_number,
 				[
