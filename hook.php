@@ -29,6 +29,6 @@ $psalm_storage_path = __DIR__ . '/database/psalm_data/' . $git_commit_hash . '.j
 if (file_exists($psalm_storage_path)) {
 	Psalm\Spirit\Sender::send(
 		$payload,
-		json_decode(file_get_contents($psalm_storage_path))
+		json_decode(file_get_contents($psalm_storage_path), true)
 	);
 }

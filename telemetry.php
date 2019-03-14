@@ -24,7 +24,7 @@ $github_storage_path = __DIR__ . '/database/github_data/' . $git_commit_hash . '
 
 if (file_exists($github_storage_path)) {
 	Psalm\Spirit\Sender::send(
-		json_decode(file_get_contents($github_storage_path)),
+		json_decode(file_get_contents($github_storage_path), true),
 		$payload
 	);
 }
