@@ -27,19 +27,21 @@ class Sender
 		$head_sha = $github_data['pull_request']['head']['sha'];
 		$base_sha = $github_data['pull_request']['base']['sha'];
 
-        $pr_path = dirname(__DIR__) . '/database/pr_comments/' . parse_url($github_data['pull_request']['html_url'], PHP_URL_PATH);
+        $pr_path = dirname(__DIR__) . '/database/pr_reviews/' . parse_url($github_data['pull_request']['html_url'], PHP_URL_PATH);
+
+        $review = null;
 
         if (file_exists($pr_path)) {
-            $comment = json_decode(file_get_contents($pr_path), true);
+            $review = json_decode(file_get_contents($pr_path), true);
 
             $client
                 ->api('pull_request')
                 ->reviews()
-                ->remove(
+                ->dismiss(
                     $repository_owner,
                     $repository,
                     $pull_request_number,
-                    $comment['id']
+                    $review['id']
                 );
         }
 
