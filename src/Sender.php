@@ -39,7 +39,7 @@ class Sender
             $client
                 ->api('pull_request')
                 ->reviews()
-                ->dismiss(
+                ->remove(
                     $repository_owner,
                     $repository,
                     $pull_request_number,
