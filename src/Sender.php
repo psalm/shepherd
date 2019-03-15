@@ -59,21 +59,44 @@ class Sender
                 }
             }
 
-            try {
-                $client
-                    ->api('pull_request')
-                    ->comments()
-                    ->update(
-                        $repository_owner,
-                        $repository,
-                        $review['id'],
-                        [
-                            'body' => 'fdsfs'
-                        ]
-                    );
-            } catch (\Exception $e) {
-                // do nothing
-            }
+            $payload = '{
+                "query": "mutation {
+                    updatePullRequestReview(
+                        input: {
+                            pullRequestReviewId: \"' . $review['id'] . '\",
+                            body: \"some test2\"
+                        }
+                    ) {
+                        pullRequestReview {
+                            updatedAt
+                        }
+                    }
+                }"
+            }';
+
+            // Prepare new cURL resource
+            $ch = curl_init('https://api.github.com/graphql');
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLINFO_HEADER_OUT, true);
+            curl_setopt($ch, CURLOPT_POST, true);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
+
+            // Set HTTP Header for POST request
+            curl_setopt(
+                $ch,
+                CURLOPT_HTTPHEADER,
+                [
+                    'Authorization: ' . sprintf('Basic %s', base64_encode($config['reviewer']['user'] . ':' . $config['reviewer']['password'])),
+                    'Accept: application/vnd.github.v3.diff',
+                    'Content-Length: ' . strlen($payload)
+                ]
+            );
+
+            // Submit the POST request
+            $result = curl_exec($ch);
+
+            // Close cURL session handle
+            curl_close($ch);
         }
 
         $diff_url = 'https://github.com/'
