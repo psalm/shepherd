@@ -68,7 +68,6 @@ class Sender
                 ->remove(
                     $repository_owner,
                     $repository,
-                    $pull_request_number,
                     $comment['id']
                 );
         }
