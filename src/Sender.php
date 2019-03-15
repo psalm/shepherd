@@ -56,6 +56,19 @@ class Sender
                         );
                 }
             }
+
+            try {
+                $client
+                    ->api('pull_request')
+                    ->comments()
+                    ->remove(
+                        $repository_owner,
+                        $repository,
+                        $review['id']
+                    );
+            } catch (\Exception $e) {
+                // do nothing
+            }
         }
 
         $diff_url = 'https://github.com/'
