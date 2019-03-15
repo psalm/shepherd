@@ -131,15 +131,21 @@ class Sender
                                     $selection_start = $issue['from'] - $issue['snippet_from'];
                                     $selection_length = $issue['to'] - $issue['from'];
 
-                                    $before_snippet = substr($snippet, 0, $selection_start);
+                                    $before_selection = substr($snippet, 0, $selection_start);
 
-                                    $before_lines = explode("\n", $before_snippet);
+                                    $after_selection = substr($snippet, $selection_start + $selection_length);
+
+                                    $before_lines = explode("\n", $before_selection);
 
                                     $last_before_line_length = strlen(array_pop($before_lines));
 
                                     $first_selected_line = explode("\n", $selected_text)[0];
 
-                                    $issue_string = $before_snippet . $first_selected_line
+                                    if ($first_selected_line === $selected_text) {
+                                        $first_selected_line .= explode("\n", $after_selection)[0];
+                                    }
+
+                                    $issue_string = $before_selection . $first_selected_line
                                         . "\n" . str_repeat(' ', $last_before_line_length) . str_repeat('^', strlen($selected_text));
 
                                     $file_comments[] = [
