@@ -82,7 +82,7 @@ class Sender
                 CURLOPT_HTTPHEADER,
                 [
                     'Content-Type: application/json',
-                    'Authorization: Token ' . $config['token'],
+                    'Authorization: Token ' . $config['reviewer']['token'],
                     'Accept: application/vnd.github.v3.diff',
                     'Content-Length: ' . strlen($payload),
                     'User-Agent: Psalm-Spirit-Client',
