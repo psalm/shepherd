@@ -12,12 +12,12 @@ class Sender
             throw new \UnexpectedValueException('Missing config');
         }
 
-        $host = $config['host'] ?? 'https://github.com';
-
         /**
          * @var array{reviewer: array{user: string, password: string, token: string}}
          */
         $config = json_decode(file_get_contents($config_path), true);
+
+        $host = $config['host'] ?? 'https://github.com';
 
         $client = new \Github\Client(null, null, $config['host'] ?? null);
         $client->authenticate($config['reviewer']['token'], null, \Github\Client::AUTH_HTTP_TOKEN);
