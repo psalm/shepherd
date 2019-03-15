@@ -82,7 +82,7 @@ class Sender
                 CURLOPT_HTTPHEADER,
                 [
                     'Content-Type: application/json',
-                    'Authorization: ' . sprintf('Basic %s', base64_encode($config['reviewer']['user'] . ':' . $config['reviewer']['password'])),
+                    'Authorization: Token ' . $config['token'],
                     'Accept: application/vnd.github.v3.diff',
                     'Content-Length: ' . strlen($payload),
                     'User-Agent: Psalm-Spirit-Client',
