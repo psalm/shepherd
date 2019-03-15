@@ -128,7 +128,7 @@ class Sender
                                         'position' => $diff_file_offset,
                                         'body' => $issue['message'],
                                     ];
-                                    break 3;
+                                    break 4;
                                 }
                             }
                         } else {
@@ -142,7 +142,7 @@ class Sender
         }
 
         if ($missed_errors) {
-            $comment_text = ($missed_errors ? "\n\n```" . implode("\n", $missed_errors) . '```' : '');
+            $comment_text = "\n\n```" . implode("\n", $missed_errors) . "\n" . '```';
 
             if ($file_comments) {
                 $message_body = 'Psalm also found errors in other files' . $comment_text;
@@ -156,8 +156,6 @@ class Sender
         } else {
             return;
         }
-
-        $message_body = 'Psalm found errors in other files' . ($missed_errors ? "\n\n```" . implode("\n", $missed_errors) . '```' : '');
 
         $review = $client
             ->api('pull_request')
