@@ -117,6 +117,8 @@ class Sender
 
             $file_name = $issue['file_name'];
 
+
+
             foreach ($diffs as $diff) {
                 if ($diff->getTo() === 'b/' . $file_name) {
                     $diff_file_offset = 0;
@@ -124,6 +126,8 @@ class Sender
                     foreach ($diff->getChunks() as $chunk) {
                         $chunk_end = $chunk->getEnd();
                         $chunk_end_range = $chunk->getEndRange();
+
+                        var_dump($chunk_end, $chunk_end_range, $issue['line_from']);
 
                         if ($issue['line_from'] >= $chunk_end
                             && $issue['line_from'] < $chunk_end + $chunk_end_range
