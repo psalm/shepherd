@@ -58,8 +58,8 @@ class Sender
             }
 
             $payload = json_encode([
-                'query' => 'mutation DeleteReview {
-                    deletePullRequestReview(input: {pullRequestReviewId: "' . $review['node_id'] . '"}) {
+                'query' => 'mutation UpdateReview {
+                    updatePullRequestReview(input: {pullRequestReviewId: "' . $review['node_id'] . '", body: "(outdated review)"}) {
                         pullRequestReview {
                             updatedAt
                         }
