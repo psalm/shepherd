@@ -30,6 +30,10 @@ if (file_exists($github_storage_path)) {
 
 echo 'and even here' . PHP_EOL;
 
+if (!is_writable(__DIR__ . '/database/github_data/')) {
+	throw new \UnexpectedValueException('Directory should be writable');
+}
+
 file_put_contents($github_storage_path, json_encode($payload));
 
 echo 'and then saved contents to ' . $github_storage_path . PHP_EOL;
