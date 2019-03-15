@@ -115,8 +115,6 @@ class Sender
                         $chunk_end = $chunk->getEnd();
                         $chunk_end_range = $chunk->getEndRange();
 
-                        var_dump($chunk_end, $chunk_end_range, $issue['line_from']);
-
                         if ($issue['line_from'] >= $chunk_end
                             && $issue['line_from'] < $chunk_end + $chunk_end_range
                         ) {
@@ -129,10 +127,28 @@ class Sender
                                 }
 
                                 if ($issue['line_from'] === $line_offset + $chunk_end - 1) {
+                                    $snippet = $issue['snippet'];
+                                    $selected_text = $issue['selected_text'];
+
+                                    $selection_start = $issue['from'] - $issue['snippet_from'];
+                                    $selection_length = $issue['to'] - $issue['from'];
+
+                                    $before_snippet = substr($snippet, 0, $selection_start);
+
+                                    $before_lines = explode("\n", $before_snippet);
+
+                                    $last_before_line_length = strlen(array_pop($before_lines));
+
+                                    $first_selected_line = explode("\n", $selected_text)[0];
+
+                                    $issue_string = $before_snippet . $first_selected_line
+                                        . "\n" . str_repeat(' ', $last_before_line_length) . '^';
+
                                     $file_comments[] = [
                                         'path' => $file_name,
                                         'position' => $diff_file_offset,
-                                        'body' => $issue['message'],
+                                        'body' => $issue['message'] . "\n```\n"
+                                            . $issue_string . "\n```",
                                     ];
                                     continue 4;
                                 }
