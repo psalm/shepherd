@@ -63,11 +63,12 @@ class Sender
             $comment = json_decode(file_get_contents($pr_comment_path), true);
 
             $client
-                ->api('pull_request')
+                ->api('issue')
                 ->comments()
                 ->remove(
                     $repository_owner,
                     $repository,
+                    $pull_request_number,
                     $comment['id']
                 );
         }
@@ -195,14 +196,14 @@ class Sender
         }
 
         $comment = $client
-            ->api('pull_request')
+            ->api('issue')
             ->comments()
             ->create(
                 $repository_owner,
                 $repository,
                 $pull_request_number,
                 [
-                    'body' => $message_body
+                    'body' => $message_body,
                 ]
             );
 
