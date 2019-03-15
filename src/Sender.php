@@ -117,9 +117,9 @@ class Sender
 
             $file_name = $issue['file_name'];
 
-
-
             foreach ($diffs as $diff) {
+                var_dump($diff->getTo(), $file_name);
+
                 if ($diff->getTo() === 'b/' . $file_name) {
                     $diff_file_offset = 0;
 
