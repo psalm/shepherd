@@ -86,8 +86,6 @@ class Sender
         $diff_parser = new \SebastianBergmann\Diff\Parser();
         $diffs = $diff_parser->parse($diff_string);
 
-        var_dump($diff_url . $diff_string);
-
         /** @var array<int, array{severity: string, line_from: int, line_to: int, type: string, message: string,
          *      file_name: string, file_path: string, snippet: string, from: int, to: int,
          *      snippet_from: int, snippet_to: int, column_from: int, column_to: int, selected_text: string}>
@@ -142,7 +140,7 @@ class Sender
                                     $first_selected_line = explode("\n", $selected_text)[0];
 
                                     $issue_string = $before_snippet . $first_selected_line
-                                        . "\n" . str_repeat(' ', $last_before_line_length) . '^';
+                                        . "\n" . str_repeat(' ', $last_before_line_length) . str_repeat('^', strlen($selected_text));
 
                                     $file_comments[] = [
                                         'path' => $file_name,
