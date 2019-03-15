@@ -168,7 +168,7 @@ class Sender
                 $pull_request_number,
                 [
                     'commit_id' => $head_sha,
-                    'body' => 'Psalm found errors in other files' . ($missed_errors ? "\n\n```" . implode("\n", $missed_errors) . '```' : ''),
+                    'body' => $message_body,
                     'comments' => $file_comments,
                     'event' => 'REQUEST_CHANGES',
                 ]
