@@ -57,11 +57,13 @@ class Sender
                 }
             }
 
+            var_dump($review);
+
             $payload = '{
                 "query": "mutation {
                     updatePullRequestReview(
                         input: {
-                            pullRequestReviewId: \"' . $review['id'] . '\",
+                            pullRequestReviewId: \"' . $review['node_id'] . '\",
                             body: \"some test2\"
                         }
                     ) {
