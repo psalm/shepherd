@@ -88,7 +88,8 @@ class Sender
                 [
                     'Authorization: ' . sprintf('Basic %s', base64_encode($config['reviewer']['user'] . ':' . $config['reviewer']['password'])),
                     'Accept: application/vnd.github.v3.diff',
-                    'Content-Length: ' . strlen($payload)
+                    'Content-Length: ' . strlen($payload),
+                    'User-Agent: Psalm-Spirit-Client',
                 ]
             );
 
