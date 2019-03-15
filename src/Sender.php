@@ -34,6 +34,8 @@ class Sender
         if (file_exists($pr_path)) {
             $review = json_decode(file_get_contents($pr_path), true);
 
+            var_dump($review);
+
             $comments = $client
                 ->api('pull_request')
                 ->reviews()
