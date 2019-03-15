@@ -61,10 +61,13 @@ class Sender
                 $client
                     ->api('pull_request')
                     ->comments()
-                    ->remove(
+                    ->update(
                         $repository_owner,
                         $repository,
-                        $review['id']
+                        $review['id'],
+                        [
+                            'body' => 'fdsfs'
+                        ]
                     );
             } catch (\Exception $e) {
                 // do nothing
