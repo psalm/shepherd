@@ -17,7 +17,7 @@ class Sender
          */
         $config = json_decode(file_get_contents($config_path), true);
 
-        $client = new \Github\Client();
+        $client = new \Github\Client(null, null, $config['host'] ?? null);
         $client->authenticate($config['reviewer']['token'], null, \Github\Client::AUTH_HTTP_TOKEN);
 
         $repository = $github_data['repository']['name'];
