@@ -34,8 +34,6 @@ class Sender
         if (file_exists($pr_path)) {
             $review = json_decode(file_get_contents($pr_path), true);
 
-            var_dump($review);
-
             $comments = $client
                 ->api('pull_request')
                 ->reviews()
@@ -74,6 +72,8 @@ class Sender
                 }"
             }';
 
+            var_dump($payload);
+
             // Prepare new cURL resource
             $ch = curl_init('https://api.github.com/graphql');
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
@@ -94,6 +94,8 @@ class Sender
 
             // Submit the POST request
             $result = curl_exec($ch);
+
+            var_dump($result);
 
             // Close cURL session handle
             curl_close($ch);
