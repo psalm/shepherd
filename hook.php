@@ -32,6 +32,8 @@ echo 'and even here' . PHP_EOL;
 
 file_put_contents($github_storage_path, json_encode($payload));
 
+echo 'and then saved contents to ' . $github_storage_path . PHP_EOL;
+
 error_log('GitHub data received for ' . $git_commit_hash);
 
 $psalm_storage_path = __DIR__ . '/database/psalm_data/' . $git_commit_hash . '.json';
