@@ -74,31 +74,14 @@ class Sender
                 );
         }
 
-        $diff_url = $host . '/'
-            . $repository_owner . '/'
-            . $repository . '/compare/'
-            . substr($base_sha, 0, 8) . '...' . substr($head_sha, 0, 8) . '.diff';
-
-        // Prepare new cURL resource
-        $ch = curl_init($diff_url);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLINFO_HEADER_OUT, true);
-
-        // Set HTTP Header for POST request
-        curl_setopt(
-            $ch,
-            CURLOPT_HTTPHEADER,
-            [
-                'Accept: application/vnd.github.v3.diff',
-                'Authorization: Token ' . $config['reviewer']['token'],
-            ]
-        );
-
-        // Submit the POST request
-        $diff_string = curl_exec($ch);
-
-        // Close cURL session handle
-        curl_close($ch);
+        $diff_string = $client
+            ->api('pull_request')
+            ->configure('diff', 'v3')
+            ->show(
+                $repository_owner,
+                $repository,
+                $pull_request_number
+            );
 
         $diff_parser = new \SebastianBergmann\Diff\Parser();
         $diffs = $diff_parser->parse($diff_string);
