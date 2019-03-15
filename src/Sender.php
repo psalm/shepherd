@@ -74,7 +74,7 @@ class Sender
                 );
         }
 
-        $diff_url = $host
+        $diff_url = $host . '/'
             . $repository_owner . '/'
             . $repository . '/compare/'
             . substr($base_sha, 0, 8) . '...' . substr($head_sha, 0, 8) . '.diff';
@@ -102,7 +102,7 @@ class Sender
         $diff_parser = new \SebastianBergmann\Diff\Parser();
         $diffs = $diff_parser->parse($diff_string);
 
-        var_dump($diff_string);
+        var_dump($diff_url . $diff_string);
 
         /** @var array<int, array{severity: string, line_from: int, line_to: int, type: string, message: string,
          *      file_name: string, file_path: string, snippet: string, from: int, to: int,
