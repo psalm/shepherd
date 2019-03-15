@@ -13,7 +13,7 @@ class Sender
         }
 
         /**
-         * @var array{reviewer: array{user: string, password: string}}
+         * @var array{reviewer: array{user: string, password: string, token: string}}
          */
         $config = json_decode(file_get_contents($config_path), true);
 
@@ -27,12 +27,13 @@ class Sender
         $head_sha = $github_data['pull_request']['head']['sha'];
         $base_sha = $github_data['pull_request']['base']['sha'];
 
-        $pr_path = dirname(__DIR__) . '/database/pr_reviews/' . parse_url($github_data['pull_request']['html_url'], PHP_URL_PATH);
+        $pr_review_path = dirname(__DIR__) . '/database/pr_reviews/' . parse_url($github_data['pull_request']['html_url'], PHP_URL_PATH);
+        $pr_comment_path = dirname(__DIR__) . '/database/pr_comments/' . parse_url($github_data['pull_request']['html_url'], PHP_URL_PATH);
 
         $review = null;
 
-        if (file_exists($pr_path)) {
-            $review = json_decode(file_get_contents($pr_path), true);
+        if (file_exists($pr_review_path)) {
+            $review = json_decode(file_get_contents($pr_review_path), true);
 
             $comments = $client
                 ->api('pull_request')
@@ -56,46 +57,19 @@ class Sender
                         );
                 }
             }
+        }
 
-            $payload = json_encode([
-                'query' => 'mutation UpdateReview {
-                    updatePullRequestReview(input: {pullRequestReviewId: "' . $review['node_id'] . '", body: "(outdated review)"}) {
-                        pullRequestReview {
-                            updatedAt
-                        }
-                    }
-                }'
-            ]);
+        if (file_exists($pr_comment_path)) {
+            $comment = json_decode(file_get_contents($pr_comment_path), true);
 
-            var_dump($payload);
-
-            // Prepare new cURL resource
-            $ch = curl_init('https://api.github.com/graphql');
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            curl_setopt($ch, CURLINFO_HEADER_OUT, true);
-            curl_setopt($ch, CURLOPT_POST, true);
-            curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
-
-            // Set HTTP Header for POST request
-            curl_setopt(
-                $ch,
-                CURLOPT_HTTPHEADER,
-                [
-                    'Content-Type: application/json',
-                    'Authorization: Token ' . $config['reviewer']['token'],
-                    'Accept: application/vnd.github.v3.diff',
-                    'Content-Length: ' . strlen($payload),
-                    'User-Agent: Psalm-Spirit-Client',
-                ]
-            );
-
-            // Submit the POST request
-            $result = curl_exec($ch);
-
-            var_dump($result);
-
-            // Close cURL session handle
-            curl_close($ch);
+            $client
+                ->api('pull_request')
+                ->comments()
+                ->remove(
+                    $repository_owner,
+                    $repository,
+                    $comment['id']
+                );
         }
 
         $diff_url = 'https://github.com/'
@@ -197,25 +171,45 @@ class Sender
             return;
         }
 
-        $review = $client
+        if ($file_comments) {
+            $review = $client
+                ->api('pull_request')
+                ->reviews()
+                ->create(
+                    $repository_owner,
+                    $repository,
+                    $pull_request_number,
+                    [
+                        'commit_id' => $head_sha,
+                        'body' => '',
+                        'comments' => $file_comments,
+                        'event' => 'REQUEST_CHANGES',
+                    ]
+                );
+
+            $pr_review_path_dir = dirname($pr_review_path);
+
+            mkdir($pr_review_path_dir, 0777, true);
+
+            file_put_contents($pr_review_path, json_encode($review));
+        }
+
+        $comment = $client
             ->api('pull_request')
-            ->reviews()
+            ->comments()
             ->create(
                 $repository_owner,
                 $repository,
                 $pull_request_number,
                 [
-                    'commit_id' => $head_sha,
-                    'body' => $message_body,
-                    'comments' => $file_comments,
-                    'event' => 'REQUEST_CHANGES',
+                    'body' => $message_body
                 ]
             );
 
-        $pr_path_dir = dirname($pr_path);
+        $pr_comment_path_dir = dirname($pr_comment_path);
 
-        mkdir($pr_path_dir, 0777, true);
+        mkdir($pr_comment_path_dir, 0777, true);
 
-        file_put_contents($pr_path, json_encode($review));
+        file_put_contents($pr_comment_path, json_encode($comment));
     }
 }
