@@ -89,7 +89,8 @@ class Sender
             $ch,
             CURLOPT_HTTPHEADER,
             [
-                'Accept: application/vnd.github.v3.diff'
+                'Accept: application/vnd.github.v3.diff',
+                'Authorization: Token ' . $config['reviewer']['token'],
             ]
         );
 
