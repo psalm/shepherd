@@ -142,7 +142,7 @@ class Sender
         }
 
         if ($missed_errors) {
-            $comment_text = "\n\n```" . implode("\n", $missed_errors) . "\n" . '```';
+            $comment_text = "\n\n```\n" . implode("\n", $missed_errors) . "\n```";
 
             if ($file_comments) {
                 $message_body = 'Psalm also found errors in other files' . $comment_text;
