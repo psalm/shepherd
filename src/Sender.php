@@ -57,13 +57,15 @@ class Sender
                 }
             }
 
-            $payload = 'mutation DeleteReview {
-              deletePullRequestReview(input: {pullRequestReviewId: "' . $review['node_id'] . '"}) {
-                pullRequestReview {
-                  updatedAt
-                }
-              }
-            }';
+            $payload = json_encode([
+                'query' => 'mutation DeleteReview {
+                    deletePullRequestReview(input: {pullRequestReviewId: "' . $review['node_id'] . '"}) {
+                        pullRequestReview {
+                            updatedAt
+                        }
+                    }
+                }'
+            ]);
 
             var_dump($payload);
 
@@ -79,6 +81,7 @@ class Sender
                 $ch,
                 CURLOPT_HTTPHEADER,
                 [
+                    'Content-Type: application/json',
                     'Authorization: ' . sprintf('Basic %s', base64_encode($config['reviewer']['user'] . ':' . $config['reviewer']['password'])),
                     'Accept: application/vnd.github.v3.diff',
                     'Content-Length: ' . strlen($payload),
