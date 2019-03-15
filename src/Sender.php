@@ -128,7 +128,7 @@ class Sender
                                         'position' => $diff_file_offset,
                                         'body' => $issue['message'],
                                     ];
-                                    break 4;
+                                    continue 4;
                                 }
                             }
                         } else {
