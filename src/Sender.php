@@ -12,6 +12,8 @@ class Sender
             throw new \UnexpectedValueException('Missing config');
         }
 
+        $host = $config['host'] ?? 'https://github.com';
+
         /**
          * @var array{reviewer: array{user: string, password: string, token: string}}
          */
@@ -72,7 +74,7 @@ class Sender
                 );
         }
 
-        $diff_url = 'https://github.com/'
+        $diff_url = $host
             . $repository_owner . '/'
             . $repository . '/compare/'
             . substr($base_sha, 0, 8) . '...' . substr($head_sha, 0, 8) . '.diff';
