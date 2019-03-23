@@ -24,12 +24,11 @@ $config = json_decode(file_get_contents($config_path), true);
 if (!empty($config['github_webhook_secret'])) {
 	$hash = hash_hmac('sha1', $payload_data, $config['github_webhook_secret']);
 
-	if (!isset($_SERVER['X-Hub-Signature'])) {
-		var_dump(array_keys($_SERVER));
+	if (!isset($_SERVER['HTTP_X_HUB_SIGNATURE'])) {
 		throw new \Exception('Missing signature header');
 	}
 
-	if ($hash !== $_SERVER['X-Hub-Signature']) {
+	if ($hash !== $_SERVER['HTTP_X_HUB_SIGNATURE']) {
 		throw new \Exception('Mismatching signature');
 	}
 }
