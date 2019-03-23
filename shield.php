@@ -14,6 +14,9 @@ $repository_data_dir = __DIR__ . '/database/psalm_master_data/' . $repository;
 
 $pct = '?? ';
 
+var_dump($repository_data_dir, file_exists($repository_data_dir));
+exit;
+
 if (file_exists($repository_data_dir)) {
 	$files = scandir($repository_data_dir, SCANDIR_SORT_DESCENDING);
 	$newest_file_name = array_filter(
