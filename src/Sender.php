@@ -83,8 +83,9 @@ class Sender
                 $pull_request_number
             );
 
-        $diff_parser = new \SebastianBergmann\Diff\Parser();
-        $diffs = $diff_parser->parse($diff_string);
+        if (!is_string($diff_string)) {
+            throw new \UnexpectedValueException('$diff_string should be a string');
+        }
 
         /** @var array<int, array{severity: string, line_from: int, line_to: int, type: string, message: string,
          *      file_name: string, file_path: string, snippet: string, from: int, to: int,
@@ -102,69 +103,49 @@ class Sender
             }
 
             $file_name = $issue['file_name'];
+            $line_from = $issue['line_from'];
 
-            foreach ($diffs as $diff) {
-                var_dump($diff->getTo(), $file_name);
+            $diff_file_offset = DiffLineFinder::getGitHubPositionFromDiff(
+                $line_from,
+                $file_name,
+                $diff_string
+            );
 
-                if ($diff->getTo() === 'b/' . $file_name) {
-                    $diff_file_offset = 0;
+            if ($diff_file_offset !== null) {
+                $snippet = $issue['snippet'];
+                $selected_text = $issue['selected_text'];
 
-                    foreach ($diff->getChunks() as $chunk) {
-                        $chunk_end = $chunk->getEnd();
-                        $chunk_end_range = $chunk->getEndRange();
+                $selection_start = $issue['from'] - $issue['snippet_from'];
+                $selection_length = $issue['to'] - $issue['from'];
 
-                        if ($issue['line_from'] >= $chunk_end
-                            && $issue['line_from'] < $chunk_end + $chunk_end_range
-                        ) {
-                            $line_offset = 0;
-                            foreach ($chunk->getLines() as $i => $chunk_line) {
-                                $diff_file_offset++;
+                $before_selection = substr($snippet, 0, $selection_start);
 
-                                if ($chunk_line->getType() !== \SebastianBergmann\Diff\Line::REMOVED) {
-                                    $line_offset++;
-                                }
+                $after_selection = substr($snippet, $selection_start + $selection_length);
 
-                                if ($issue['line_from'] === $line_offset + $chunk_end - 1) {
-                                    $snippet = $issue['snippet'];
-                                    $selected_text = $issue['selected_text'];
+                $before_lines = explode("\n", $before_selection);
 
-                                    $selection_start = $issue['from'] - $issue['snippet_from'];
-                                    $selection_length = $issue['to'] - $issue['from'];
+                $last_before_line_length = strlen(array_pop($before_lines));
 
-                                    $before_selection = substr($snippet, 0, $selection_start);
+                $first_selected_line = explode("\n", $selected_text)[0];
 
-                                    $after_selection = substr($snippet, $selection_start + $selection_length);
-
-                                    $before_lines = explode("\n", $before_selection);
-
-                                    $last_before_line_length = strlen(array_pop($before_lines));
-
-                                    $first_selected_line = explode("\n", $selected_text)[0];
-
-                                    if ($first_selected_line === $selected_text) {
-                                        $first_selected_line .= explode("\n", $after_selection)[0];
-                                    }
-
-                                    $issue_string = $before_selection . $first_selected_line
-                                        . "\n" . str_repeat(' ', $last_before_line_length) . str_repeat('^', strlen($selected_text));
-
-                                    $file_comments[] = [
-                                        'path' => $file_name,
-                                        'position' => $diff_file_offset,
-                                        'body' => $issue['message'] . "\n```\n"
-                                            . $issue_string . "\n```",
-                                    ];
-                                    continue 4;
-                                }
-                            }
-                        } else {
-                            $diff_file_offset += count($chunk->getLines());
-                        }
-                    }
+                if ($first_selected_line === $selected_text) {
+                    $first_selected_line .= explode("\n", $after_selection)[0];
                 }
+
+                $issue_string = $before_selection . $first_selected_line
+                    . "\n" . str_repeat(' ', $last_before_line_length) . str_repeat('^', strlen($selected_text));
+
+                $file_comments[] = [
+                    'path' => $file_name,
+                    'position' => $diff_file_offset,
+                    'body' => $issue['message'] . "\n```\n"
+                        . $issue_string . "\n```",
+                ];
+
+                continue;
             }
 
-            $missed_errors[] = $file_name . ':' . $issue['line_from'] . ':' . $issue['column_from'] . ' - ' . $issue['message'];
+            $missed_errors[] = $file_name . ':' . $line_from . ':' . $issue['column_from'] . ' - ' . $issue['message'];
         }
 
         if ($missed_errors) {

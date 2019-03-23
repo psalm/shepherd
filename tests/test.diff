@@ -1,0 +1,1053 @@
+diff --git a/src/Psalm/Internal/Analyzer/ClassAnalyzer.php b/src/Psalm/Internal/Analyzer/ClassAnalyzer.php
+index 945570f40..88ac21ad7 100644
+--- a/src/Psalm/Internal/Analyzer/ClassAnalyzer.php
++++ b/src/Psalm/Internal/Analyzer/ClassAnalyzer.php
+@@ -1496,9 +1496,7 @@ private function checkTemplateParams(
+                 if (!$template_type[0]->isMixed()
+                     && isset($storage->template_type_extends[strtolower($parent_storage->name)][$i])
+                 ) {
+-                    $extended_type = new Type\Union([
+-                        $storage->template_type_extends[strtolower($parent_storage->name)][$i]
+-                    ]);
++                    $extended_type = $storage->template_type_extends[strtolower($parent_storage->name)][$i];
+ 
+                     if (!TypeAnalyzer::isContainedBy($codebase, $extended_type, $template_type[0])) {
+                         if (IssueBuffer::accepts(
+diff --git a/src/Psalm/Internal/Analyzer/MethodAnalyzer.php b/src/Psalm/Internal/Analyzer/MethodAnalyzer.php
+index 673259c44..066ad3f7c 100644
+--- a/src/Psalm/Internal/Analyzer/MethodAnalyzer.php
++++ b/src/Psalm/Internal/Analyzer/MethodAnalyzer.php
+@@ -613,9 +613,9 @@ public static function compareMethods(
+ 
+                 $template_types = [];
+ 
+-                foreach ($map as $key => $atomic_type) {
++                foreach ($map as $key => $type) {
+                     if (is_string($key)) {
+-                        $template_types[$key] = [new Type\Union([$atomic_type]), $guide_classlike_storage->name];
++                        $template_types[$key] = [$type, $guide_classlike_storage->name];
+                     }
+                 }
+ 
+@@ -638,10 +638,10 @@ public static function compareMethods(
+ 
+                 $template_types = [];
+ 
+-                foreach ($map as $key => $atomic_type) {
++                foreach ($map as $key => $type) {
+                     if (is_string($key)) {
+                         $template_types[$key] = [
+-                            new Type\Union([$atomic_type]),
++                            $type,
+                             $implementer_method_storage->defining_fqcln
+                         ];
+                     }
+@@ -771,9 +771,9 @@ public static function compareMethods(
+ 
+                     $template_types = [];
+ 
+-                    foreach ($map as $key => $atomic_type) {
++                    foreach ($map as $key => $type) {
+                         if (is_string($key)) {
+-                            $template_types[$key] = [new Type\Union([$atomic_type]), $guide_classlike_storage->name];
++                            $template_types[$key] = [$type, $guide_classlike_storage->name];
+                         }
+                     }
+ 
+diff --git a/src/Psalm/Internal/Analyzer/Statements/Block/ForeachAnalyzer.php b/src/Psalm/Internal/Analyzer/Statements/Block/ForeachAnalyzer.php
+index 55b819d10..e86c777d6 100644
+--- a/src/Psalm/Internal/Analyzer/Statements/Block/ForeachAnalyzer.php
++++ b/src/Psalm/Internal/Analyzer/Statements/Block/ForeachAnalyzer.php
+@@ -786,7 +786,7 @@ function (array $arr) : Type\Union {
+ 
+     /**
+      * @param  string $template_name
+-     * @param  array<string, array<int|string, Type\Atomic>>  $template_type_extends
++     * @param  array<string, array<int|string, Type\Union>>  $template_type_extends
+      * @param  array<string, array{Type\Union, ?string}>  $class_template_types
+      * @param  array<int, Type\Union> $calling_type_params
+      * @return Type\Union|null
+@@ -814,19 +814,47 @@ private static function getExtendedType(
+         if (isset($template_type_extends[$template_class_lc][$template_name])) {
+             $extended_type = $template_type_extends[$template_class_lc][$template_name];
+ 
+-            if (!$extended_type instanceof Type\Atomic\TTemplateParam) {
+-                return new Type\Union([$extended_type]);
++            $return_type = null;
++
++            foreach ($extended_type->getTypes() as $extended_atomic_type) {
++                if (!$extended_atomic_type instanceof Type\Atomic\TTemplateParam) {
++                    if (!$return_type) {
++                        $return_type = $extended_type;
++                    } else {
++                        $return_type = Type::combineUnionTypes(
++                            $return_type,
++                            $extended_type
++                        );
++                    }
++
++                    continue;
++                }
++
++                if ($extended_atomic_type->defining_class) {
++                    $candidate_type = self::getExtendedType(
++                        $extended_atomic_type->param_name,
++                        strtolower($extended_atomic_type->defining_class),
++                        $calling_class_lc,
++                        $template_type_extends,
++                        $class_template_types,
++                        $calling_type_params
++                    );
++
++                    if ($candidate_type) {
++                        if (!$return_type) {
++                            $return_type = $candidate_type;
++                        } else {
++                            $return_type = Type::combineUnionTypes(
++                                $return_type,
++                                $candidate_type
++                            );
++                        }
++                    }
++                }
+             }
+ 
+-            if ($extended_type->defining_class) {
+-                return self::getExtendedType(
+-                    $extended_type->param_name,
+-                    strtolower($extended_type->defining_class),
+-                    $calling_class_lc,
+-                    $template_type_extends,
+-                    $class_template_types,
+-                    $calling_type_params
+-                );
++            if ($return_type) {
++                return $return_type;
+             }
+         }
+ 
+diff --git a/src/Psalm/Internal/Analyzer/Statements/Expression/Call/MethodCallAnalyzer.php b/src/Psalm/Internal/Analyzer/Statements/Expression/Call/MethodCallAnalyzer.php
+index c3f4fff82..98ec8de6e 100644
+--- a/src/Psalm/Internal/Analyzer/Statements/Expression/Call/MethodCallAnalyzer.php
++++ b/src/Psalm/Internal/Analyzer/Statements/Expression/Call/MethodCallAnalyzer.php
+@@ -1183,52 +1183,75 @@ public static function getClassTemplateParams(
+                 if ($class_storage !== $calling_class_storage
+                     && isset($e[strtolower($class_storage->name)][$type_name])
+                 ) {
+-                    $type_extends = $e[strtolower($class_storage->name)][$type_name];
+-
+-                    if ($type_extends instanceof Type\Atomic\TTemplateParam) {
+-                        if (isset($calling_class_storage->template_types[$type_extends->param_name])) {
+-                            $mapped_offset = array_search(
+-                                $type_extends->param_name,
+-                                array_keys($calling_class_storage->template_types)
+-                            );
+-
+-                            if (isset($lhs_type_part->type_params[(int) $mapped_offset])) {
+-                                $class_template_params[$type_name] = [
+-                                    $lhs_type_part->type_params[(int) $mapped_offset],
+-                                    $class_storage->name,
+-                                    0,
+-                                ];
+-                            }
+-                        } elseif ($type_extends->defining_class
+-                            && isset(
+-                                $calling_class_storage
++                    $input_type_extends = $e[strtolower($class_storage->name)][$type_name];
++
++                    $output_type_extends = null;
++
++                    foreach ($input_type_extends->getTypes() as $type_extends_atomic) {
++                        if ($type_extends_atomic instanceof Type\Atomic\TTemplateParam) {
++                            if (isset($calling_class_storage->template_types[$type_extends_atomic->param_name])) {
++                                $mapped_offset = array_search(
++                                    $type_extends_atomic->param_name,
++                                    array_keys($calling_class_storage->template_types)
++                                );
++
++                                if (isset($lhs_type_part->type_params[(int) $mapped_offset])) {
++                                    $candidate_type = $lhs_type_part->type_params[(int) $mapped_offset];
++
++                                    if (!$output_type_extends) {
++                                        $output_type_extends = $candidate_type;
++                                    } else {
++                                        $output_type_extends = Type::combineUnionTypes(
++                                            $candidate_type,
++                                            $output_type_extends
++                                        );
++                                    }
++                                }
++                            } elseif ($type_extends_atomic->defining_class
++                                && isset(
++                                    $calling_class_storage
++                                        ->template_type_extends
++                                            [strtolower($type_extends_atomic->defining_class)]
++                                            [$type_extends_atomic->param_name]
++                                )
++                            ) {
++                                $mapped_offset = array_search(
++                                    $type_extends_atomic->param_name,
++                                    array_keys($calling_class_storage
+                                     ->template_type_extends
+-                                        [strtolower($type_extends->defining_class)]
+-                                        [$type_extends->param_name]
+-                            )
+-                        ) {
+-                            $mapped_offset = array_search(
+-                                $type_extends->param_name,
+-                                array_keys($calling_class_storage
+-                                ->template_type_extends
+-                                    [strtolower($type_extends->defining_class)])
+-                            );
+-
+-                            if (isset($lhs_type_part->type_params[(int) $mapped_offset])) {
+-                                $class_template_params[$type_name] = [
+-                                    $lhs_type_part->type_params[(int) $mapped_offset],
+-                                    $class_storage->name,
+-                                    0,
+-                                ];
++                                        [strtolower($type_extends_atomic->defining_class)])
++                                );
++
++                                if (isset($lhs_type_part->type_params[(int) $mapped_offset])) {
++                                    $candidate_type = $lhs_type_part->type_params[(int) $mapped_offset];
++
++                                    if (!$output_type_extends) {
++                                        $output_type_extends = $candidate_type;
++                                    } else {
++                                        $output_type_extends = Type::combineUnionTypes(
++                                            $candidate_type,
++                                            $output_type_extends
++                                        );
++                                    }
++                                }
++                            }
++                        } else {
++                            if (!$output_type_extends) {
++                                $output_type_extends = new Type\Union([$type_extends_atomic]);
++                            } else {
++                                $output_type_extends = Type::combineUnionTypes(
++                                    new Type\Union([$type_extends_atomic]),
++                                    $output_type_extends
++                                );
+                             }
+                         }
+-                    } else {
+-                        $class_template_params[$type_name] = [
+-                            new Type\Union([$type_extends]),
+-                            $class_storage->name,
+-                            0,
+-                        ];
+                     }
++
++                    $class_template_params[$type_name] = [
++                        $output_type_extends ?: Type::getMixed(),
++                        $class_storage->name,
++                        0,
++                    ];
+                 }
+ 
+                 if (!isset($class_template_params[$type_name])) {
+@@ -1242,20 +1265,37 @@ public static function getClassTemplateParams(
+                 if ($class_storage !== $calling_class_storage
+                     && isset($e[strtolower($class_storage->name)][$type_name])
+                 ) {
+-                    $type_extends = $e[strtolower($class_storage->name)][$type_name];
+-                    if (!$type_extends instanceof Type\Atomic\TTemplateParam) {
+-                        $class_template_params[$type_name] = [
+-                            new Type\Union([$type_extends]),
+-                            $class_storage->name,
+-                            0,
+-                        ];
+-                    } else {
+-                        $class_template_params[$type_name] = [
+-                            $type_extends->as,
+-                            $class_storage->name,
+-                            0,
+-                        ];
++                    $input_type_extends = $e[strtolower($class_storage->name)][$type_name];
++
++                    $output_type_extends = null;
++
++                    foreach ($input_type_extends->getTypes() as $type_extends_atomic) {
++                        if ($type_extends_atomic instanceof Type\Atomic\TTemplateParam) {
++                            if (!$output_type_extends) {
++                                $output_type_extends = $type_extends_atomic->as;
++                            } else {
++                                $output_type_extends = Type::combineUnionTypes(
++                                    $type_extends_atomic->as,
++                                    $output_type_extends
++                                );
++                            }
++                        } else {
++                            if (!$output_type_extends) {
++                                $output_type_extends = new Type\Union([$type_extends_atomic]);
++                            } else {
++                                $output_type_extends = Type::combineUnionTypes(
++                                    new Type\Union([$type_extends_atomic]),
++                                    $output_type_extends
++                                );
++                            }
++                        }
+                     }
++
++                    $class_template_params[$type_name] = [
++                        $output_type_extends ?: Type::getMixed(),
++                        $class_storage->name,
++                        0,
++                    ];
+                 }
+ 
+                 if ($lhs_var_id !== '$this') {
+diff --git a/src/Psalm/Internal/Analyzer/Statements/Expression/Call/NewAnalyzer.php b/src/Psalm/Internal/Analyzer/Statements/Expression/Call/NewAnalyzer.php
+index 09d85be16..5c4f68b75 100644
+--- a/src/Psalm/Internal/Analyzer/Statements/Expression/Call/NewAnalyzer.php
++++ b/src/Psalm/Internal/Analyzer/Statements/Expression/Call/NewAnalyzer.php
+@@ -411,7 +411,7 @@ function (array $i) : Type\Union {
+ 
+     /**
+      * @param  string $template_name
+-     * @param  array<string, array<int|string, Type\Atomic>>  $template_type_extends
++     * @param  array<string, array<int|string, Type\Union>>  $template_type_extends
+      * @param  array<string, array{Type\Union, ?string}>  $found_generic_params
+      * @return array{Type\Union, ?string}
+      */
+@@ -426,15 +426,17 @@ private static function getGenericParamForOffset(
+ 
+         foreach ($template_type_extends as $type_map) {
+             foreach ($type_map as $extended_template_name => $extended_type) {
+-                if (is_string($extended_template_name)
+-                    && $extended_type instanceof Type\Atomic\TTemplateParam
+-                    && $extended_type->param_name === $template_name
+-                ) {
+-                    return self::getGenericParamForOffset(
+-                        $extended_template_name,
+-                        $template_type_extends,
+-                        $found_generic_params
+-                    );
++                foreach ($extended_type->getTypes() as $extended_atomic_type) {
++                    if (is_string($extended_template_name)
++                        && $extended_atomic_type instanceof Type\Atomic\TTemplateParam
++                        && $extended_atomic_type->param_name === $template_name
++                    ) {
++                        return self::getGenericParamForOffset(
++                            $extended_template_name,
++                            $template_type_extends,
++                            $found_generic_params
++                        );
++                    }
+                 }
+             }
+         }
+diff --git a/src/Psalm/Internal/Analyzer/Statements/Expression/CallAnalyzer.php b/src/Psalm/Internal/Analyzer/Statements/Expression/CallAnalyzer.php
+index 5a105f7e5..0c93a521b 100644
+--- a/src/Psalm/Internal/Analyzer/Statements/Expression/CallAnalyzer.php
++++ b/src/Psalm/Internal/Analyzer/Statements/Expression/CallAnalyzer.php
+@@ -1553,22 +1553,38 @@ private static function getTemplateTypesForFunction(
+                         if (is_string($template_name)
+                             && $class_name_lc === strtolower($class_storage->name)
+                         ) {
+-                            if ($type instanceof Type\Atomic\TTemplateParam
+-                                && $type->defining_class
+-                                && isset(
+-                                    $calling_class_storage
++                            $output_type = null;
++
++                            foreach ($type->getTypes() as $atomic_type) {
++                                if ($atomic_type instanceof Type\Atomic\TTemplateParam
++                                    && $atomic_type->defining_class
++                                    && isset(
++                                        $calling_class_storage
++                                            ->template_type_extends
++                                            [strtolower($atomic_type->defining_class)]
++                                            [$atomic_type->param_name]
++                                    )
++                                ) {
++                                    $output_type_candidate = $calling_class_storage
+                                         ->template_type_extends
+-                                        [strtolower($type->defining_class)]
+-                                        [$type->param_name]
+-                                )
+-                            ) {
+-                                $type = $calling_class_storage
+-                                    ->template_type_extends
+-                                    [strtolower($type->defining_class)]
+-                                    [$type->param_name];
++                                        [strtolower($atomic_type->defining_class)]
++                                        [$atomic_type->param_name];
++                                } else {
++                                    $output_type_candidate = new Type\Union([$atomic_type]);
++                                }
++
++                                if (!$output_type) {
++                                    $output_type = $output_type_candidate;
++                                } else {
++                                    $output_type = Type::combineUnionTypes(
++                                        $output_type_candidate,
++                                        $output_type
++                                    );
++                                }
+                             }
+ 
+-                            $template_types[$template_name] = [new Type\Union([$type]), $class_storage->name];
++
++                            $template_types[$template_name] = [$output_type ?: Type::getMixed(), $class_storage->name];
+                         }
+                     }
+                 }
+diff --git a/src/Psalm/Internal/Analyzer/TypeAnalyzer.php b/src/Psalm/Internal/Analyzer/TypeAnalyzer.php
+index 41edbf169..b9772b430 100644
+--- a/src/Psalm/Internal/Analyzer/TypeAnalyzer.php
++++ b/src/Psalm/Internal/Analyzer/TypeAnalyzer.php
+@@ -1340,7 +1340,7 @@ private static function isMatchingTypeContainedBy(
+ 
+                         foreach ($extends_list as $key => $value) {
+                             if (is_string($key)) {
+-                                $generic_params[] = new Type\Union([$value]);
++                                $generic_params[] = $value;
+                             }
+                         }
+ 
+@@ -1377,21 +1377,36 @@ private static function isMatchingTypeContainedBy(
+ 
+                         $new_input_params = [];
+ 
+-                        foreach ($params as $key => $atomic_input_param) {
++                        foreach ($params as $key => $extended_input_param_type) {
+                             if (is_string($key)) {
+-                                if ($atomic_input_param instanceof TTemplateParam
+-                                    && $atomic_input_param->param_name
+-                                    && isset($input_class_storage->template_types[$atomic_input_param->param_name])
+-                                ) {
+-                                    $old_params_offset = (int) array_search(
+-                                        $atomic_input_param->param_name,
+-                                        array_keys($input_class_storage->template_types)
+-                                    );
+-
+-                                    $new_input_params[] = $input_type_params[$old_params_offset];
+-                                } else {
+-                                    $new_input_params[] = new Type\Union([$atomic_input_param]);
++                                $new_input_param = null;
++
++                                foreach ($extended_input_param_type->getTypes() as $et) {
++                                    if ($et instanceof TTemplateParam
++                                        && $et->param_name
++                                        && isset($input_class_storage->template_types[$et->param_name])
++                                    ) {
++                                        $old_params_offset = (int) array_search(
++                                            $et->param_name,
++                                            array_keys($input_class_storage->template_types)
++                                        );
++
++                                        $candidate_param_type = $input_type_params[$old_params_offset];
++                                    } else {
++                                        $candidate_param_type = new Type\Union([$et]);
++                                    }
++
++                                    if (!$new_input_param) {
++                                        $new_input_param = $candidate_param_type;
++                                    } else {
++                                        $new_input_param = Type::combineUnionTypes(
++                                            $new_input_param,
++                                            $candidate_param_type
++                                        );
++                                    }
+                                 }
++
++                                $new_input_params[] = $new_input_param ?: Type::getMixed();
+                             }
+                         }
+ 
+diff --git a/src/Psalm/Internal/Codebase/Methods.php b/src/Psalm/Internal/Codebase/Methods.php
+index 74f86204f..b952fc613 100644
+--- a/src/Psalm/Internal/Codebase/Methods.php
++++ b/src/Psalm/Internal/Codebase/Methods.php
+@@ -296,7 +296,7 @@ function (FunctionLikeParameter $p) {
+                             $params[$i]->type = clone $overridden_storage->params[$i]->type;
+ 
+                             if ($params[$i]->type && $source) {
+-                                self::localizeParamType(
++                                $params[$i]->type = self::localizeParamType(
+                                     $source->getCodebase(),
+                                     $params[$i]->type,
+                                     $appearing_fq_class_name,
+@@ -318,22 +318,21 @@ function (FunctionLikeParameter $p) {
+         throw new \UnexpectedValueException('Cannot get method params for ' . $method_id);
+     }
+ 
+-    /**
+-     * @return void
+-     */
+     private static function localizeParamType(
+         Codebase $codebase,
+         Type\Union $type,
+         string $appearing_fq_class_name,
+         string $base_fq_class_name
+-    ) {
++    ) : Type\Union {
+         $class_storage = $codebase->classlike_storage_provider->get($appearing_fq_class_name);
+         $extends = $class_storage->template_type_extends;
+ 
+         if (!$extends) {
+-            return;
++            return $type;
+         }
+ 
++        $type = clone $type;
++
+         foreach ($type->getTypes() as $key => $atomic_type) {
+             if ($atomic_type instanceof Type\Atomic\TTemplateParam
+                 || $atomic_type instanceof Type\Atomic\TTemplateParamClass
+@@ -345,7 +344,11 @@ private static function localizeParamType(
+                         $extended_param = $extends[strtolower($base_fq_class_name)][$atomic_type->param_name];
+ 
+                         $type->removeType($key);
+-                        $type->addType($extended_param);
++                        $type = Type::combineUnionTypes(
++                            $type,
++                            $extended_param,
++                            $codebase
++                        );
+                     }
+                 }
+             }
+@@ -355,7 +358,7 @@ private static function localizeParamType(
+                 || $atomic_type instanceof Type\Atomic\TGenericObject
+             ) {
+                 foreach ($atomic_type->type_params as $type_param) {
+-                    self::localizeParamType(
++                    $type_param = self::localizeParamType(
+                         $codebase,
+                         $type_param,
+                         $appearing_fq_class_name,
+@@ -370,7 +373,7 @@ private static function localizeParamType(
+                 if ($atomic_type->params) {
+                     foreach ($atomic_type->params as $param) {
+                         if ($param->type) {
+-                            self::localizeParamType(
++                            $param->type = self::localizeParamType(
+                                 $codebase,
+                                 $param->type,
+                                 $appearing_fq_class_name,
+@@ -381,7 +384,7 @@ private static function localizeParamType(
+                 }
+ 
+                 if ($atomic_type->return_type) {
+-                    self::localizeParamType(
++                    $atomic_type->return_type = self::localizeParamType(
+                         $codebase,
+                         $atomic_type->return_type,
+                         $appearing_fq_class_name,
+@@ -390,6 +393,8 @@ private static function localizeParamType(
+                 }
+             }
+         }
++
++        return $type;
+     }
+ 
+     /**
+diff --git a/src/Psalm/Internal/Codebase/Populator.php b/src/Psalm/Internal/Codebase/Populator.php
+index 2113e3526..b61a39901 100644
+--- a/src/Psalm/Internal/Codebase/Populator.php
++++ b/src/Psalm/Internal/Codebase/Populator.php
+@@ -323,19 +323,10 @@ private function populateDataFromTraits(
+                                     continue;
+                                 }
+ 
+-                                if ($type instanceof Type\Atomic\TTemplateParam
+-                                    && $type->defining_class
+-                                    && ($referenced_type
+-                                        = $storage->template_type_extends
+-                                            [strtolower($type->defining_class)]
+-                                            [$type->param_name]
+-                                            ?? null)
+-                                    && (!$referenced_type instanceof Type\Atomic\TTemplateParam)
+-                                ) {
+-                                    $storage->template_type_extends[$t_storage_class][$i] = $referenced_type;
+-                                } else {
+-                                    $storage->template_type_extends[$t_storage_class][$i] = $type;
+-                                }
++                                $storage->template_type_extends[$t_storage_class][$i] = self::extendType(
++                                    $type,
++                                    $storage
++                                );
+                             }
+                         }
+                     }
+@@ -343,8 +334,7 @@ private function populateDataFromTraits(
+                     $storage->template_type_extends[$used_trait_lc] = [];
+ 
+                     foreach ($trait_storage->template_types as $template_name => $template_type) {
+-                        $storage->template_type_extends[$used_trait_lc][$template_name]
+-                            = array_values($template_type[0]->getTypes())[0];
++                        $storage->template_type_extends[$used_trait_lc][$template_name] = $template_type[0];
+                     }
+                 }
+             } elseif ($trait_storage->template_type_extends) {
+@@ -356,6 +346,41 @@ private function populateDataFromTraits(
+         }
+     }
+ 
++    private static function extendType(
++        Type\Union $type,
++        ClassLikeStorage $storage
++    ) : Type\Union {
++        $extended_types = [];
++
++        foreach ($type->getTypes() as $atomic_type) {
++            if ($atomic_type instanceof Type\Atomic\TTemplateParam
++                && $atomic_type->defining_class
++            ) {
++                $referenced_type
++                    = $storage->template_type_extends
++                        [strtolower($atomic_type->defining_class)]
++                        [$atomic_type->param_name]
++                        ?? null;
++
++                if ($referenced_type) {
++                    foreach ($referenced_type->getTypes() as $atomic_referenced_type) {
++                        if (!$atomic_referenced_type instanceof Type\Atomic\TTemplateParam) {
++                            $extended_types[] = $atomic_referenced_type;
++                        } else {
++                            $extended_types[] = $atomic_type;
++                        }
++                    }
++                } else {
++                    $extended_types[] = $atomic_type;
++                }
++            } else {
++                $extended_types[] = $atomic_type;
++            }
++        }
++
++        return new Type\Union($extended_types);
++    }
++
+     /**
+      * @return void
+      */
+@@ -406,19 +431,10 @@ private function populateDataFromParentClass(
+                                     continue;
+                                 }
+ 
+-                                if ($type instanceof Type\Atomic\TTemplateParam
+-                                    && $type->defining_class
+-                                    && ($referenced_type
+-                                        = $storage->template_type_extends
+-                                            [strtolower($type->defining_class)]
+-                                            [$type->param_name]
+-                                            ?? null)
+-                                    && (!$referenced_type instanceof Type\Atomic\TTemplateParam)
+-                                ) {
+-                                    $storage->template_type_extends[$t_storage_class][$i] = $referenced_type;
+-                                } else {
+-                                    $storage->template_type_extends[$t_storage_class][$i] = $type;
+-                                }
++                                $storage->template_type_extends[$t_storage_class][$i] = self::extendType(
++                                    $type,
++                                    $storage
++                                );
+                             }
+                         }
+                     }
+@@ -427,7 +443,7 @@ private function populateDataFromParentClass(
+ 
+                     foreach ($parent_storage->template_types as $template_name => $template_type) {
+                         $storage->template_type_extends[$parent_storage_class][$template_name]
+-                            = array_values($template_type[0]->getTypes())[0];
++                            = $template_type[0];
+                     }
+                 }
+             } elseif ($parent_storage->template_type_extends) {
+@@ -539,19 +555,10 @@ private function populateInterfaceDataFromParentInterfaces(
+                                     continue;
+                                 }
+ 
+-                                if ($type instanceof Type\Atomic\TTemplateParam
+-                                    && $type->defining_class
+-                                    && ($referenced_type
+-                                        = $storage->template_type_extends
+-                                            [strtolower($type->defining_class)]
+-                                            [$type->param_name]
+-                                            ?? null)
+-                                    && (!$referenced_type instanceof Type\Atomic\TTemplateParam)
+-                                ) {
+-                                    $storage->template_type_extends[$t_storage_class][$i] = $referenced_type;
+-                                } else {
+-                                    $storage->template_type_extends[$t_storage_class][$i] = $type;
+-                                }
++                                $storage->template_type_extends[$t_storage_class][$i] = self::extendType(
++                                    $type,
++                                    $storage
++                                );
+                             }
+                         }
+                     }
+@@ -560,7 +567,7 @@ private function populateInterfaceDataFromParentInterfaces(
+ 
+                     foreach ($parent_interface_storage->template_types as $template_name => $template_type) {
+                         $storage->template_type_extends[$parent_interface_lc][$template_name]
+-                            = array_values($template_type[0]->getTypes())[0];
++                            = $template_type[0];
+                     }
+                 }
+             }
+@@ -641,7 +648,7 @@ private function populateDataFromImplementedInterfaces(
+ 
+                     foreach ($implemented_interface_storage->template_types as $template_name => $template_type) {
+                         $storage->template_type_extends[$implemented_interface_lc][$template_name]
+-                            = array_values($template_type[0]->getTypes())[0];
++                            = $template_type[0];
+                     }
+                 }
+             }
+diff --git a/src/Psalm/Internal/Visitor/ReflectorVisitor.php b/src/Psalm/Internal/Visitor/ReflectorVisitor.php
+index cafcea450..1f1e06ab6 100644
+--- a/src/Psalm/Internal/Visitor/ReflectorVisitor.php
++++ b/src/Psalm/Internal/Visitor/ReflectorVisitor.php
+@@ -1090,20 +1090,7 @@ private function extendTemplatedType(
+             $storage->template_type_extends_count = count($atomic_type->type_params);
+ 
+             foreach ($atomic_type->type_params as $type_param) {
+-                if (!$type_param->isSingle()) {
+-                    if (IssueBuffer::accepts(
+-                        new InvalidDocblock(
+-                            '@template-extends type parameter cannot be a union type',
+-                            new CodeLocation($this->file_scanner, $node, null, true)
+-                        )
+-                    )) {
+-                    }
+-                    return;
+-                }
+-
+-                foreach ($type_param->getTypes() as $type_param_atomic) {
+-                    $extended_type_parameters[] = $type_param_atomic;
+-                }
++                $extended_type_parameters[] = $type_param;
+             }
+ 
+             if ($extended_type_parameters) {
+@@ -1185,20 +1172,7 @@ private function implementTemplatedType(
+             $storage->template_type_implements_count[$generic_class_lc] = count($atomic_type->type_params);
+ 
+             foreach ($atomic_type->type_params as $type_param) {
+-                if (!$type_param->isSingle()) {
+-                    if (IssueBuffer::accepts(
+-                        new InvalidDocblock(
+-                            '@template-implements type parameter cannot be a union type',
+-                            new CodeLocation($this->file_scanner, $node, null, true)
+-                        )
+-                    )) {
+-                    }
+-                    return;
+-                }
+-
+-                foreach ($type_param->getTypes() as $type_param_atomic) {
+-                    $implemented_type_parameters[] = $type_param_atomic;
+-                }
++                $implemented_type_parameters[] = $type_param;
+             }
+ 
+             if ($implemented_type_parameters) {
+@@ -1280,20 +1254,7 @@ private function useTemplatedType(
+             $storage->template_type_uses_count[$generic_class_lc] = count($atomic_type->type_params);
+ 
+             foreach ($atomic_type->type_params as $type_param) {
+-                if (!$type_param->isSingle()) {
+-                    if (IssueBuffer::accepts(
+-                        new InvalidDocblock(
+-                            '@template-uses type parameter cannot be a union type',
+-                            new CodeLocation($this->file_scanner, $node, null, true)
+-                        )
+-                    )) {
+-                    }
+-                    return;
+-                }
+-
+-                foreach ($type_param->getTypes() as $type_param_atomic) {
+-                    $used_type_parameters[] = $type_param_atomic;
+-                }
++                $used_type_parameters[] = $type_param;
+             }
+ 
+             if ($used_type_parameters) {
+diff --git a/src/Psalm/Storage/ClassLikeStorage.php b/src/Psalm/Storage/ClassLikeStorage.php
+index eb2c01c0b..fe8f274d3 100644
+--- a/src/Psalm/Storage/ClassLikeStorage.php
++++ b/src/Psalm/Storage/ClassLikeStorage.php
+@@ -273,7 +273,7 @@ class ClassLikeStorage
+     public $template_types;
+ 
+     /**
+-     * @var array<string, array<int|string, Type\Atomic>>|null
++     * @var array<string, array<int|string, Type\Union>>|null
+      */
+     public $template_type_extends;
+ 
+diff --git a/src/Psalm/Type/Union.php b/src/Psalm/Type/Union.php
+index 594a2c242..e8d1b5f07 100644
+--- a/src/Psalm/Type/Union.php
++++ b/src/Psalm/Type/Union.php
+@@ -855,27 +855,33 @@ public function replaceTemplateTypesWithStandins(
+     ) {
+         $keys_to_unset = [];
+ 
++        $new_types = [];
++
+         foreach ($this->types as $key => $atomic_type) {
+             if ($atomic_type instanceof Type\Atomic\TTemplateParam
+                 && isset($template_types[$key])
+                 && $atomic_type->defining_class === $template_types[$key][1]
+             ) {
+                 if ($template_types[$key][0]->getId() !== $key) {
+-                    $first_atomic_type = array_values($template_types[$key][0]->getTypes())[0];
++                    $replacement_type = $template_types[$key][0];
+ 
+                     if ($replace) {
+-                        if ($first_atomic_type instanceof Type\Atomic\TMixed
++                        if ($replacement_type->hasMixed()
+                             && !$atomic_type->as->hasMixed()
+                         ) {
+-                            $this->types[$first_atomic_type->getKey()] = clone array_values(
+-                                $atomic_type->as->getTypes()
+-                            )[0];
++                            foreach ($atomic_type->as->getTypes() as $as_atomic_type) {
++                                $this->types[$as_atomic_type->getKey()] = clone $as_atomic_type;
++                            }
+                         } else {
+-                            $this->types[$first_atomic_type->getKey()] = clone $first_atomic_type;
+-                        }
++                            foreach ($replacement_type->getTypes() as $replacement_atomic_type) {
++                                $this->types[$replacement_atomic_type->getKey()] = clone $replacement_atomic_type;
++                            }
+ 
+-                        if ($first_atomic_type->getKey() !== $key) {
+-                            $keys_to_unset[] = $key;
++                            foreach ($replacement_type->getTypes() as $replacement_key => $_) {
++                                if ($replacement_key !== $key) {
++                                    $keys_to_unset[] = $key;
++                                }
++                            }
+                         }
+ 
+                         if ($input_type) {
+@@ -1025,7 +1031,7 @@ public function replaceTemplateTypesWithStandins(
+ 
+                                     foreach ($extends_list as $key => $value) {
+                                         if (is_int($key)) {
+-                                            $new_generic_params[] = new Type\Union([$value]);
++                                            $new_generic_params[] = $value;
+                                         }
+                                     }
+ 
+diff --git a/tests/ArrayAssignmentTest.php b/tests/ArrayAssignmentTest.php
+index bd33e192d..ed8b68705 100644
+--- a/tests/ArrayAssignmentTest.php
++++ b/tests/ArrayAssignmentTest.php
+@@ -1056,10 +1056,10 @@ function foo(array $arr) : void {
+                 'assertions' => [],
+                 'error_levels' => ['MixedAssignment'],
+             ],
+-            'SKIPPED-implementsArrayAccessAllowNullOffset' => [
++            'implementsArrayAccessAllowNullOffset' => [
+                 '<?php
+                     /**
+-                     * @template-implements ArrayAccess<int, string>
++                     * @template-implements ArrayAccess<?int, string>
+                      */
+                     class C implements ArrayAccess {
+                         public function offsetExists(int $offset) : bool { return true; }
+diff --git a/tests/Template/TemplateExtendsTest.php b/tests/Template/TemplateExtendsTest.php
+index fc1acea11..1dc90e1ce 100644
+--- a/tests/Template/TemplateExtendsTest.php
++++ b/tests/Template/TemplateExtendsTest.php
+@@ -1457,6 +1457,76 @@ function foo(C $c) : void {
+                         $c->add(new stdClass);
+                     }',
+             ],
++            'templateExtendsUnionType' => [
++                '<?php
++                    /**
++                     * @template T
++                     */
++                    class A {
++                        /** @var T */
++                        public $t;
++
++                        /** @param T $t */
++                        public function __construct($t) {
++                            $this->t = $t;
++                        }
++                    }
++
++                    /**
++                     * @template TT
++                     * @template-extends A<int|string>
++                     */
++                    class B extends A {}',
++            ],
++            'badTemplateImplementsUnionType' => [
++                '<?php
++                    /**
++                     * @template T
++                     */
++                    interface I {
++                        /** @param T $t */
++                        public function __construct($t);
++                    }
++
++                    /**
++                     * @template TT
++                     * @template-implements I<int|string>
++                     */
++                    class B implements I {
++                        /** @var int|string */
++                        public $t;
++
++                        /** @param int|string $t */
++                        public function __construct($t) {
++                            $this->t = $t;
++                        }
++                    }',
++            ],
++            'badTemplateUseUnionType' => [
++                '<?php
++                    /**
++                     * @template T
++                     */
++                    trait T {
++                        /** @var T */
++                        public $t;
++
++                        /** @param T $t */
++                        public function __construct($t) {
++                            $this->t = $t;
++                        }
++                    }
++
++                    /**
++                     * @template TT
++                     */
++                    class B {
++                        /**
++                         * @template-use T<int|string>
++                         */
++                        use T;
++                    }',
++            ],
+         ];
+     }
+ 
+@@ -1768,28 +1838,6 @@ public function __construct($t) {
+                     class B extends A {}',
+                 'error_message' => 'InvalidDocblock'
+             ],
+-            'badTemplateExtendsUnionType' => [
+-                '<?php
+-                    /**
+-                     * @template T
+-                     */
+-                    class A {
+-                        /** @var T */
+-                        public $t;
+-
+-                        /** @param T $t */
+-                        public function __construct($t) {
+-                            $this->t = $t;
+-                        }
+-                    }
+-
+-                    /**
+-                     * @template TT
+-                     * @template-extends A<int|string>
+-                     */
+-                    class B extends A {}',
+-                'error_message' => 'InvalidDocblock'
+-            ],
+             'badTemplateImplementsShouldBeExtends' => [
+                 '<?php
+                     /**
+@@ -1863,23 +1911,6 @@ public function __construct($t);
+                     class B implements I {}',
+                 'error_message' => 'InvalidDocblock'
+             ],
+-            'badTemplateImplementsUnionType' => [
+-                '<?php
+-                    /**
+-                     * @template T
+-                     */
+-                    interface I {
+-                        /** @param T $t */
+-                        public function __construct($t);
+-                    }
+-
+-                    /**
+-                     * @template TT
+-                     * @template-implements I<int|string>
+-                     */
+-                    class B implements I {}',
+-                'error_message' => 'InvalidDocblock'
+-            ],
+             'badTemplateExtendsShouldBeImplements' => [
+                 '<?php
+                     /**
+@@ -2001,32 +2032,6 @@ class B {
+                     }',
+                 'error_message' => 'InvalidDocblock'
+             ],
+-            'badTemplateUseUnionType' => [
+-                '<?php
+-                    /**
+-                     * @template T
+-                     */
+-                    trait T {
+-                        /** @var T */
+-                        public $t;
+-
+-                        /** @param T $t */
+-                        public function __construct($t) {
+-                            $this->t = $t;
+-                        }
+-                    }
+-
+-                    /**
+-                     * @template TT
+-                     */
+-                    class B {
+-                        /**
+-                         * @template-use T<int|string>
+-                         */
+-                        use T;
+-                    }',
+-                'error_message' => 'InvalidDocblock'
+-            ],
+             'templateExtendsWithoutAllParams' => [
+                 '<?php
+                     /**
+diff --git a/tests/Template/TemplateTest.php b/tests/Template/TemplateTest.php
+index 0ffbd556f..0f7913b56 100644
+--- a/tests/Template/TemplateTest.php
++++ b/tests/Template/TemplateTest.php
+@@ -1812,6 +1812,21 @@ public function __construct(I $foo) {
+                         }
+                     }'
+             ],
++            'allowUnionTypeParam' => [
++                '<?php
++                    /**
++                     * @template T
++                     * @param callable(T) $x
++                     * @param array<T> $y
++                     */
++                    function example($x, $y): void {}
++
++                    example(
++                        /** @param int|false $x */
++                        function($x): void {},
++                        [strpos("str", "str")]
++                    );'
++            ],
+         ];
+     }
+ 
