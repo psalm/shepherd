@@ -32,14 +32,10 @@ class GithubData
 
 	public static function storeMasterData(string $git_commit_hash, array $payload) : void
 	{
-		$github_storage_path = self::getMasterStoragePath($payload['repository']['full_name'], $git_commit_hash);
+		$github_storage_path = self::getMasterStoragePath($git_commit_hash);
 
 		if (file_exists($github_storage_path)) {
 			exit;
-		}
-
-		if (!file_exists(dirname($github_storage_path))) {
-			mkdir(dirname($github_storage_path), 0777, true);
 		}
 
 		if (!is_writable(dirname($github_storage_path))) {
@@ -48,12 +44,12 @@ class GithubData
 
 		file_put_contents($github_storage_path, json_encode($payload));
 
-		error_log('GitHub data saved for ' . $git_commit_hash);
+		error_log('GitHub data saved for ' . $git_commit_hash . ' in ' . $github_storage_path);
 	}
 
-	public static function getMasterStoragePath(string $repository, string $git_commit_hash) : string
+	public static function getMasterStoragePath(string $git_commit_hash) : string
 	{
-		return dirname(__DIR__) . '/database/github_master_data/' . $repository . '/' . $git_commit_hash . '.json';
+		return dirname(__DIR__) . '/database/github_master_data/' . $git_commit_hash . '.json';
 	}
 
 	public static function getPullRequestStoragePath(string $git_commit_hash) : string
