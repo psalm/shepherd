@@ -24,11 +24,11 @@ $config = json_decode(file_get_contents($config_path), true);
 if (!empty($config['github_webhook_secret'])) {
 	$hash = hash_hmac('sha1', $payload_data, $config['github_webhook_secret']);
 
-	if (!isset($_SERVER['X-Hub-Signature'])) {
+	if (!isset($_SERVER['x-hub-signature'])) {
 		throw new \Exception('Missing signature header');
 	}
 
-	if ($hash !== $_SERVER['X-Hub-Signature']) {
+	if ($hash !== $_SERVER['x-hub-signature']) {
 		throw new \Exception('Mismatching signature');
 	}
 }
@@ -44,7 +44,6 @@ if (!isset($payload['pull_request'])) {
 			$payload
 		);
 	}
-	
 
 	return;
 }
