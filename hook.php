@@ -29,6 +29,7 @@ if (!empty($config['github_webhook_secret'])) {
 	}
 
 	if ($hash !== $_SERVER['HTTP_X_HUB_SIGNATURE']) {
+		var_dump($hash, $_SERVER['HTTP_X_HUB_SIGNATURE']);
 		throw new \Exception('Mismatching signature');
 	}
 }
