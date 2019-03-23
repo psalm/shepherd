@@ -1,6 +1,7 @@
 {
 	"reviewer": {
 		"user": "someuser",
-		"password": "somepassword"
-	}
+		"token": "YOUR_API_TOKEN"
+	},
+	"github_webhook_secret": "OPTIONAL_SECRET"
 }

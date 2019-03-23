@@ -20,22 +20,4 @@ if (!preg_match('/^[a-f0-9]+$/', $git_commit_hash)) {
 	throw new \UnexpectedValueException('Bad git commit hash given');
 }
 
-$psalm_storage_path = __DIR__ . '/database/psalm_data/' . $git_commit_hash . '.json';
-
-if (file_exists($psalm_storage_path)) {
-	exit;
-}
-
-file_put_contents($psalm_storage_path, json_encode($payload));
-
-error_log('Telemetry received for ' . $git_commit_hash);
-
-$github_storage_path = __DIR__ . '/database/github_data/' . $git_commit_hash . '.json';
-
-if (file_exists($github_storage_path)) {
-	Psalm\Spirit\Sender::send(
-		json_decode(file_get_contents($github_storage_path), true),
-		$payload
-	);
-}
-
+Psalm\Spirit\PsalmData::storeJson($git_commit_hash, $payload);

@@ -8,49 +8,56 @@ error_reporting(E_ALL);
 
 require 'vendor/autoload.php';
 
-$payload = json_decode($_POST['payload'], true);
+$payload_data = $_POST['payload'];
 
-if (!isset($payload['pull_request'])) {
-	return;
+$config_path = __DIR__ . '/config.json';
+
+if (!file_exists($config_path)) {
+    throw new \UnexpectedValueException('Missing config');
 }
 
-echo 'got here' . PHP_EOL;
+/**
+ * @var array{github_webhook_secret?:string}
+ */
+$config = json_decode(file_get_contents($config_path), true);
+
+if (!empty($config['github_webhook_secret'])) {
+	$hash = hash_hmac('sha1', $payload_data, $config['github_webhook_secret']);
+
+	if (!isset($_SERVER['X-Hub-Signature'])) {
+		throw new \Exception('Missing signature header');
+	}
+
+	if ($hash !== $_SERVER['X-Hub-Signature']) {
+		throw new \Exception('Mismatching signature');
+	}
+}
+
+$payload = json_decode($payload_data, true);
 
 $git_commit_hash = $payload['pull_request']['head']['sha'] ?? null;
+
+if (!isset($payload['pull_request'])) {
+	if (($payload['ref'] ?? '') === 'refs/heads/master' && isset($payload['repository'])) {
+		Psalm\Spirit\GithubData::storeMasterData(
+			$git_commit_hash,
+			$payload
+		);
+	}
+	
+
+	return;
+}
 
 if (!$git_commit_hash) {
 	return;
 }
 
-echo 'and here' . PHP_EOL;
-
 if (!preg_match('/^[a-f0-9]+$/', $git_commit_hash)) {
 	throw new \UnexpectedValueException('Bad git commit hash given');
 }
 
-$github_storage_path = __DIR__ . '/database/github_data/' . $git_commit_hash . '.json';
-
-if (file_exists($github_storage_path)) {
-	exit;
-}
-
-echo 'and even here' . PHP_EOL;
-
-if (!is_writable(__DIR__ . '/database/github_data/')) {
-	throw new \UnexpectedValueException('Directory should be writable');
-}
-
-file_put_contents($github_storage_path, json_encode($payload));
-
-echo 'and then saved contents to ' . $github_storage_path . PHP_EOL;
-
-error_log('GitHub data received for ' . $git_commit_hash);
-
-$psalm_storage_path = __DIR__ . '/database/psalm_data/' . $git_commit_hash . '.json';
-
-if (file_exists($psalm_storage_path)) {
-	Psalm\Spirit\Sender::send(
-		$payload,
-		json_decode(file_get_contents($psalm_storage_path), true)
-	);
-}
+Psalm\Spirit\GithubData::storePullRequestData(
+	$git_commit_hash,
+	$payload
+);

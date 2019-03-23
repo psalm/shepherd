@@ -1,1 +1,0 @@
-Data from GitHub lives live here, in JSON form, named by commit hash
