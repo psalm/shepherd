@@ -38,6 +38,10 @@ class GithubData
 			exit;
 		}
 
+		if (!file_exists(dirname($github_storage_path))) {
+			mkdir(dirname($github_storage_path), 0777, true);
+		}
+
 		if (!is_writable(dirname($github_storage_path))) {
 			throw new \UnexpectedValueException('Directory should be writable');
 		}
