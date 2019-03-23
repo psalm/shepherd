@@ -5,3 +5,4 @@ RewriteBase /
 RewriteRule ^hook$ hook.php [L,QSA]
 RewriteRule ^telemetry$ telemetry.php [L,QSA]
 RewriteRule ^reprocess/(.*)$ reprocess.php?sha=$1 [L,QSA]
+RewriteRule ^github/([-\d\w._]+\/[-\d\w._]+)/coverage.svg$ shield.php?github_repo=$1 [L,QSA]
