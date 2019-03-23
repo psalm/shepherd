@@ -8,13 +8,15 @@ error_reporting(E_ALL);
 
 require 'vendor/autoload.php';
 
+$raw_post = file_get_contents('php://input');
+
 switch ($_SERVER['CONTENT_TYPE']) {
 	case 'application/x-www-form-urlencoded':
 		$raw_payload = $_POST['payload'];
 		break;
 
 	case 'application/json':
-		$raw_payload = file_get_contents('php://input');
+		$raw_payload = $raw_post;
 		break;
 
 	default:
@@ -33,14 +35,13 @@ if (!file_exists($config_path)) {
 $config = json_decode(file_get_contents($config_path), true);
 
 if (!empty($config['github_webhook_secret'])) {
-	$hash = 'sha1=' . hash_hmac('sha1', $raw_payload, $config['github_webhook_secret'], false);
+	$hash = 'sha1=' . hash_hmac('sha1', $raw_post, $config['github_webhook_secret'], false);
 
 	if (!isset($_SERVER['HTTP_X_HUB_SIGNATURE'])) {
 		throw new \Exception('Missing signature header');
 	}
 
-	if ($hash !== $_SERVER['HTTP_X_HUB_SIGNATURE']) {
-		var_dump($hash, $_SERVER['HTTP_X_HUB_SIGNATURE']);
+	if (!hash_equals($hash, $_SERVER['HTTP_X_HUB_SIGNATURE'])) {
 		throw new \Exception('Mismatching signature');
 	}
 }
