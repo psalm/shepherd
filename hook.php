@@ -8,7 +8,18 @@ error_reporting(E_ALL);
 
 require 'vendor/autoload.php';
 
-$payload_data = $_POST['payload'];
+switch ($_SERVER['CONTENT_TYPE']) {
+	case 'application/x-www-form-urlencoded':
+		$raw_payload = $_POST['payload'];
+		break;
+
+	case 'application/json':
+		$raw_payload = file_get_contents('php://input');
+		break;
+
+	default:
+		throw new \UnexpectedValueException('Unrecognised payload');
+}
 
 $config_path = __DIR__ . '/config.json';
 
@@ -22,7 +33,7 @@ if (!file_exists($config_path)) {
 $config = json_decode(file_get_contents($config_path), true);
 
 if (!empty($config['github_webhook_secret'])) {
-	$hash = hash_hmac('sha1', $payload_data, $config['github_webhook_secret']);
+	$hash = 'sha1=' . hash_hmac('sha1', $raw_payload, $config['github_webhook_secret'], false);
 
 	if (!isset($_SERVER['HTTP_X_HUB_SIGNATURE'])) {
 		throw new \Exception('Missing signature header');
@@ -34,7 +45,7 @@ if (!empty($config['github_webhook_secret'])) {
 	}
 }
 
-$payload = json_decode($payload_data, true);
+$payload = json_decode($raw_payload, true);
 
 $git_commit_hash = $payload['pull_request']['head']['sha'] ?? null;
 
