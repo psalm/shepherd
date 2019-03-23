@@ -23,7 +23,7 @@ if (file_exists($repository_data_dir)) {
 		}
 	)[0];
 
-	$payload = json_decode(file_get_contents($newest_file_name), true);
+	$payload = json_decode(file_get_contents($repository_data_dir . '/' . $newest_file_name), true);
 
 	list($mixed_count, $nonmixed_count) = $payload['coverage'];
 
