@@ -2,7 +2,7 @@
 
 $repository = $_SERVER['QUERY_STRING'];
 
-if (preg_match('/^[-\d\w._]+\/[-\d\w._]+$/', $repository)) {
+if (!preg_match('/^[-\d\w._]+\/[-\d\w._]+$/', $repository)) {
 	throw new \UnexpectedValueException('Repsitory format not recognised');
 }
 
@@ -13,9 +13,6 @@ if (strpos($repository, '..') !== false) {
 $repository_data_dir = __DIR__ . '/database/psalm_master_data/' . $repository;
 
 $pct = '?? ';
-
-var_dump($repository_data_dir, file_exists($repository_data_dir));
-exit;
 
 if (file_exists($repository_data_dir)) {
 	$files = scandir($repository_data_dir, SCANDIR_SORT_DESCENDING);
