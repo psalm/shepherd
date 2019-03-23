@@ -45,23 +45,23 @@ class PsalmData
 
 	public static function storeMasterData(string $git_commit_hash, string $repository) : void
 	{
-		$psalm_storage_path = self::getMasterStoragePath($repository, $git_commit_hash);
+		$psalm_master_storage_path = self::getMasterStoragePath($repository, $git_commit_hash);
 
-		if (file_exists($psalm_storage_path)) {
+		if (file_exists($psalm_master_storage_path)) {
 			exit;
 		}
 
-		if (!file_exists(dirname($psalm_storage_path))) {
-			mkdir(dirname($psalm_storage_path), 0777, true);
+		if (!file_exists(dirname($psalm_master_storage_path))) {
+			mkdir(dirname($psalm_master_storage_path), 0777, true);
 		}
 
-		if (!is_writable(dirname($psalm_storage_path))) {
+		if (!is_writable(dirname($psalm_master_storage_path))) {
 			throw new \UnexpectedValueException('Directory should be writable');
 		}
 
-		symlink($psalm_storage_path, self::getStoragePath($git_commit_hash));
+		symlink(self::getStoragePath($git_commit_hash), $psalm_master_storage_path);
 
-		error_log('Psalm master data saved for ' . $git_commit_hash . ' in ' . $psalm_storage_path);
+		error_log('Psalm master data saved for ' . $git_commit_hash . ' in ' . $psalm_master_storage_path);
 	}
 
 	public static function getMasterStoragePath(string $repository, string $git_commit_hash) : string
