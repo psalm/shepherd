@@ -48,18 +48,21 @@ if (!empty($config['github_webhook_secret'])) {
 
 $payload = json_decode($raw_payload, true);
 
-$git_commit_hash = $payload['pull_request']['head']['sha'] ?? null;
-
 if (!isset($payload['pull_request'])) {
-	if (($payload['ref'] ?? '') === 'refs/heads/master' && isset($payload['repository'])) {
+	if (($_SERVER['HTTP_X_GITHUB_EVENT'] ?? '') === 'push'
+		&& ($payload['ref'] ?? '') === 'refs/heads/master'
+		&& isset($payload['repository'])
+	) {
 		Psalm\Spirit\GithubData::storeMasterData(
-			$git_commit_hash,
+			$payload['after'],
 			$payload
 		);
 	}
 
 	return;
 }
+
+$git_commit_hash = $payload['pull_request']['head']['sha'] ?? null;
 
 if (!$git_commit_hash) {
 	return;
