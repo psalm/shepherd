@@ -71,6 +71,6 @@ class PsalmData
 
 	public static function getStoragePath(string $git_commit_hash) : string
 	{
-		return dirname(__DIR__) . '/database/psalm_pr_data/' . $git_commit_hash . '.json';
+		return dirname(__DIR__) . '/database/psalm_data/' . $git_commit_hash . '.json';
 	}
 }
