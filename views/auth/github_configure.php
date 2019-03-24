@@ -20,6 +20,7 @@ $client->authenticate($github_token, null, \Github\Client::AUTH_HTTP_TOKEN);
 
 $repos = $client
     ->api('me')
+    ->setPerPage(200)
     ->repositories(
     	'all',
     	'full_name',
