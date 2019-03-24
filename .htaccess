@@ -3,7 +3,8 @@ RewriteEngine on
 RewriteBase /
 
 RewriteRule ^hook$ views/hook.php [L,QSA]
-RewriteRule ^auth$ views/auth.php [L,QSA]
+RewriteRule ^auth$ views/auth/index.php [L,QSA]
+RewriteRule ^auth/github/redirect$ views/auth/github_redirect.php [L,QSA]
 RewriteRule ^telemetry$ views/telemetry.php [L,QSA]
 RewriteRule ^reprocess/(.*)$ views/reprocess.php?sha=$1 [L,QSA]
 RewriteRule ^github/([-\d\w._]+\/[-\d\w._]+)/coverage.svg$ views/shield.php?$1 [L,QSA]

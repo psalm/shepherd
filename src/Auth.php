@@ -19,4 +19,51 @@ class Auth
 	{
 		return 'hello';
 	}
+
+	private static function fetchTokenFromGithub(string $code, string $state, Config\OAuthApp $config) : string
+	{
+		$params = [
+		    'client_id' => $config->client_id,
+		    'client_secret' => $config->client_secret,
+		    'code' => $code,
+		    'state' => $state,
+		];
+
+		$payload = http_build_query($data);
+
+		$github_url = $config->gh_enterprise_url ?: 'https://github.com';
+
+		// Prepare new cURL resource
+		$ch = curl_init($github_url . '/login/oauth/access_token');
+		curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+		curl_setopt($ch, CURLINFO_HEADER_OUT, true);
+		curl_setopt($ch, CURLOPT_POST, true);
+		curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
+		curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
+
+		// Set HTTP Header for POST request
+		curl_setopt(
+		    $ch,
+		    CURLOPT_HTTPHEADER,
+		    [
+		        'Accept: application/json',
+		        'Content-Type: application/x-www-form-urlencoded',
+		        'Content-Length: ' . strlen($payload)
+		    ]
+		);
+
+		// Submit the POST request
+		$response = curl_exec($ch);
+
+		// Close cURL session handle
+		curl_close($ch);
+
+		if (!$response) {
+		    throw new \UnexpectedValueException('Response should exist');
+		}
+
+		$response_data = json_decode($response, true);
+
+		return $response_data['token'];
+	}
 }
