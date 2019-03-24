@@ -37,6 +37,7 @@ class PsalmData
 			$gh_pr_data = json_decode(file_get_contents($github_pr_storage_path), true);
 
 			Sender::send(
+				Auth::getToken($gh_pr_data['repository']['owner']['login'], $gh_pr_data['repository']['name']),
 				$gh_pr_data,
 				$payload
 			);

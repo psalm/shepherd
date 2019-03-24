@@ -7,8 +7,7 @@
 >
     <projectFiles>
         <directory name="src" />
-        <file name="hook.php" />
-        <file name="telemetry.php" />
+        <directory name="views" />
         <ignoreFiles>
             <directory name="vendor" />
         </ignoreFiles>

@@ -2,7 +2,14 @@ Options -Indexes
 RewriteEngine on
 RewriteBase /
 
-RewriteRule ^hook$ hook.php [L,QSA]
-RewriteRule ^telemetry$ telemetry.php [L,QSA]
-RewriteRule ^reprocess/(.*)$ reprocess.php?sha=$1 [L,QSA]
-RewriteRule ^github/([-\d\w._]+\/[-\d\w._]+)/coverage.svg$ shield.php?$1 [L,QSA]
+RewriteRule ^hook$ views/hook.php [L,QSA]
+RewriteRule ^auth$ views/auth.php [L,QSA]
+RewriteRule ^telemetry$ views/telemetry.php [L,QSA]
+RewriteRule ^reprocess/(.*)$ views/reprocess.php?sha=$1 [L,QSA]
+RewriteRule ^github/([-\d\w._]+\/[-\d\w._]+)/coverage.svg$ views/shield.php?$1 [L,QSA]
+
+RewriteRule ^composer\.*$ - [F,L]
+RewriteRule ^database/?.*$ - [F,L]
+RewriteRule ^vendor/?.*$ - [F,L]
+RewriteRule ^src/?.*$ - [F,L]
+RewriteRule ^config.json.*$ - [F,L]

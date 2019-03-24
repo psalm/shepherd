@@ -6,7 +6,7 @@ ini_set('html_errors', '1');
 
 error_reporting(E_ALL);
 
-require 'vendor/autoload.php';
+require '../vendor/autoload.php';
 
 $raw_post = file_get_contents('php://input');
 

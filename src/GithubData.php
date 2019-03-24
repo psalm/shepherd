@@ -24,6 +24,7 @@ class GithubData
 
 		if (file_exists($psalm_storage_path)) {
 			Sender::send(
+				Auth::getToken($payload['repository']['owner']['login'], $payload['repository']['name']),
 				$payload,
 				json_decode(file_get_contents($psalm_storage_path), true)
 			);

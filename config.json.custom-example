@@ -1,0 +1,7 @@
+{
+	"custom": {
+		"personal_token": "HARDCODED_API_TOKEN",
+		"webhook_secret": "OPTIONAL_SECRET"
+	},
+	"gh_enterprise_url": "OPTIONAL_CUSTOM_GITHUB_URL"
+}

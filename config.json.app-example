@@ -1,0 +1,7 @@
+{
+	"oauth_app": {
+		"client_id": "CLIENT_ID",
+		"client_secret": "CLIENT_SECRET"
+	},
+	"gh_enterprise_url": "OPTIONAL_CUSTOM_GITHUB_URL"
+}

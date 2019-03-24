@@ -4,23 +4,15 @@ namespace Psalm\Spirit;
 
 class Sender
 {
-    public static function send(array $github_data, array $psalm_data) : void
-    {
-        $config_path = __DIR__ . '/../config.json';
+    public static function send(
+        string $github_token,
+        array $github_data,
+        array $psalm_data
+    ) : void {
+        $config = Config::getInstance();
 
-        if (!file_exists($config_path)) {
-            throw new \UnexpectedValueException('Missing config');
-        }
-
-        /**
-         * @var array{reviewer: array{user: string, password: string, token: string}}
-         */
-        $config = json_decode(file_get_contents($config_path), true);
-
-        $host = $config['host'] ?? 'https://github.com';
-
-        $client = new \Github\Client(null, null, $config['host'] ?? null);
-        $client->authenticate($config['reviewer']['token'], null, \Github\Client::AUTH_HTTP_TOKEN);
+        $client = new \Github\Client(null, null, $config->gh_enterprise_url);
+        $client->authenticate($github_token, null, \Github\Client::AUTH_HTTP_TOKEN);
 
         $repository = $github_data['repository']['name'];
         $repository_owner = $github_data['repository']['owner']['login'];
