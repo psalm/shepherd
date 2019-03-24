@@ -20,7 +20,12 @@ $client->authenticate($github_token, null, \Github\Client::AUTH_HTTP_TOKEN);
 
 $repos = $client
     ->api('me')
-    ->repositories('all');
+    ->repositories(
+    	'all',
+    	'full_name',
+    	'asc',
+    	'public'
+    );
 
 /** @psalm-suppress ForbiddenCode */
 var_dump($repos);
