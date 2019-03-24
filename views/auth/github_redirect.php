@@ -21,5 +21,18 @@ if (!$code) {
 	throw new \UnexpectedValueException('No code sent');
 }
 
-Auth::fetchTokenFromGithub($code, $state, $config);
+$token = Auth::fetchTokenFromGithub($code, $state, $config);
 
+setcookie('github_token', $token);
+
+$params = [
+    'client_id' => $config->client_id,
+    'redirect_uri' => 'https://' . $_SERVER['HTTP_HOST'] . '/auth/github/redirect',
+    'allow_signup' => false,
+    'scopes' => 'public_repo write:repo_hook',
+    'state' => hash('sha256', $_SERVER['REMOTE_IP'], $config->client_secret)
+];
+
+$github_url = $config->gh_enterprise_url ?: 'https://github.com';
+
+header('Location: https://' . $_SERVER['HTTP_HOST'] . '/auth/github/configure');
