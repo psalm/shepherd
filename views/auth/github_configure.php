@@ -19,8 +19,8 @@ $client = new \Github\Client(null, null, $config->gh_enterprise_url);
 $client->authenticate($github_token, null, \Github\Client::AUTH_HTTP_TOKEN);
 
 $repos = $client
-    ->api('repos')
-    ->all();
+    ->api('me')
+    ->repositories();
 
 /** @psalm-suppress ForbiddenCode */
 var_dump($repos);
