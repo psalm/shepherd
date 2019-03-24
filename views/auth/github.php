@@ -13,7 +13,7 @@ $params = [
 	'redirect_uri' => 'https://' . $_SERVER['HTTP_HOST'] . '/auth/github/redirect',
 	'allow_signup' => false,
 	'scope' => 'public_repo write:repo_hook',
-	'state' => hash_hmac('sha256', $_SERVER['REMOTE_HOST'], $config->client_secret)
+	'state' => hash_hmac('sha256', $_SERVER['REMOTE_ADDR'], $config->client_secret)
 ];
 
 $github_url = $config->gh_enterprise_url ?: 'https://github.com';

@@ -8,7 +8,7 @@ if (!$config instanceof Psalm\Spirit\Config\OAuthApp) {
 	throw new \UnexpectedValueException('Cannot use oauth flow if config not proper');
 }
 
-$expected_state = hash_hmac('sha256', $_SERVER['REMOTE_HOST'], $config->client_secret);
+$expected_state = hash_hmac('sha256', $_SERVER['REMOTE_ADDR'], $config->client_secret);
 
 $state = $_GET['state'] ?? null;
 $code = $_GET['code'] ?? null;
