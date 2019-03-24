@@ -20,7 +20,7 @@ class Auth
 		return 'hello';
 	}
 
-	private static function fetchTokenFromGithub(string $code, string $state, Config\OAuthApp $config) : string
+	public static function fetchTokenFromGithub(string $code, string $state, Config\OAuthApp $config) : string
 	{
 		$params = [
 		    'client_id' => $config->client_id,
@@ -29,7 +29,7 @@ class Auth
 		    'state' => $state,
 		];
 
-		$payload = http_build_query($data);
+		$payload = http_build_query($params);
 
 		$github_url = $config->gh_enterprise_url ?: 'https://github.com';
 
@@ -53,7 +53,7 @@ class Auth
 		);
 
 		// Submit the POST request
-		$response = curl_exec($ch);
+		$response = (string) curl_exec($ch);
 
 		// Close cURL session handle
 		curl_close($ch);

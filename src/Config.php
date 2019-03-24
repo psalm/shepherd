@@ -27,7 +27,11 @@ abstract class Config
          * @var array{
          *     oauth_app?: array{
          *         client_id: string,
-         *         client_secret: string
+         *         client_secret: string,
+         *         db_host: string,
+         *         db_name: string,
+         *         db_user: string,
+         *         db_password: string
          *     },
          *     custom?: array{
          *         personal_token: string

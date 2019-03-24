@@ -22,4 +22,5 @@ $repos = $client
     ->api('repos')
     ->all();
 
+/** @psalm-suppress ForbiddenCode */
 var_dump($repos);
