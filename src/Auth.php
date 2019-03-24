@@ -64,6 +64,8 @@ class Auth
 
 		$response_data = json_decode($response, true);
 
+		var_dump($response_data);
+
 		return $response_data['token'];
 	}
 }
