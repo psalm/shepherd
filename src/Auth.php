@@ -64,6 +64,6 @@ class Auth
 
 		$response_data = json_decode($response, true);
 
-		return $response_data['token'];
+		return $response_data['access_token'];
 	}
 }
