@@ -12,7 +12,7 @@ $params = [
 	'client_id' => $config->client_id,
 	'redirect_uri' => 'https://' . $_SERVER['HTTP_HOST'] . '/auth/github/redirect',
 	'allow_signup' => false,
-	'scope' => 'public_repo write:repo_hook',
+	'scope' => 'public_repo write:repo_hook read:org',
 	'state' => hash_hmac('sha256', $_SERVER['REMOTE_ADDR'], $config->client_secret)
 ];
 
