@@ -1,5 +1,7 @@
 <?php
 
+require '../vendor/autoload.php';
+
 $repository = $_SERVER['QUERY_STRING'];
 
 if (!preg_match('/^[-\d\w._]+\/[-\d\w._]+$/', $repository)) {

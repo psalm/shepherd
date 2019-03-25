@@ -51,17 +51,17 @@ class PsalmData
 					$pr_number
 				);
 			}
-
-			return;
 		}
 
-		$gh_pr_data = json_decode(file_get_contents($github_pr_storage_path), true);
+		if (file_exists($github_pr_storage_path)) {
+			$gh_pr_data = json_decode(file_get_contents($github_pr_storage_path), true);
 
-		Sender::send(
-			Auth::getToken($gh_pr_data['repository']['owner']['login'], $gh_pr_data['repository']['name']),
-			$gh_pr_data,
-			$payload
-		);
+			Sender::send(
+				Auth::getToken($gh_pr_data['repository']['owner']['login'], $gh_pr_data['repository']['name']),
+				$gh_pr_data,
+				$payload
+			);
+		}
 	}
 
 	public static function storeMasterData(string $git_commit_hash, string $repository) : void

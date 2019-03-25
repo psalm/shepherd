@@ -1,12 +1,14 @@
 <?php
 
+require '../vendor/autoload.php';
+
 ini_set('display_errors', '1');
 ini_set('display_startup_errors', '1');
 ini_set('html_errors', '1');
 
 error_reporting(E_ALL);
 
-require '../vendor/autoload.php';
+$config = Psalm\Spirit\Config::getInstance();
 
 $raw_post = file_get_contents('php://input');
 
@@ -23,19 +25,8 @@ switch ($_SERVER['CONTENT_TYPE']) {
 		throw new \UnexpectedValueException('Unrecognised payload');
 }
 
-$config_path = __DIR__ . '/config.json';
-
-if (!file_exists($config_path)) {
-    throw new \UnexpectedValueException('Missing config');
-}
-
-/**
- * @var array{github_webhook_secret?:string}
- */
-$config = json_decode(file_get_contents($config_path), true);
-
-if (!empty($config['github_webhook_secret'])) {
-	$hash = 'sha1=' . hash_hmac('sha1', $raw_post, $config['github_webhook_secret'], false);
+if ($config instanceof Psalm\Spirit\Config\Custom && $config->webhook_secret) {
+	$hash = 'sha1=' . hash_hmac('sha1', $raw_post, $config->webhook_secret, false);
 
 	if (!isset($_SERVER['HTTP_X_HUB_SIGNATURE'])) {
 		throw new \Exception('Missing signature header');
