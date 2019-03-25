@@ -20,7 +20,13 @@ class Api
 			}
 		)[0];
 
-		$payload = json_decode(file_get_contents(readlink($repository_data_dir . '/' . $newest_file_name)), true);
+		$target = readlink($repository_data_dir . '/' . $newest_file_name);
+
+		if (!file_exists($target)) {
+			return '??';
+		}
+
+		$payload = json_decode(file_get_contents($target), true);
 
 		list($mixed_count, $nonmixed_count) = $payload['coverage'];
 
