@@ -4,12 +4,12 @@ namespace Psalm\Spirit;
 
 class Api
 {
-	public static function getTypeCoverage(string $repository) : string
+	public static function getTypeCoverage(string $repository) : ?string
 	{
 		$repository_data_dir = dirname(__DIR__) . '/database/psalm_master_data/' . $repository;
 
 		if (!file_exists($repository_data_dir)) {
-			return '??';
+			return null;
 		}
 
 		$files = scandir($repository_data_dir, SCANDIR_SORT_DESCENDING);
@@ -23,7 +23,7 @@ class Api
 		$target = readlink($repository_data_dir . '/' . $newest_file_name);
 
 		if (!file_exists($target)) {
-			return '??';
+			return null;
 		}
 
 		$payload = json_decode(file_get_contents($target), true);
@@ -31,9 +31,9 @@ class Api
 		list($mixed_count, $nonmixed_count) = $payload['coverage'];
 
 		if (!$mixed_count && $nonmixed_count) {
-			return '100';
+			return '100%';
 		}
 
-		return number_format(100 * $nonmixed_count / ($mixed_count + $nonmixed_count), 1);
+		return number_format(100 * $nonmixed_count / ($mixed_count + $nonmixed_count), 1) . '%';
 	}
 }
