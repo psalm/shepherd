@@ -29,7 +29,7 @@ if ($pct > 95) {
 } elseif ($pct > 90) {
 	$color = '#97ca00';
 } elseif ($pct > 85) {
-	$color = '#bbbe0c';
+	$color = '#aeaf12';
 } elseif ($pct > 80) {
 	$color = '#dfb317';
 } elseif ($pct > 75) {
