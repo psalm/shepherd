@@ -31,9 +31,9 @@ class Api
 		list($mixed_count, $nonmixed_count) = $payload['coverage'];
 
 		if (!$mixed_count && $nonmixed_count) {
-			return '100%';
+			return '100';
 		}
 
-		return number_format(100 * $nonmixed_count / ($mixed_count + $nonmixed_count), 1) . '%';
+		return number_format(100 * $nonmixed_count / ($mixed_count + $nonmixed_count), 1);
 	}
 }
