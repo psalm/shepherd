@@ -24,7 +24,7 @@ class DiffLineFinder
                         && $input_line < $chunk_end + $chunk_end_range
                     ) {
                         $line_offset = 0;
-                        foreach ($chunk->getLines() as $i => $chunk_line) {
+                        foreach ($chunk->getLines() as $chunk_line) {
                             $diff_file_offset++;
 
                             if ($chunk_line->getType() !== \SebastianBergmann\Diff\Line::REMOVED) {

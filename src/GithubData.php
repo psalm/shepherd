@@ -19,16 +19,6 @@ class GithubData
 		file_put_contents($github_storage_path, json_encode($payload));
 
 		error_log('GitHub PR data saved for ' . $git_commit_hash);
-
-		$psalm_storage_path = PsalmData::getStoragePath($git_commit_hash);
-
-		if (file_exists($psalm_storage_path)) {
-			Sender::send(
-				Auth::getToken($payload['repository']['owner']['login'], $payload['repository']['name']),
-				$payload,
-				json_decode(file_get_contents($psalm_storage_path), true)
-			);
-		}
 	}
 
 	public static function storeMasterData(string $git_commit_hash, array $payload) : void

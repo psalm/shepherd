@@ -25,7 +25,7 @@ class Auth
 		throw new \UnexpectedValueException('Could not find valid token for ' . $repo_owner . '/' . $repo_name);
 	}
 
-	private static function getTokenForRepo(string $repo_owner, string $repo_name) : ?string
+	private static function getTokenForRepo(string $_repo_owner, string $_repo_name) : ?string
 	{
 		return null;
 	}

@@ -20,14 +20,15 @@ class PsalmData
 
 		error_log('Telemetry saved for ' . $git_commit_hash);
 
-		$github_master_storage_path = GithubData::getMasterStoragePath($git_commit_hash);
-
-		if (file_exists($github_master_storage_path)) {
-			$gh_master_data = json_decode(file_get_contents($github_master_storage_path), true);
-
+		if (!empty($payload['build']['CI_REPO_OWNER'])
+			&& !empty($payload['build']['CI_REPO_NAME'])
+			&& empty($payload['build']['CI_PR_REPO_OWNER'])
+			&& empty($payload['build']['CI_PR_REPO_NAME'])
+			&& ($payload['build']['CI_BRANCH'] ?? '') === 'master'
+		) {
 			self::storeMasterData(
 				$git_commit_hash,
-				$gh_master_data['repository']['full_name']
+				$payload['build']['CI_REPO_OWNER'] . '/' . $payload['build']['CI_REPO_NAME']
 			);
 		}
 

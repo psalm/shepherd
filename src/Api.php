@@ -8,8 +8,6 @@ class Api
 	{
 		$repository_data_dir = dirname(__DIR__) . '/database/psalm_master_data/' . $repository;
 
-		$pct = '?? ';
-
 		if (!file_exists($repository_data_dir)) {
 			return '??';
 		}
