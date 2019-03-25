@@ -21,8 +21,8 @@ if (!$code) {
 	throw new \UnexpectedValueException('No code sent');
 }
 
-$token = Psalm\Spirit\Auth::fetchTokenFromGithub($code, $state, $config);
+$github_token = Psalm\Spirit\Auth::fetchTokenFromGithub($code, $state, $config);
 
-setcookie('github_token', $token);
+setcookie('github_token', $github_token);
 
 header('Location: https://' . $_SERVER['HTTP_HOST'] . '/auth/github/configure');

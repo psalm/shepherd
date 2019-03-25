@@ -54,6 +54,7 @@ abstract class Config
 	       		$config['oauth_app']['client_id'],
 	       		$config['oauth_app']['client_secret'],
 	       		$config['gh_enterprise_url'] ?? null,
+	       		$config['oauth_app']['public_access_oauth_token'] ?? null,
 	       		$config['oauth_app']['db_host'],
 	       		$config['oauth_app']['db_name'],
 	       		$config['oauth_app']['db_user'],

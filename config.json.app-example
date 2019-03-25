@@ -6,6 +6,7 @@
 		"db_name": "DATABASE_NAME",
 		"db_user": "DATABASE_USER",
 		"db_password": "DATABASE_PASSWORD",
+		"public_access_oauth_token": "OPTIONAL_PUBLIC_ACCESS_TOKEN"
 	},
 	"gh_enterprise_url": "OPTIONAL_CUSTOM_GITHUB_URL"
 }

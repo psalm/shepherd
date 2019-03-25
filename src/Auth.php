@@ -12,12 +12,22 @@ class Auth
 			return $config->personal_token;
 		}
 
-		return self::getTokenForRepo($repo_owner, $repo_name);
+		$repo_token = self::getTokenForRepo($repo_owner, $repo_name);
+
+		if ($repo_token) {
+			return $repo_token;
+		}
+
+		if ($config->public_access_oauth_token) {
+			return $config->public_access_oauth_token;
+		}
+
+		throw new \UnexpectedValueException('Could not find valid token for ' . $repo_owner . '/' . $repo_name);
 	}
 
-	private static function getTokenForRepo(string $repo_owner, string $repo_name) : string
+	private static function getTokenForRepo(string $repo_owner, string $repo_name) : ?string
 	{
-		return 'hello';
+		return null;
 	}
 
 	public static function fetchTokenFromGithub(string $code, string $state, Config\OAuthApp $config) : string

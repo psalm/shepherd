@@ -57,4 +57,39 @@ class GithubData
 	{
 		return dirname(__DIR__) . '/database/github_pr_data/' . $git_commit_hash . '.json';
 	}
+
+	public static function fetchPullRequestDataForCommit(
+		string $git_commit_hash,
+		string $repo_owner,
+		string $repo_name,
+		int $pr_number
+	) : void {
+		$config = Config::getInstance();
+		$github_token = Auth::getToken($repo_owner, $repo_name);
+
+		$client = new \Github\Client(null, null, $config->gh_enterprise_url);
+        $client->authenticate($github_token, null, \Github\Client::AUTH_HTTP_TOKEN);
+
+		$pr = $client
+		    ->api('pull_request')
+		    ->show(
+		    	$repo_owner,
+		    	$repo_name,
+		    	$pr_number
+		    );
+
+		$repo = $client
+		    ->api('repo')
+		    ->show(
+		    	$repo_owner,
+		    	$repo_name
+		    );
+
+		$data = [
+			'pull_request' => $pr,
+			'repository' => $repo
+		];
+
+		self::storePullRequestData($git_commit_hash, $data);
+	}
 }

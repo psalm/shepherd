@@ -33,15 +33,34 @@ class PsalmData
 
 		$github_pr_storage_path = GithubData::getPullRequestStoragePath($git_commit_hash);
 
-		if (file_exists($github_pr_storage_path)) {
-			$gh_pr_data = json_decode(file_get_contents($github_pr_storage_path), true);
+		if (!file_exists($github_pr_storage_path)) {
+			if (isset($payload['build']['CI_PR_REPO_OWNER'])
+				&& isset($payload['build']['CI_PR_REPO_NAME'])
+				&& isset($payload['build']['CI_PR_NUMBER'])
+				&& $payload['build']['CI_PR_NUMBER'] !== "false"
+			) {
+				$owner = $payload['build']['CI_PR_REPO_OWNER'];
+				$repo_name = $payload['build']['CI_PR_REPO_NAME'];
+				$pr_number = (int) $payload['build']['CI_PR_NUMBER'];
 
-			Sender::send(
-				Auth::getToken($gh_pr_data['repository']['owner']['login'], $gh_pr_data['repository']['name']),
-				$gh_pr_data,
-				$payload
-			);
+				GithubData::fetchPullRequestDataForCommit(
+					$git_commit_hash,
+					$owner,
+					$repo_name,
+					$pr_number
+				);
+			}
+
+			return;
 		}
+
+		$gh_pr_data = json_decode(file_get_contents($github_pr_storage_path), true);
+
+		Sender::send(
+			Auth::getToken($gh_pr_data['repository']['owner']['login'], $gh_pr_data['repository']['name']),
+			$gh_pr_data,
+			$payload
+		);
 	}
 
 	public static function storeMasterData(string $git_commit_hash, string $repository) : void
