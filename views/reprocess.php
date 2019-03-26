@@ -25,13 +25,15 @@ $payload = json_decode(file_get_contents($psalm_storage_path), true);
 $github_pr_storage_path = Psalm\Spirit\GithubData::getPullRequestStoragePath($git_commit_hash);
 
 if (!file_exists($github_pr_storage_path)) {
-	if (isset($payload['build']['CI_PR_REPO_OWNER'])
-		&& isset($payload['build']['CI_PR_REPO_NAME'])
-		&& isset($payload['build']['CI_PR_NUMBER'])
+	if (!empty($payload['build']['CI_PR_REPO_OWNER'])
+		&& !empty($payload['build']['CI_PR_REPO_NAME'])
+		&& !empty($payload['build']['CI_PR_NUMBER'])
+		&& !empty($payload['build']['CI_REPO_OWNER'])
+		&& !empty($payload['build']['CI_REPO_NAME'])
 		&& $payload['build']['CI_PR_NUMBER'] !== "false"
 	) {
-		$owner = $payload['build']['CI_PR_REPO_OWNER'];
-		$repo_name = $payload['build']['CI_PR_REPO_NAME'];
+		$owner = $payload['build']['CI_REPO_OWNER'];
+		$repo_name = $payload['build']['CI_REPO_NAME'];
 		$pr_number = (int) $payload['build']['CI_PR_NUMBER'];
 
 		Psalm\Spirit\GithubData::fetchPullRequestDataForCommit(
