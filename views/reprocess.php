@@ -14,25 +14,29 @@ if (!preg_match('/^[a-f0-9]+$/', $git_commit_hash)) {
 	throw new \UnexpectedValueException('Bad git commit hash given');
 }
 
-$github_storage_path = Psalm\Spirit\GithubData::getPullRequestStoragePath($git_commit_hash);
-
-if (!file_exists($github_storage_path)) {
-	throw new \UnexpectedValueException('No data from GitHub');
-}
-
 $psalm_storage_path = Psalm\Spirit\PsalmData::getStoragePath($git_commit_hash);
 
 if (!file_exists($psalm_storage_path)) {
 	throw new \UnexpectedValueException('No data from Psalm CI');
 }
 
-$gh_payload = json_decode(file_get_contents($github_storage_path), true);
+$github_pr_storage_path = Psalm\Spirit\GithubData::getPullRequestStoragePath($git_commit_hash);
 
-Psalm\Spirit\Sender::send(
-	Psalm\Spirit\Auth::getToken(
-		$gh_payload['repository']['owner']['login'],
-		$gh_payload['repository']['name']
-	),
-	$gh_payload,
-	json_decode(file_get_contents($psalm_storage_path), true)
-);
+if (!file_exists($github_pr_storage_path)) {
+	if (isset($payload['build']['CI_PR_REPO_OWNER'])
+		&& isset($payload['build']['CI_PR_REPO_NAME'])
+		&& isset($payload['build']['CI_PR_NUMBER'])
+		&& $payload['build']['CI_PR_NUMBER'] !== "false"
+	) {
+		$owner = $payload['build']['CI_PR_REPO_OWNER'];
+		$repo_name = $payload['build']['CI_PR_REPO_NAME'];
+		$pr_number = (int) $payload['build']['CI_PR_NUMBER'];
+
+		Psalm\Spirit\GithubData::fetchPullRequestDataForCommit(
+			$git_commit_hash,
+			$owner,
+			$repo_name,
+			$pr_number
+		);
+	}
+}

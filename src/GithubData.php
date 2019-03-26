@@ -60,6 +60,8 @@ class GithubData
 		$client = new \Github\Client(null, null, $config->gh_enterprise_url);
         $client->authenticate($github_token, null, \Github\Client::AUTH_HTTP_TOKEN);
 
+        error_log('Fetching pull request data for ' . $repo_owner . '/' . $repo_name . '/' . $pr_number);
+
 		$pr = $client
 		    ->api('pull_request')
 		    ->show(
@@ -67,6 +69,8 @@ class GithubData
 		    	$repo_name,
 		    	$pr_number
 		    );
+
+		error_log('Fetching repo data for ' . $repo_owner . '/' . $repo_name);
 
 		$repo = $client
 		    ->api('repo')
