@@ -1,9 +1,3 @@
-VERSION := $(shell git for-each-ref refs/tags --format='%(refname:short)' --sort=-taggerdate --count 1)
-
-# Create a timestamp-tagged local version variable so when we reload Minikube clusters they are properly updated with
-# fresh code.
-LOCAL_VERSION := local-$(shell date +%s)
-
 help: ## Prints this help
 	@grep -E '^([a-zA-Z0-9_-]|\%|\/)+:.*?## .*$$' Makefile | sort | awk 'BEGIN {FS = ":.*?## "}; {sub(/\%/, "<blah>", $$1)}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
 
@@ -42,3 +36,7 @@ dev-distclean: ## Wipe the current development environment
 
 dev-ssh: ## SSH into your current development environment
 	docker exec -it spirit-php /bin/bash
+
+deploy:
+	docker build . -t $(name) -f ./docker/php/Dockerfile.deploy
+	docker push $(name)
