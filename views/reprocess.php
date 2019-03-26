@@ -20,6 +20,8 @@ if (!file_exists($psalm_storage_path)) {
 	throw new \UnexpectedValueException('No data from Psalm CI');
 }
 
+$payload = json_decode(file_get_contents($psalm_storage_path), true);
+
 $github_pr_storage_path = Psalm\Spirit\GithubData::getPullRequestStoragePath($git_commit_hash);
 
 if (!file_exists($github_pr_storage_path)) {
