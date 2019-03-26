@@ -1,0 +1,14 @@
+version: '3.4'
+services:
+  spirit-php:
+    container_name: spirit-php
+    build:
+      context: docker/php
+      dockerfile: Dockerfile
+    ports:
+      - "8080:80"
+    volumes:
+      - "${PWD}:/app/public"
+networks:
+  developer_local:
+    driver: bridge
