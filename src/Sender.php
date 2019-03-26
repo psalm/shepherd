@@ -14,8 +14,8 @@ class Sender
         $client = new \Github\Client(null, null, $config->gh_enterprise_url);
         $client->authenticate($github_token, null, \Github\Client::AUTH_HTTP_TOKEN);
 
-        $repository = $github_data['repository']['name'];
-        $repository_owner = $github_data['repository']['owner']['login'];
+        $repository = $github_data['pull_request']['base']['repo']['name'];
+        $repository_owner = $github_data['pull_request']['base']['repo']['owner']['login'];
         $pull_request_number = $github_data['pull_request']['number'];
 
         $pr_review_path = dirname(__DIR__) . '/database/pr_reviews/' . parse_url($github_data['pull_request']['html_url'], PHP_URL_PATH);

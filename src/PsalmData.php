@@ -40,8 +40,8 @@ class PsalmData
 				&& isset($payload['build']['CI_PR_NUMBER'])
 				&& $payload['build']['CI_PR_NUMBER'] !== "false"
 			) {
-				$owner = $payload['build']['CI_PR_REPO_OWNER'];
-				$repo_name = $payload['build']['CI_PR_REPO_NAME'];
+				$owner = $payload['build']['CI_REPO_OWNER'];
+				$repo_name = $payload['build']['CI_REPO_NAME'];
 				$pr_number = (int) $payload['build']['CI_PR_NUMBER'];
 
 				GithubData::fetchPullRequestDataForCommit(
@@ -57,7 +57,10 @@ class PsalmData
 			$gh_pr_data = json_decode(file_get_contents($github_pr_storage_path), true);
 
 			Sender::send(
-				Auth::getToken($gh_pr_data['repository']['owner']['login'], $gh_pr_data['repository']['name']),
+				Auth::getToken(
+					$gh_pr_data['pull_request']['base']['repo']['owner']['login'],
+					$gh_pr_data['pull_request']['base']['repo']['name']
+				),
 				$gh_pr_data,
 				$payload
 			);

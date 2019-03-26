@@ -70,18 +70,8 @@ class GithubData
 		    	$pr_number
 		    );
 
-		error_log('Fetching repo data for ' . $repo_owner . '/' . $repo_name);
-
-		$repo = $client
-		    ->api('repo')
-		    ->show(
-		    	$repo_owner,
-		    	$repo_name
-		    );
-
 		$data = [
 			'pull_request' => $pr,
-			'repository' => $repo
 		];
 
 		self::storePullRequestData($git_commit_hash, $data);
