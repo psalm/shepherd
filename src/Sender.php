@@ -18,6 +18,8 @@ class Sender
         $repository_owner = $github_data['pull_request']['base']['repo']['owner']['login'];
         $pull_request_number = $github_data['pull_request']['number'];
 
+        $head_sha = $github_data['pull_request']['head']['sha'];
+
         $pr_review_path = dirname(__DIR__) . '/database/pr_reviews/' . parse_url($github_data['pull_request']['html_url'], PHP_URL_PATH);
         $pr_comment_path = dirname(__DIR__) . '/database/pr_comments/' . parse_url($github_data['pull_request']['html_url'], PHP_URL_PATH);
 
