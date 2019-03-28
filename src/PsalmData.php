@@ -99,7 +99,7 @@ class PsalmData
 
 	public static function getMasterStoragePath(string $repository, string $git_commit_hash) : string
 	{
-		return dirname(__DIR__) . '/database/psalm_master_data/' . $repository . '/' . $git_commit_hash . '.json';
+		return dirname(__DIR__) . '/database/psalm_master_data/' . strtolower($repository) . '/' . $git_commit_hash . '.json';
 	}
 
 	public static function getStoragePath(string $git_commit_hash) : string
