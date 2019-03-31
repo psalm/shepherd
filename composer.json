@@ -1,5 +1,5 @@
 {
-    "name": "psalm/spirit",
+    "name": "psalm/shepherd",
     "description": "What runs on spirit.psalm.dev",
     "type": "project",
     "require": {
