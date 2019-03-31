@@ -10,5 +10,7 @@
 <ul>
 <?php foreach (Psalm\Shepherd\Api::getGithubRepositories() as $github_repository) : ?>
 	<li><?php echo $github_repository ?>: <img src="/github/<?php echo $github_repository ?>/coverage.svg"></li>
-<? endforeach ?>
+<? endforeach; ?>
 </ul>
+</body>
+</html>
