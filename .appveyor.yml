@@ -52,5 +52,5 @@ install:
 ## Run the actual test
 test_script:
     - cd c:\shepherd
-    - vendor/bin/shepherd tests
-    - php vendor/bin/psalm --shepherd
+    - vendor\bin\phpunit tests
+    - php vendor\bin\psalm --shepherd
