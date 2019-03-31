@@ -6,7 +6,6 @@ RewriteBase /
 RewriteRule ^database/?.*$ - [R=404,NC,L]
 RewriteRule ^vendor/?.*$ - [R=404,NC,L]
 RewriteRule ^src/?.*$ - [R=404,NC,L]
-RewriteRule ^views/?.*$ - [R=404,NC,L]
 RewriteRule ^config.*$ - [R=404,NC,L]
 
 RewriteRule ^hook$ views/hook.php [L,QSA]
