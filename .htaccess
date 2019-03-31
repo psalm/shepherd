@@ -13,4 +13,8 @@ RewriteRule ^reprocess/(.*)$ views/reprocess.php?sha=$1 [L,QSA]
 RewriteRule ^github/([-\d\w._]+\/[-\d\w._]+)/coverage.svg$ views/shield.php?$1 [L,QSA]
 
 # 404s
-RewriteRule ^.*$ - [R=404,NC,L]
+RewriteRule ^database/?.*$ - [R=404,NC,L]
+RewriteRule ^vendor/?.*$ - [R=404,NC,L]
+RewriteRule ^src/?.*$ - [R=404,NC,L]
+RewriteRule ^views/?.*$ - [R=404,NC,L]
+RewriteRule ^config.*$ - [R=404,NC,L]
