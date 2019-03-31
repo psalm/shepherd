@@ -1,3 +1,3 @@
-# Psalm Spirit server
+# Psalm Shepherd server
 
-![Psalm coverage](https://spirit.psalm.dev/github/psalm/spirit/coverage.svg)
+![Psalm coverage](https://shepherd.dev/github/psalm/shepherd/coverage.svg)
