@@ -1,8 +1,8 @@
 <?php
 
-namespace Psalm\Spirit\Config;
+namespace Psalm\Shepherd\Config;
 
-class OAuthApp extends \Psalm\Spirit\Config
+class OAuthApp extends \Psalm\Shepherd\Config
 {
 	/** @var string */
 	public $client_id;

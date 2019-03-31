@@ -1,6 +1,6 @@
 {
     "name": "psalm/shepherd",
-    "description": "What runs on spirit.psalm.dev",
+    "description": "What runs on shepherd.dev",
     "type": "project",
     "require": {
         "php": "^7.1",
@@ -18,7 +18,7 @@
     ],
     "autoload": {
         "psr-4": {
-            "Psalm\\Spirit\\": "src"
+            "Psalm\\Shepherd\\": "src"
         }
     },
     "require-dev": {

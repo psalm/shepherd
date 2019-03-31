@@ -12,7 +12,7 @@ if (strpos($repository, '..') !== false) {
 	throw new \UnexpectedValueException('Unexpected values in repository name');
 }
 
-$pct = Psalm\Spirit\Api::getTypeCoverage($repository);
+$pct = Psalm\Shepherd\Api::getTypeCoverage($repository);
 
 header('Content-type: image/svg+xml;charset=utf-8');
 header('Cache-control: max-age=0, no-cache');

@@ -8,7 +8,7 @@ ini_set('html_errors', '1');
 
 error_reporting(E_ALL);
 
-$config = Psalm\Spirit\Config::getInstance();
+$config = Psalm\Shepherd\Config::getInstance();
 
 $raw_post = file_get_contents('php://input');
 
@@ -25,7 +25,7 @@ switch ($_SERVER['CONTENT_TYPE']) {
 		throw new \UnexpectedValueException('Unrecognised payload');
 }
 
-if ($config instanceof Psalm\Spirit\Config\Custom && $config->webhook_secret) {
+if ($config instanceof Psalm\Shepherd\Config\Custom && $config->webhook_secret) {
 	$hash = 'sha1=' . hash_hmac('sha1', $raw_post, $config->webhook_secret, false);
 
 	if (!isset($_SERVER['HTTP_X_HUB_SIGNATURE'])) {
@@ -44,7 +44,7 @@ if (!isset($payload['pull_request'])) {
 		&& ($payload['ref'] ?? '') === 'refs/heads/master'
 		&& isset($payload['repository'])
 	) {
-		Psalm\Spirit\GithubData::storeMasterData(
+		Psalm\Shepherd\GithubData::storeMasterData(
 			$payload['after'],
 			$payload
 		);
@@ -63,7 +63,7 @@ if (!preg_match('/^[a-f0-9]+$/', $git_commit_hash)) {
 	throw new \UnexpectedValueException('Bad git commit hash given');
 }
 
-Psalm\Spirit\GithubData::storePullRequestData(
+Psalm\Shepherd\GithubData::storePullRequestData(
 	$git_commit_hash,
 	$payload
 );

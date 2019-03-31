@@ -1,6 +1,6 @@
 <?php
 
-namespace Psalm\Spirit\PsalmPlugin;
+namespace Psalm\Shepherd\PsalmPlugin;
 
 use PhpParser;
 use Psalm\CodeLocation;

@@ -14,7 +14,7 @@ class GithubDiffLineTest extends TestCase
         ?int $expected
     ) {
         $this->assertSame(
-            \Psalm\Spirit\DiffLineFinder::getGitHubPositionFromDiff(
+            \Psalm\Shepherd\DiffLineFinder::getGitHubPositionFromDiff(
                 $line_from,
                 $file_name,
                 file_get_contents(__DIR__ . '/test.diff')

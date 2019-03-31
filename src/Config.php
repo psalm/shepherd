@@ -1,6 +1,6 @@
 <?php
 
-namespace Psalm\Spirit;
+namespace Psalm\Shepherd;
 
 abstract class Config
 {

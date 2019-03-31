@@ -2,9 +2,9 @@
 
 require '../../vendor/autoload.php';
 
-$config = Psalm\Spirit\Config::getInstance();
+$config = Psalm\Shepherd\Config::getInstance();
 
-if (!$config instanceof Psalm\Spirit\Config\OAuthApp) {
+if (!$config instanceof Psalm\Shepherd\Config\OAuthApp) {
 	throw new \UnexpectedValueException('Cannot use oauth flow if config not proper');
 }
 

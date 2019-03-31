@@ -31,7 +31,7 @@ install:
 
 script:
   - vendor/bin/phpunit tests
-  - vendor/bin/psalm --with-spirit
+  - vendor/bin/psalm --shepherd
 
 # Base test matrix (php/env)
 matrix:

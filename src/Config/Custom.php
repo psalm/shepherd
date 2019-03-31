@@ -1,8 +1,8 @@
 <?php
 
-namespace Psalm\Spirit\Config;
+namespace Psalm\Shepherd\Config;
 
-class Custom extends \Psalm\Spirit\Config
+class Custom extends \Psalm\Shepherd\Config
 {
 	/** @var string */
 	public $personal_token;

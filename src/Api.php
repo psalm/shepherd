@@ -1,6 +1,6 @@
 <?php
 
-namespace Psalm\Spirit;
+namespace Psalm\Shepherd;
 
 class Api
 {
