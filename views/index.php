@@ -1,3 +1,6 @@
+<?php
+require '../vendor/autoload.php';
+?>
 <html>
 <head>
 <title>Shepherd</title>
