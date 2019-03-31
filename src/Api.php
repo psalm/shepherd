@@ -47,12 +47,20 @@ class Api
 		$owners = scandir($dir);
 
 		foreach ($owners as $file) {
+			if ($file[0] === '.') {
+				continue;
+			}
+			
 			$owner_dir = $dir . DIRECTORY_SEPARATOR . $file;
 
 			if (is_dir($owner_dir)) {
 				$owner_repos = scandir($owner_dir);
 
 				foreach ($owner_repos as $repo_name) {
+					if ($repo_name[0] === '.') {
+						continue;
+					}
+
 					if (is_dir($owner_dir . DIRECTORY_SEPARATOR . $repo_name)) {
 						$repositories[] = $file . '/' . $repo_name;
 					}
