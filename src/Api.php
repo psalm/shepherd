@@ -36,4 +36,30 @@ class Api
 
 		return number_format(100 * $nonmixed_count / ($mixed_count + $nonmixed_count), 1);
 	}
+
+	/** @return string[] */
+	public static function getGithubRepositories() : array
+	{
+		$repositories = [];
+
+		$dir = dirname(__DIR__) . '/database/psalm_master_data/';
+
+		$owners = scandir($dir);
+
+		foreach ($owners as $file) {
+			$owner_dir = $dir . DIRECTORY_SEPARATOR . $file;
+
+			if (is_dir($owner_dir)) {
+				$owner_repos = scandir($owner_dir);
+
+				foreach ($owner_repos as $repo_name) {
+					if (is_dir($owner_dir . DIRECTORY_SEPARATOR . $repo_name)) {
+						$repositories[] = $file . '/' . $repo_name;
+					}
+				}
+			}
+		}
+		
+		return $repositories;
+	}
 }
