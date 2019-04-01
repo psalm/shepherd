@@ -10,7 +10,6 @@ $github_url = $config->gh_enterprise_url ?: 'https://github.com';
 <title>Shepherd</title>
 </head>
 <body>
-<h1>Psalm Shepherd</h1>
 
 <h2>Github Repository coverage</h2>
 
