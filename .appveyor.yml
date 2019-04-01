@@ -7,6 +7,7 @@ pull_requests:
 version: '{build}.{branch}'
 
 environment:
+  SSL_CERT_FILE: "C:\\php\\cacert.pem"
   COMPOSER_ROOT_VERSION: '7.0-dev'
 
   matrix:
@@ -17,7 +18,7 @@ matrix:
   fast_finish: true
 
 cache:
-  - c:\php -> appveyor.yml
+  - c:\php -> .appveyor.yml
   - '%LOCALAPPDATA%\Composer\files'
 
 init:
@@ -26,6 +27,7 @@ init:
 install:
   - IF NOT EXIST c:\php mkdir c:\php
   - IF NOT EXIST c:\php\%PHP_VERSION% mkdir c:\php\%PHP_VERSION%
+  - appveyor DownloadFile https://curl.haxx.se/ca/cacert.pem -FileName C:\php\cacert.pem
   - cd c:\php\%PHP_VERSION%
   - IF NOT EXIST php-installed.txt curl --fail --location --silent --show-error -o php-%PHP_VERSION%-Win32-VC15-x86-latest.zip https://windows.php.net/downloads/releases/latest/php-%PHP_VERSION%-Win32-VC15-x86-latest.zip
   - IF NOT EXIST php-installed.txt 7z x php-%PHP_VERSION%*-Win32-VC15-x86-latest.zip -y >nul
@@ -42,15 +44,16 @@ install:
   - IF NOT EXIST php-installed.txt echo extension=php_pdo_sqlite.dll >> php.ini
   - IF NOT EXIST php-installed.txt echo zend.assertions=1 >> php.ini
   - IF NOT EXIST php-installed.txt echo assert.exception=On >> php.ini
+  - IF NOT EXIST php-installed.txt echo curl.cainfo="C:/php/cacert.pem" >> php.ini
+  - IF NOT EXIST php-installed.txt echo openssl.cafile="C:/php/cacert.pem" >> php.ini
   - IF NOT EXIST php-installed.txt curl -fsS -o composer.phar https://getcomposer.org/composer.phar
   - IF NOT EXIST php-installed.txt echo @php %%~dp0composer.phar %%* > composer.bat
   - IF NOT EXIST php-installed.txt type nul >> php-installed.txt
   - cd c:\shepherd
   - composer update --no-interaction --no-ansi --no-progress --no-suggest --optimize-autoloader --prefer-stable %DEPENDENCIES%
 
-
 ## Run the actual test
 test_script:
     - cd c:\shepherd
     - vendor\bin\phpunit tests
-    - php vendor\bin\psalm --shepherd
+    - php vendor\vimeo\psalm\psalm --shepherd
