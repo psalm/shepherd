@@ -8,14 +8,17 @@ RewriteRule ^vendor/?.*$ - [R=404,NC,L]
 RewriteRule ^src/?.*$ - [R=404,NC,L]
 RewriteRule ^config.*$ - [R=404,NC,L]
 
-RewriteRule ^hook$ views/hook.php [L,QSA]
+RewriteRule ^hooks/github$ views/hooks/github.php [L,QSA]
+RewriteRule ^hooks/psalm$ views/hooks/psalm.php [L,QSA]
 
 RewriteRule ^auth/github$ views/auth/github.php [L,QSA]
 RewriteRule ^auth/github/redirect$ views/auth/github_redirect.php [L,QSA]
 RewriteRule ^auth/github/configure$ views/auth/github_configure.php [L,QSA]
 
-RewriteRule ^telemetry$ views/telemetry.php [L,QSA]
 RewriteRule ^reprocess/(.*)$ views/reprocess.php?sha=$1 [L,QSA]
 RewriteRule ^github/([-\d\w._]+\/[-\d\w._]+)/coverage.svg$ views/shield.php?$1 [L,QSA]
+
+# legacy
+RewriteRule ^telemetry$ hooks/psalm [L,QSA]
 
 RewriteRule ^$ views/index.php [L,QSA]
