@@ -71,7 +71,7 @@ class Api
 
 			$payload = json_decode(file_get_contents($target), true);
 
-			$github_data = GithubData::getDataForCommit($owner, $repo_name, $git_commit_hash);
+			$github_data = GithubData::getDataForCommit($git_commit_hash, $owner, $repo_name);
 
 			$date = $github_data['commit']['commiter']['date'];
 

@@ -110,7 +110,7 @@ class GithubData
 		$client = new \Github\Client(null, null, $config->gh_enterprise_url);
         $client->authenticate($github_token, null, \Github\Client::AUTH_HTTP_TOKEN);
 
-        var_dump('Fetching data for ' . $repo_owner . '/' . $repo_name . '/' . $git_commit_hash);
+        error_log('Fetching data for ' . $repo_owner . '/' . $repo_name . '/' . $git_commit_hash);
 
 		$data = $client
 		    ->api('git')
