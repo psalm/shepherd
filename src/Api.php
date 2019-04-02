@@ -86,6 +86,8 @@ class Api
 			$history[$date] = $c;
 		}
 
+		ksort($history);
+
 		return $history;
 	}
 
