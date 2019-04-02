@@ -83,7 +83,7 @@ class Api
 				$c = 100 * $nonmixed_count / ($mixed_count + $nonmixed_count);
 			}
 
-			$history[$date] = $c;
+			$history[$date] = [$git_commit_hash, $c];
 		}
 
 		ksort($history);
