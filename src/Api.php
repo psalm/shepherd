@@ -73,9 +73,7 @@ class Api
 
 			$github_data = GithubData::getDataForCommit($git_commit_hash, $owner, $repo_name);
 
-			var_dump($github_data);
-
-			$date = $github_data['commiter']['date'];
+			$date = $github_data['committer']['date'];
 
 			list($mixed_count, $nonmixed_count) = $payload['coverage'];
 
