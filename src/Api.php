@@ -71,9 +71,14 @@ class Api
 
 			$payload = json_decode(file_get_contents($target), true);
 
-			$github_data = GithubData::getDataForCommit($git_commit_hash, $owner, $repo_name);
+			if (isset($payload['git']['head']['date'])) {
+				$date = date('c', $payload['git']['head']['date']);
+			} else {
+				// backup, should deprecate in May 2019
+				$github_data = GithubData::getDataForCommit($git_commit_hash, $owner, $repo_name);
 
-			$date = $github_data['committer']['date'];
+				$date = $github_data['committer']['date'];
+			}
 
 			list($mixed_count, $nonmixed_count) = $payload['coverage'];
 
