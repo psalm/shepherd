@@ -19,13 +19,15 @@ $github_url = $config->gh_enterprise_url ?: 'https://github.com';
 	</nav>
 
 	<div class="container front">
-		<h2>Github Repository coverage</h2>
+		<div class="coverage_list">
+			<h2>Github Repository coverage</h2>
 
-		<ul>
-		<?php foreach (Psalm\Shepherd\Api::getGithubRepositories() as $github_repository) : ?>
-			<li><a href="<?php echo $github_url . '/' . $github_repository ?>"><?php echo $github_repository ?></a>:<br><img src="/github/<?php echo $github_repository ?>/coverage.svg"></li>
-		<?php endforeach; ?>
-		</ul>
+			<ul>
+			<?php foreach (Psalm\Shepherd\Api::getGithubRepositories() as $github_repository) : ?>
+				<li><a href="<?php echo $github_url . '/' . $github_repository ?>"><?php echo $github_repository ?></a>:<br><img src="/github/<?php echo $github_repository ?>/coverage.svg"></li>
+			<?php endforeach; ?>
+			</ul>
+		</div>
 	</div>
 </body>
 </html>

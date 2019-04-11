@@ -28,13 +28,15 @@ nav {
 }
 
 h1 {
-    margin: 10px 0 10px 20px;
+    margin: 20px 0 20px 20px;
     float: left;
+    font-size: 50px;
+    font-family: "Sentinel A", "Sentinel B";
+    font-weight: normal;
 }
 
-h1 a {
-    display: block;
-    padding: 20px 0;
+h1 svg {
+	vertical-align: text-top;
 }
 
 nav ul {
