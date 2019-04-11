@@ -66,7 +66,7 @@ class Api
 				continue;
 			}
 
-			$git_commit_hash = explode(".", $file)[0];
+			$git_commit_hash = explode(".", basename($file))[0];
 
 			$payload = json_decode(file_get_contents($target), true);
 
