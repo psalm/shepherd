@@ -76,6 +76,12 @@ code {
     line-height: 1.6em;
 }
 
+.intro {
+    max-width: 492px;
+    padding: 0 20px 50px;
+    float: left;
+}
+
 @media all and (max-width: 1021px) {
     nav {
         padding: 15px;

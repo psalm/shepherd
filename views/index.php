@@ -20,6 +20,10 @@ $github_url = $config->gh_enterprise_url ?: 'https://github.com';
 	</nav>
 
 	<div class="container front">
+		<div class="intro">
+			<p>Shepherd is a currently-experimental service to handle CI output from <a href="https://psalm.dev">Psalm</a>.</p>
+			<p>It's being actively developed at <a href="https://github.com/psalm/shepherd">github.com/psalm/shepherd</a>.</p>
+		</div>
 		<div class="coverage_list">
 			<h2>Github Repository coverage</h2>
 
