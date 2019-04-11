@@ -56,8 +56,6 @@ class Api
 
 		$files = self::getOrderedFilesInDir($repository_data_dir);
 
-		[$owner, $repo_name] = explode("/", $repository);
-
 		$history = [];
 
 		foreach ($files as $file) {
@@ -71,14 +69,11 @@ class Api
 
 			$payload = json_decode(file_get_contents($target), true);
 
-			if (isset($payload['git']['head']['date'])) {
-				$date = date('c', $payload['git']['head']['date']);
-			} else {
-				// backup, should deprecate in May 2019
-				$github_data = GithubData::getDataForCommit($git_commit_hash, $owner, $repo_name);
-
-				$date = $github_data['committer']['date'];
+			if (!isset($payload['git']['head']['date'])) {
+				continue;
 			}
+
+			$date = $payload['git']['head']['date'];
 
 			list($mixed_count, $nonmixed_count) = $payload['coverage'];
 
