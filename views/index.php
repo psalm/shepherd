@@ -29,5 +29,8 @@ $github_url = $config->gh_enterprise_url ?: 'https://github.com';
 			</ul>
 		</div>
 	</div>
+	<footer>
+    	<p>Not quite sure what to put here yet</p>
+	</footer>
 </body>
 </html>
