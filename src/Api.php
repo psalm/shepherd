@@ -14,9 +14,9 @@ class Api
 
 		$ordered_files = self::getOrderedFilesInDir($repository_data_dir);
 
-		$newest_file_name = end(self::getOrderedFilesInDir($repository_data_dir));
+		$newest_file_path = end(self::getOrderedFilesInDir($repository_data_dir));
 
-		$target = readlink($repository_data_dir . '/' . $newest_file_name);
+		$target = readlink($newest_file_name);
 
 		if (!file_exists($target)) {
 			return null;
@@ -38,14 +38,13 @@ class Api
 	 */
 	private static function getOrderedFilesInDir(string $repository_data_dir) : array
 	{
-		$files = scandir($repository_data_dir, SCANDIR_SORT_DESCENDING);
+		$files = glob($repository_data_dir . '/*.json');
 		
-		return array_filter(
-			$files,
-			function (string $filename) : bool {
-				return (bool) strpos($filename, '.json');
-			}
-		);
+		usort($files, function($a, $b) {
+		    return filemtime($a) < filemtime($b);
+		});
+		
+		return $files;
 	}
 
 	public static function getHistory(string $repository) : array
@@ -61,7 +60,7 @@ class Api
 		$history = [];
 
 		foreach ($files as $file) {
-			$target = readlink($repository_data_dir . '/' . $file);
+			$target = readlink($file);
 
 			if (!file_exists($target)) {
 				continue;
