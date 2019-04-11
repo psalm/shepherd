@@ -9,6 +9,7 @@ $github_url = $config->gh_enterprise_url ?: 'https://github.com';
 <head>
 <title>Shepherd</title>
 <link rel="stylesheet" href="/assets/styles/main.css">
+<link rel="stylesheet" type="text/css" href="https://cloud.typography.com/751592/7707372/css/fonts.css" />
 </head>
 <body>
 	<nav>
