@@ -82,6 +82,16 @@ code {
     float: left;
 }
 
+.coverage_list {
+    float: left;
+    width: 480px;
+}
+
+.coverage_history {
+    float: left;
+    width: 480px;
+}
+
 @media all and (max-width: 1021px) {
     nav {
         padding: 15px;
