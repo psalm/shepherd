@@ -14,9 +14,9 @@ class Api
 
 		$ordered_files = self::getOrderedFilesInDir($repository_data_dir);
 
-		$newest_file_path = end(self::getOrderedFilesInDir($repository_data_dir));
+		$newest_file_path = end($ordered_files);
 
-		$target = readlink($newest_file_name);
+		$target = readlink($newest_file_path);
 
 		if (!file_exists($target)) {
 			return null;
@@ -40,8 +40,8 @@ class Api
 	{
 		$files = glob($repository_data_dir . '/*.json');
 		
-		usort($files, function($a, $b) {
-		    return filemtime($a) < filemtime($b);
+		usort($files, function(string $a, string $b) : int {
+		    return (int) (filemtime($a) < filemtime($b));
 		});
 		
 		return $files;
