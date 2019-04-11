@@ -31,7 +31,7 @@ $github_url = $config->gh_enterprise_url ?: 'https://github.com';
 			<?php foreach (Psalm\Shepherd\Api::getGithubRepositories() as $github_repository) : ?>
 				<li>
 					<a href="<?php echo $github_url . '/' . $github_repository ?>"><?php echo $github_repository ?></a>:<br>
-					<a href="/github/<?php echo $github_repository ?>"/><img src="/github/<?php echo $github_repository ?>/coverage.svg"></li>
+					<a href="/github/<?php echo $github_repository ?>"/><img src="/github/<?php echo $github_repository ?>/coverage.svg"></a></li>
 				</li>
 			<?php endforeach; ?>
 			</ul>
