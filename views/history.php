@@ -23,6 +23,7 @@ $github_url = $config->gh_enterprise_url ?: 'https://github.com';
 <title>Shepherd - <?php echo $repository ?></title>
 <link rel="stylesheet" href="/assets/styles/main.css">
 <link rel="stylesheet" type="text/css" href="https://cloud.typography.com/751592/7707372/css/fonts.css" />
+<meta name="viewport" content="initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
 </head>
 <body>
 	<nav>
