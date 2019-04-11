@@ -10,7 +10,7 @@ $github_url = $config->gh_enterprise_url ?: 'https://github.com';
 <title>Shepherd</title>
 </head>
 <body>
-<h1><img src="/assets/img/logo.svg" width="32" height="32" alt="Shepherd Logo" /> Shepherd</h1>
+<h1><?php require('../assets/img/logo.svg'); ?> Shepherd</h1>
 
 <h2>Github Repository coverage</h2>
 
