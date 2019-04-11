@@ -70,6 +70,7 @@ class Api
 			$payload = json_decode(file_get_contents($target), true);
 
 			if (!isset($payload['git']['head']['date'])) {
+				var_dump($payload);
 				continue;
 			}
 
