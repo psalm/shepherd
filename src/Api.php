@@ -12,7 +12,9 @@ class Api
 			return null;
 		}
 
-		$newest_file_name = self::getOrderedFilesInDir($repository_data_dir)[0];
+		$ordered_files = self::getOrderedFilesInDir($repository_data_dir);
+
+		$newest_file_name = end(self::getOrderedFilesInDir($repository_data_dir));
 
 		$target = readlink($repository_data_dir . '/' . $newest_file_name);
 
