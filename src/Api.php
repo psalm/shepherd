@@ -14,9 +14,7 @@ class Api
 
 		$ordered_files = self::getOrderedFilesInDir($repository_data_dir);
 
-		var_dump($ordered_files);
-
-		$newest_file_path = end($ordered_files);
+		$newest_file_path = reset($ordered_files);
 
 		$target = readlink($newest_file_path);
 
