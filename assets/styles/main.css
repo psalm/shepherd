@@ -35,6 +35,11 @@ h1 {
     font-weight: normal;
 }
 
+h1 a {
+    color: #434343;
+    text-decoration: none;
+}
+
 h1 svg {
 	vertical-align: text-top;
 }
