@@ -123,6 +123,16 @@ code {
   
 }
 
+table {
+    border-collapse: collapse;
+}
+
+th, td {
+    text-align: left;
+    padding: .5em;
+    border: 1px solid #ccc;
+}
+
 footer {
     box-sizing: border-box;
     padding: 17px 15px 10px;
