@@ -42,7 +42,7 @@ $github_url = $config->gh_enterprise_url ?: 'https://github.com';
 					<tr>
 						<th>Date</th>
 						<th>Commit</th>
-						<th>Coverage</th>
+						<th>Type Coverage</th>
 					</tr>
 				</thead>
 				<tbody>
