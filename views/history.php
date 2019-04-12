@@ -37,13 +37,24 @@ $github_url = $config->gh_enterprise_url ?: 'https://github.com';
 		<div class="coverage_list">
 			<h2>Type coverage history for <?php echo $repository ?></h2>
 
-			<ul>
-			<?php foreach ($pct as $date => [$commit, $coverage]) : ?>
-				<li><?php echo date('F j Y, H:i:s', $date) ?> - <a href="<?php echo $github_url . '/' . $repository . '/commit/' . $commit ?>"><?php echo substr($commit, 0, 7) ?></a>:<br />
-					<?php echo number_format($coverage, 5) ?>
-				</li>
-			<?php endforeach; ?>
-			</ul>
+			<table>
+				<thead>
+					<tr>
+						<th>Date</th>
+						<th>Commit</th>
+						<th>Coverage</th>
+					</tr>
+				</thead>
+				<tbody>
+					<?php foreach ($pct as $date => [$commit, $coverage]) : ?>
+					<tr>
+						<td><?php echo date('F j Y, H:i:s', $date) ?></td>
+						<td><a href="<?php echo $github_url . '/' . $repository . '/commit/' . $commit ?>"><?php echo substr($commit, 0, 7) ?></a></td>
+						<td><?php echo number_format($coverage, 3) ?>%</td>
+					</tr>
+					<?php endforeach; ?>
+				</tbody>
+			</table>
 		</div>
 	</div>
 	<footer>
