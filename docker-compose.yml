@@ -3,12 +3,11 @@ services:
   spirit-php:
     container_name: spirit-php
     build:
-      context: docker/php
+      context: .
       dockerfile: Dockerfile
     ports:
       - "8080:80"
     volumes:
-      - "${PWD}:/app/public"
-networks:
-  developer_local:
-    driver: bridge
+      - type: bind
+        source: "${PWD}/database"
+        target: "/var/www/html/database"
