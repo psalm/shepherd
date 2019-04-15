@@ -38,5 +38,5 @@ dev-ssh: ## SSH into your current development environment
 	docker exec -it spirit-php /bin/bash
 
 deploy:
-	docker build . -t $(name) -f ./docker/php/Dockerfile.deploy
+	docker build . -t $(name)
 	docker push $(name)
