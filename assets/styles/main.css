@@ -35,6 +35,10 @@ h1 {
     font-weight: normal;
 }
 
+h2 {
+    font-family: "Sentinel A", "Sentinel B";
+}
+
 h1 a {
     color: #434343;
     text-decoration: none;
