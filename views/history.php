@@ -35,7 +35,9 @@ $github_url = $config->gh_enterprise_url ?: 'https://github.com';
 
 	<div class="container front">
 		<div class="coverage_list">
-			<h2>Type coverage history for <a href="<?php echo $github_url . '/' . $github_repository ?>"><?php echo $repository ?></a></h2>
+			<h2><a href="<?php echo $github_url . '/' . $github_repository ?>"><?php echo $repository ?></a></h2>
+			
+			<h3>Type coverage history</h3>
 
 			<table>
 				<thead>
