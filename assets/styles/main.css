@@ -96,6 +96,18 @@ code {
     width: 480px;
 }
 
+.coverage_list ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    font-family: "Operator Mono SSm A", "Operator Mono SSm B";
+    font-size: 14px;
+}
+
+.coverage_list ul a {
+    text-decoration: none;
+}
+
 .coverage_history {
     float: left;
     width: 480px;
