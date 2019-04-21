@@ -104,6 +104,10 @@ code {
     font-size: 14px;
 }
 
+.coverage_list li {
+    margin: 0 0 .5em;
+}
+
 .coverage_list ul a {
     text-decoration: none;
 }
