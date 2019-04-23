@@ -1,7 +1,7 @@
 version: '3.4'
 services:
-  spirit-php:
-    container_name: spirit-php
+  shepherd-php:
+    container_name: shepherd-php
     build:
       context: .
       dockerfile: Dockerfile

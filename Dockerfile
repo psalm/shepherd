@@ -8,13 +8,13 @@ COPY .htaccess /var/www/html
 COPY config.json /var/www/html
 COPY assets /var/www/html/assets
 
-RUN mkdir -p /app/public/database/github_commits && \
-	mkdir -p /app/public/database/github_master_data && \
-	mkdir -p /app/public/database/github_pr_data && \
-	mkdir -p /app/public/database/pr_comments && \
-	mkdir -p /app/public/database/pr_reviews && \
-	mkdir -p /app/public/database/psalm_data && \
-	mkdir -p /app/public/database/psalm_master_data
+RUN mkdir -p /var/www/html/database/github_commits && \
+	mkdir -p /var/www/html/database/github_master_data && \
+	mkdir -p /var/www/html/database/github_pr_data && \
+	mkdir -p /var/www/html/database/pr_comments && \
+	mkdir -p /var/www/html/database/pr_reviews && \
+	mkdir -p /var/www/html/database/psalm_data && \
+	mkdir -p /var/www/html/database/psalm_master_data
 
 COPY docker/php/vhost.conf /etc/apache2/sites-available/000-default.conf
 

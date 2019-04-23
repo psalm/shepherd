@@ -9,6 +9,9 @@ use Psalm\StatementsSource;
 use Psalm\Type;
 use Github\Api;
 
+/**
+ * @psalm-suppress UnusedClass
+ */
 class GitApiProvider implements \Psalm\Plugin\Hook\MethodReturnTypeProviderInterface
 {
     public static function getClassLikeNames() : array

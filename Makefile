@@ -35,7 +35,7 @@ dev-distclean: ## Wipe the current development environment
 	docker-compose down --rmi all
 
 dev-ssh: ## SSH into your current development environment
-	docker exec -it spirit-php /bin/bash
+	docker exec -it shepherd-php /bin/bash
 
 deploy:
 	docker build . -t $(name)

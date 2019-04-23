@@ -1,9 +1,5 @@
 <?php
 require '../vendor/autoload.php';
-
-$config = Psalm\Shepherd\Config::getInstance();
-
-$github_url = $config->gh_enterprise_url ?: 'https://github.com';
 ?>
 <html>
 <head>
