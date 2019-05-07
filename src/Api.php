@@ -129,6 +129,8 @@ class Api
 			}
 		}
 
+		var_dump($repositories);
+
 		krsort($repositories);
 
 		return array_slice(array_values($repositories), 0, 5);
