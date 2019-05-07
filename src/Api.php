@@ -117,22 +117,18 @@ class Api
 					}
 
 					if (is_dir($owner_dir . DIRECTORY_SEPARATOR . $repo_name)) {
-						$repositories[] = $file . '/' . $repo_name;
-
 						$dir_files = self::getOrderedFilesInDir($owner_dir . DIRECTORY_SEPARATOR . $repo_name);
 
-						$last_file = end($dir_files);
+						$last_file = reset($dir_files);
 
-						$repositories[filemtime($last_file)] = $file . '/' . $repo_name;
+						$repositories[$file . '/' . $repo_name] = filemtime($last_file);
 					}
 				}
 			}
 		}
 
-		var_dump($repositories);
+		arsort($repositories);
 
-		krsort($repositories);
-
-		return array_slice(array_values($repositories), 0, 5);
+		return array_slice(array_keys($repositories), 0, 5);
 	}
 }
