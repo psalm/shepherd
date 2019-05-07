@@ -87,13 +87,13 @@ class Api
 			$history[$date] = [$git_commit_hash, $c];
 		}
 
-		ksort($history);
+		krsort($history);
 
 		return $history;
 	}
 
 	/** @return string[] */
-	public static function getGithubRepositories() : array
+	public static function getRecentGithubRepositories() : array
 	{
 		$repositories = [];
 
@@ -118,11 +118,19 @@ class Api
 
 					if (is_dir($owner_dir . DIRECTORY_SEPARATOR . $repo_name)) {
 						$repositories[] = $file . '/' . $repo_name;
+
+						$dir_files = self::getOrderedFilesInDir($owner_dir . DIRECTORY_SEPARATOR . $repo_name);
+
+						$last_file = end($dir_files);
+
+						$repositories[filemtime($last_file)] = $file . '/' . $repo_name;
 					}
 				}
 			}
 		}
-		
-		return $repositories;
+
+		krsort($repositories);
+
+		return array_slice(array_values($repositories), 0, 5);
 	}
 }

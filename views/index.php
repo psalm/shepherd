@@ -22,10 +22,10 @@ require '../vendor/autoload.php';
 			<p>It's being actively developed at <a href="https://github.com/psalm/shepherd">github.com/psalm/shepherd</a>.</p>
 		</div>
 		<div class="coverage_list">
-			<h2>Github Repository coverage</h2>
+			<h2>Recent type coverage</h2>
 
 			<ul>
-			<?php foreach (Psalm\Shepherd\Api::getGithubRepositories() as $github_repository) : ?>
+			<?php foreach (Psalm\Shepherd\Api::getRecentGithubRepositories() as $github_repository) : ?>
 				<li>
 					<a href="/github/<?php echo $github_repository ?>"/>
 						<?php echo $github_repository ?></a><br>
