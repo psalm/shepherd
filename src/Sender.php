@@ -203,7 +203,9 @@ class Sender
 
             $pr_review_path_dir = dirname($pr_review_path);
 
-            mkdir($pr_review_path_dir, 0777, true);
+            if (!file_exists($pr_review_path_dir)) {
+                mkdir($pr_review_path_dir, 0777, true);
+            }
 
             file_put_contents($pr_review_path, json_encode($review));
         }
@@ -228,7 +230,9 @@ class Sender
 
         $pr_comment_path_dir = dirname($pr_comment_path);
 
-        mkdir($pr_comment_path_dir, 0777, true);
+        if (!file_exists($pr_comment_path_dir)) {
+            mkdir($pr_comment_path_dir, 0777, true);
+        }
 
         file_put_contents($pr_comment_path, json_encode($comment));
     }
