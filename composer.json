@@ -5,7 +5,7 @@
     "require": {
         "php": "^7.1",
         "vimeo/psalm": "dev-master",
-        "knplabs/github-api": "^2.11",
+        "muglug/github-api": "dev-master",
         "php-http/guzzle6-adapter": "^1.0",
         "sebastian/diff": "^3.0"
     },
