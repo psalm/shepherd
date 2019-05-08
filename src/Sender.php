@@ -28,26 +28,38 @@ class Sender
         if (file_exists($pr_review_path)) {
             $review = json_decode(file_get_contents($pr_review_path), true);
 
-            $comments = $client
-                ->api('pull_request')
-                ->reviews()
-                ->comments(
-                    $repository_owner,
-                    $repository,
-                    $pull_request_number,
-                    $review['id']
+            try {
+                $comments = $client
+                    ->api('pull_request')
+                    ->reviews()
+                    ->comments(
+                        $repository_owner,
+                        $repository,
+                        $pull_request_number,
+                        $review['id']
+                    );
+            } catch (\Github\Exception\RuntimeException $e) {
+                throw new \RuntimeException(
+                    'Could not fetch comments for review ' . $review['id'] . ' for pull request ' . $pull_request_number . ' on ' . $repository_owner . '/' . $repository
                 );
+            }
 
             if (is_array($comments)) {
                 foreach ($comments as $comment) {
-                    $client
-                        ->api('pull_request')
-                        ->comments()
-                        ->remove(
-                            $repository_owner,
-                            $repository,
-                            $comment['id']
+                    try {
+                        $client
+                            ->api('pull_request')
+                            ->comments()
+                            ->remove(
+                                $repository_owner,
+                                $repository,
+                                $comment['id']
+                            );
+                    } catch (\Github\Exception\RuntimeException $e) {
+                        throw new \RuntimeException(
+                            'Could not remove PR comment (via PR API) ' . $comment['id'] . ' on ' . $repository_owner . '/' . $repository
                         );
+                    }
                 }
             }
         }
@@ -55,24 +67,36 @@ class Sender
         if (file_exists($pr_comment_path)) {
             $comment = json_decode(file_get_contents($pr_comment_path), true);
 
-            $client
-                ->api('issue')
-                ->comments()
-                ->remove(
-                    $repository_owner,
-                    $repository,
-                    $comment['id']
+            try {
+                $client
+                    ->api('issue')
+                    ->comments()
+                    ->remove(
+                        $repository_owner,
+                        $repository,
+                        $comment['id']
+                    );
+            } catch (\Github\Exception\RuntimeException $e) {
+                throw new \RuntimeException(
+                    'Could not remove PR comment (via issues API) ' . $comment['id'] . ' on ' . $repository_owner . '/' . $repository
                 );
+            }
         }
 
-        $diff_string = $client
-            ->api('pull_request')
-            ->configure('diff', 'v3')
-            ->show(
-                $repository_owner,
-                $repository,
-                $pull_request_number
+        try {
+            $diff_string = $client
+                ->api('pull_request')
+                ->configure('diff', 'v3')
+                ->show(
+                    $repository_owner,
+                    $repository,
+                    $pull_request_number
+                );
+        } catch (\Github\Exception\RuntimeException $e) {
+            throw new \RuntimeException(
+                'Could not fetch pull request diff for ' . $pull_request_number . ' on ' . $repository_owner . '/' . $repository
             );
+        }
 
         if (!is_string($diff_string)) {
             throw new \UnexpectedValueException('$diff_string should be a string');
@@ -156,20 +180,26 @@ class Sender
         }
 
         if ($file_comments) {
-            $review = $client
-                ->api('pull_request')
-                ->reviews()
-                ->create(
-                    $repository_owner,
-                    $repository,
-                    $pull_request_number,
-                    [
-                        'commit_id' => $head_sha,
-                        'body' => '',
-                        'comments' => $file_comments,
-                        'event' => 'REQUEST_CHANGES',
-                    ]
+            try {
+                $review = $client
+                    ->api('pull_request')
+                    ->reviews()
+                    ->create(
+                        $repository_owner,
+                        $repository,
+                        $pull_request_number,
+                        [
+                            'commit_id' => $head_sha,
+                            'body' => '',
+                            'comments' => $file_comments,
+                            'event' => 'REQUEST_CHANGES',
+                        ]
+                    );
+            } catch (\Github\Exception\RuntimeException $e) {
+                throw new \RuntimeException(
+                    'Could not create PR review for ' . $pull_request_number . ' on ' . $repository_owner . '/' . $repository
                 );
+            }
 
             $pr_review_path_dir = dirname($pr_review_path);
 
@@ -178,17 +208,23 @@ class Sender
             file_put_contents($pr_review_path, json_encode($review));
         }
 
-        $comment = $client
-            ->api('issue')
-            ->comments()
-            ->create(
-                $repository_owner,
-                $repository,
-                $pull_request_number,
-                [
-                    'body' => $message_body,
-                ]
+        try {
+            $comment = $client
+                ->api('issue')
+                ->comments()
+                ->create(
+                    $repository_owner,
+                    $repository,
+                    $pull_request_number,
+                    [
+                        'body' => $message_body,
+                    ]
+                );
+        } catch (\Github\Exception\RuntimeException $e) {
+            throw new \RuntimeException(
+                'Could not add comment for ' . $pull_request_number . ' on ' . $repository_owner . '/' . $repository
             );
+        }
 
         $pr_comment_path_dir = dirname($pr_comment_path);
 
