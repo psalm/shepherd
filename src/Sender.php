@@ -56,7 +56,7 @@ class Sender
                                 $comment['id']
                             );
                     } catch (\Github\Exception\RuntimeException $e) {
-                        throw new \RuntimeException(
+                        error_log(
                             'Could not remove PR comment (via PR API) ' . $comment['id'] . ' on ' . $repository_owner . '/' . $repository
                         );
                     }
@@ -77,7 +77,7 @@ class Sender
                         $comment['id']
                     );
             } catch (\Github\Exception\RuntimeException $e) {
-                throw new \RuntimeException(
+                error_log(
                     'Could not remove PR comment (via issues API) ' . $comment['id'] . ' on ' . $repository_owner . '/' . $repository
                 );
             }
