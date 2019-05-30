@@ -35,7 +35,7 @@ h1 {
     font-weight: normal;
 }
 
-h2 {
+h2, h3 {
     font-family: "Operator SSm A", "Operator SSm B";
     font-weight: normal;
 }
