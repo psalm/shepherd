@@ -1,5 +1,5 @@
 body {
-    font-family: "Sentinel SSm A", "Sentinel SSm B";
+    font-family: "Operator SSm A", "Operator SSm B";
     line-height: 1.5em;
     margin: 0;
     padding: 0;
@@ -31,12 +31,12 @@ h1 {
     margin: 20px 0 20px 20px;
     float: left;
     font-size: 50px;
-    font-family: "Sentinel A", "Sentinel B";
+    font-family: "Operator SSm A", "Operator SSm B";
     font-weight: normal;
 }
 
 h2 {
-    font-family: "Sentinel A", "Sentinel B";
+    font-family: "Operator SSm A", "Operator SSm B";
 }
 
 h1 a {
