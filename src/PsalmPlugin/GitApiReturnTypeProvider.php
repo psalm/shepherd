@@ -77,11 +77,6 @@ class GitApiProvider implements \Psalm\Plugin\Hook\MethodReturnTypeProviderInter
                     $api = Api\Miscellaneous\Gitignore::class;
                     break;
 
-                case 'integration':
-                case 'integrations':
-                    $api = Api\Integrations::class;
-                    break;
-
                 case 'apps':
                     $api = Api\Apps::class;
                     break;

@@ -4,7 +4,7 @@ namespace Psalm\Shepherd;
 
 class Auth
 {
-	public static function getToken(string $repo_owner, string $repo_name) : string
+	public static function getToken(GithubRepository $repository) : string
 	{
 		$config = Config::getInstance();
 
@@ -12,7 +12,7 @@ class Auth
 			return $config->personal_token;
 		}
 
-		$repo_token = self::getTokenForRepo($repo_owner, $repo_name);
+		$repo_token = self::getTokenForRepo($repository);
 
 		if ($repo_token) {
 			return $repo_token;
@@ -22,10 +22,11 @@ class Auth
 			return $config->public_access_oauth_token;
 		}
 
-		throw new \UnexpectedValueException('Could not find valid token for ' . $repo_owner . '/' . $repo_name);
+		throw new \UnexpectedValueException('Could not find valid token for ' . $repository->owner_name . '/' . $repository->repo_name);
 	}
 
-	private static function getTokenForRepo(string $_repo_owner, string $_repo_name) : ?string
+	/** @psalm-suppress UnusedParam */
+	private static function getTokenForRepo(GithubRepository $repository) : ?string
 	{
 		return null;
 	}

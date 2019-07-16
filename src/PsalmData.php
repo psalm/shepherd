@@ -20,63 +20,29 @@ class PsalmData
 
 		error_log('Telemetry saved for ' . $git_commit_hash);
 
-		$github_master_storage_path = GithubData::getMasterStoragePath($git_commit_hash);
+		$repository = GithubData::getRepositoryForCommitAndPayload($git_commit_hash, $payload);
 
-		if (!empty($payload['build']['CI_REPO_OWNER'])
-			&& !empty($payload['build']['CI_REPO_NAME'])
-			&& empty($payload['build']['CI_PR_REPO_OWNER'])
-			&& empty($payload['build']['CI_PR_REPO_NAME'])
-			&& ($payload['build']['CI_BRANCH'] ?? '') === 'master'
-		) {
-			self::storeMasterData(
-				$git_commit_hash,
-				$payload['build']['CI_REPO_OWNER'] . '/' . $payload['build']['CI_REPO_NAME']
-			);
-		} elseif (file_exists($github_master_storage_path)) {
-			$github_master_storage_data = json_decode(file_get_contents($github_master_storage_path), true);
-
-			self::storeMasterData(
-				$git_commit_hash,
-				$github_master_storage_data['repository']['full_name']
-			);
+		if (!$repository) {
+			return;
 		}
 
-		$github_pr_storage_path = GithubData::getPullRequestStoragePath($git_commit_hash);
+		self::storeMasterData(
+			$git_commit_hash,
+			$repository
+		);
 
-		if (!file_exists($github_pr_storage_path)) {
-			if (isset($payload['build']['CI_PR_REPO_OWNER'])
-				&& isset($payload['build']['CI_PR_REPO_NAME'])
-				&& isset($payload['build']['CI_PR_NUMBER'])
-				&& $payload['build']['CI_PR_NUMBER'] !== "false"
-			) {
-				$owner = $payload['build']['CI_REPO_OWNER'];
-				$repo_name = $payload['build']['CI_REPO_NAME'];
-				$pr_number = (int) $payload['build']['CI_PR_NUMBER'];
+		$gh_pr_data = GithubData::getPullRequestDataForCommitAndPayload($git_commit_hash, $repository, $payload);
 
-				GithubData::fetchPullRequestDataForCommit(
-					$git_commit_hash,
-					$owner,
-					$repo_name,
-					$pr_number
-				);
-			}
-		}
-
-		if (file_exists($github_pr_storage_path)) {
-			$gh_pr_data = json_decode(file_get_contents($github_pr_storage_path), true);
-
+		if ($gh_pr_data) {
 			Sender::send(
-				Auth::getToken(
-					$gh_pr_data['pull_request']['base']['repo']['owner']['login'],
-					$gh_pr_data['pull_request']['base']['repo']['name']
-				),
+				Auth::getToken($repository),
 				$gh_pr_data,
 				$payload
 			);
 		}
 	}
 
-	public static function storeMasterData(string $git_commit_hash, string $repository) : void
+	public static function storeMasterData(string $git_commit_hash, GithubRepository $repository) : void
 	{
 		$psalm_master_storage_path = self::getMasterStoragePath($repository, $git_commit_hash);
 
@@ -97,9 +63,11 @@ class PsalmData
 		error_log('Psalm master data saved for ' . $git_commit_hash . ' in ' . $psalm_master_storage_path);
 	}
 
-	public static function getMasterStoragePath(string $repository, string $git_commit_hash) : string
+	public static function getMasterStoragePath(GithubRepository $repository, string $git_commit_hash) : string
 	{
-		return dirname(__DIR__) . '/database/psalm_master_data/' . strtolower($repository) . '/' . $git_commit_hash . '.json';
+		return dirname(__DIR__) . '/database/psalm_master_data/'
+			. strtolower($repository->owner_name . '/' . $repository->repo_name)
+			. '/' . $git_commit_hash . '.json';
 	}
 
 	public static function getStoragePath(string $git_commit_hash) : string

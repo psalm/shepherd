@@ -28,11 +28,13 @@ if (!file_exists($psalm_storage_path)) {
 
 $gh_pr_data = json_decode(file_get_contents($github_storage_path), true);
 
+$repository = new \Psalm\Shepherd\GithubRepository(
+	$gh_pr_data['pull_request']['base']['repo']['owner']['login'],
+	$gh_pr_data['pull_request']['base']['repo']['name']
+);
+
 Psalm\Shepherd\Sender::send(
-	Psalm\Shepherd\Auth::getToken(
-		$gh_pr_data['pull_request']['base']['repo']['owner']['login'],
-		$gh_pr_data['pull_request']['base']['repo']['name']
-	),
+	Psalm\Shepherd\Auth::getToken($repository),
 	$gh_pr_data,
 	json_decode(file_get_contents($psalm_storage_path), true)
 );

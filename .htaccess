@@ -10,6 +10,7 @@ RewriteRule ^config.*$ - [R=404,NC,L]
 
 RewriteRule ^hooks/github$ views/hooks/github.php [L,QSA]
 RewriteRule ^hooks/psalm$ views/hooks/psalm.php [L,QSA]
+RewriteRule ^hooks/phpunit$ views/hooks/phpunit.php [L,QSA]
 
 RewriteRule ^auth/github$ views/auth/github.php [L,QSA]
 RewriteRule ^auth/github/redirect$ views/auth/github_redirect.php [L,QSA]

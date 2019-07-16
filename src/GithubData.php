@@ -48,32 +48,85 @@ class GithubData
 		return dirname(__DIR__) . '/database/github_pr_data/' . $git_commit_hash . '.json';
 	}
 
-	public static function fetchPullRequestDataForCommit(
-		string $git_commit_hash,
-		string $repo_owner,
-		string $repo_name,
+	private static function fetchPullRequestData(
+		GithubRepository $repository,
 		int $pr_number
-	) : void {
+	) : array {
 		$config = Config::getInstance();
-		$github_token = Auth::getToken($repo_owner, $repo_name);
+		$github_token = Auth::getToken($repository);
 
 		$client = new \Github\Client(null, null, $config->gh_enterprise_url);
         $client->authenticate($github_token, null, \Github\Client::AUTH_HTTP_TOKEN);
 
-        error_log('Fetching pull request data for ' . $repo_owner . '/' . $repo_name . '/' . $pr_number);
+        error_log('Fetching pull request data for ' . $repository->owner_name . '/' . $repository->repo_name . '/' . $pr_number);
 
 		$pr = $client
 		    ->api('pull_request')
 		    ->show(
-		    	$repo_owner,
-		    	$repo_name,
+		    	$repository->owner_name,
+		    	$repository->repo_name,
 		    	$pr_number
 		    );
 
-		$data = [
+		return [
 			'pull_request' => $pr,
 		];
+	}
 
-		self::storePullRequestData($git_commit_hash, $data);
+	public static function getRepositoryForCommitAndPayload(string $git_commit_hash, array $payload) : ?GithubRepository
+	{
+		if (!empty($payload['build']['CI_REPO_OWNER'])
+			&& !empty($payload['build']['CI_REPO_NAME'])
+			&& empty($payload['build']['CI_PR_REPO_OWNER'])
+			&& empty($payload['build']['CI_PR_REPO_NAME'])
+			&& ($payload['build']['CI_BRANCH'] ?? '') === 'master'
+		) {
+			return new GithubRepository(
+				$payload['build']['CI_REPO_OWNER'],
+				$payload['build']['CI_REPO_NAME']
+			);
+		}
+
+		$github_master_storage_path = GithubData::getMasterStoragePath($git_commit_hash);
+
+		if (file_exists($github_master_storage_path)) {
+			$github_master_storage_data = json_decode(file_get_contents($github_master_storage_path), true);
+
+			return new GithubRepository(
+				$github_master_storage_data['repository']['owner']['login'],
+				$github_master_storage_data['repository']['name']
+			);
+		}
+
+		return null;
+	}
+
+	public static function getPullRequestDataForCommitAndPayload(
+		string $git_commit_hash,
+		GithubRepository $repository,
+		array $payload
+	) : ?array {
+		$github_pr_storage_path = self::getPullRequestStoragePath($git_commit_hash);
+
+		if (!file_exists($github_pr_storage_path)) {
+			if (isset($payload['build']['CI_PR_NUMBER'])
+				&& $payload['build']['CI_PR_NUMBER'] !== "false"
+			) {
+				$pr_number = (int) $payload['build']['CI_PR_NUMBER'];
+
+				$data = self::fetchPullRequestData(
+					$repository,
+					$pr_number
+				);
+
+				self::storePullRequestData($git_commit_hash, $data);
+			}
+		}
+
+		if (file_exists($github_pr_storage_path)) {
+			return json_decode(file_get_contents($github_pr_storage_path), true);
+		}
+
+		return null;
 	}
 }
