@@ -4,7 +4,7 @@ namespace Psalm\Shepherd;
 
 class Sender
 {
-    public static function send(
+    public static function updatePsalmReview(
         string $github_token,
         array $github_data,
         array $psalm_data
@@ -235,5 +235,198 @@ class Sender
         }
 
         file_put_contents($pr_comment_path, json_encode($comment));
+    }
+
+    public static function addGithubReview(
+        string $review_type,
+        string $github_token,
+        GithubPullRequest $pull_request,
+        string $message,
+        array $file_comments = []
+    ) : void {
+        $config = Config::getInstance();
+
+        $client = new \Github\Client(null, null, $config->gh_enterprise_url);
+        $client->authenticate($github_token, null, \Github\Client::AUTH_HTTP_TOKEN);
+
+        $review_id = self::getGithubReviewIdForPullRequest($pull_request->url, $review_type);
+        $comment_id = self::getGithubCommentIdForPullRequest($pull_request->url, $review_type);
+
+        if ($review_id) {
+            // deletes review comments
+            self::deleteCommentsForReview($client, $pull_request, $review_id);
+        }
+
+        if ($comment_id) {
+            // deletes the review itself
+            self::deleteComment($client, $pull_request, $comment_id);
+        }
+
+        if ($file_comments) {
+            self::addGithubReviewComments($client, $pull_request, $review_type, $file_comments);
+        }
+
+        self::addGithubReviewComment($client, $pull_request, $review_type, $message);
+    }
+
+    private static function deleteCommentsForReview(
+        \Github\Client $client,
+        GithubPullRequest $pull_request,
+        int $review_id
+    ) : void {
+        $repository = $pull_request->repository;
+        $repository_slug = $repository->owner_name . '/' . $repository->repo_name;
+
+        try {
+            $comments = $client
+                ->api('pull_request')
+                ->reviews()
+                ->comments(
+                    $repository->owner_name,
+                    $repository->repo_name,
+                    $pull_request->number,
+                    $review_id
+                );
+        } catch (\Github\Exception\RuntimeException $e) {
+            throw new \RuntimeException(
+                'Could not fetch comments for review ' . $review_id . ' for pull request ' . $pull_request->number . ' on ' . $repository_slug
+            );
+        }
+
+        if (is_array($comments)) {
+            foreach ($comments as $comment) {
+                try {
+                    $client
+                        ->api('pull_request')
+                        ->comments()
+                        ->remove(
+                            $repository->owner_name,
+                            $repository->repo_name,
+                            $comment['id']
+                        );
+                } catch (\Github\Exception\RuntimeException $e) {
+                    error_log(
+                        'Could not remove PR comment (via PR API) ' . $comment['id'] . ' on ' . $repository_slug
+                    );
+                }
+            }
+        }
+    }
+
+    private static function deleteComment(
+        \Github\Client $client,
+        GithubPullRequest $pull_request,
+        int $comment_id
+    ) : void {
+        $repository = $pull_request->repository;
+        $repository_slug = $repository->owner_name . '/' . $repository->repo_name;
+
+        try {
+            $client
+                ->api('issue')
+                ->comments()
+                ->remove(
+                    $repository->owner_name,
+                    $repository->repo_name,
+                    $comment_id
+                );
+        } catch (\Github\Exception\RuntimeException $e) {
+            error_log(
+                'Could not remove PR comment (via issues API) ' . $comment_id . ' on ' . $repository_slug
+            );
+        }
+    }
+
+    private static function addGithubReviewComments(
+        \Github\Client $client,
+        GithubPullRequest $pull_request,
+        string $tool,
+        array $file_comments
+    ) : void {
+        $repository = $pull_request->repository;
+        $repository_slug = $repository->owner_name . '/' . $repository->repo_name;
+
+        try {
+            $review = $client
+                ->api('pull_request')
+                ->reviews()
+                ->create(
+                    $repository->owner_name,
+                    $repository->repo_name,
+                    $pull_request->number,
+                    [
+                        'commit_id' => $pull_request->head_commit,
+                        'body' => '',
+                        'comments' => $file_comments,
+                        'event' => 'REQUEST_CHANGES',
+                    ]
+                );
+        } catch (\Github\Exception\RuntimeException $e) {
+            throw new \RuntimeException(
+                'Could not create PR review for ' . $pull_request->number . ' on ' . $repository_slug
+            );
+        }
+
+        self::storeGithubReviewForPullRequest($pull_request->url, $tool, $review['id']);
+    }
+
+    private static function addGithubReviewComment(
+        \Github\Client $client,
+        GithubPullRequest $pull_request,
+        string $tool,
+        string $message_body
+    ) : void {
+        $repository = $pull_request->repository;
+        $repository_slug = $repository->owner_name . '/' . $repository->repo_name;
+
+        try {
+            $comment = $client
+                ->api('issue')
+                ->comments()
+                ->create(
+                    $repository->owner_name,
+                    $repository->repo_name,
+                    $pull_request->number,
+                    [
+                        'body' => $message_body,
+                    ]
+                );
+        } catch (\Github\Exception\RuntimeException $e) {
+            throw new \RuntimeException(
+                'Could not add comment for ' . $pull_request->number . ' on ' . $repository_slug
+            );
+        }
+
+        self::storeGithubCommentForPullRequest($pull_request->url, $tool, $comment['id']);
+    }
+
+    private static function storeGithubReviewForPullRequest(
+        string $github_pr_url,
+        string $tool,
+        int $review_id
+    ) : void {
+
+    }
+
+    private static function storeGithubCommentForPullRequest(
+        string $github_pr_url,
+        string $tool,
+        int $comment_id
+    ) : void {
+
+    }
+
+    private static function getGithubReviewIdForPullRequest(
+        string $github_pr_url,
+        string $tool
+    ) : ?int {
+        return null;
+    }
+
+    private static function getGithubCommentIdForPullRequest(
+        string $github_pr_url,
+        string $tool
+    ) : ?int {
+        return null;
     }
 }

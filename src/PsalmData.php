@@ -34,7 +34,7 @@ class PsalmData
 		$gh_pr_data = GithubData::getPullRequestDataForCommitAndPayload($git_commit_hash, $repository, $payload);
 
 		if ($gh_pr_data) {
-			Sender::send(
+			Sender::updatePsalmReview(
 				Auth::getToken($repository),
 				$gh_pr_data,
 				$payload

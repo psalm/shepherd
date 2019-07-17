@@ -33,7 +33,7 @@ $repository = new \Psalm\Shepherd\GithubRepository(
 	$gh_pr_data['pull_request']['base']['repo']['name']
 );
 
-Psalm\Shepherd\Sender::send(
+Psalm\Shepherd\Sender::updatePsalmReview(
 	Psalm\Shepherd\Auth::getToken($repository),
 	$gh_pr_data,
 	json_decode(file_get_contents($psalm_storage_path), true)

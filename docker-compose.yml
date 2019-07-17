@@ -11,3 +11,20 @@ services:
       - type: bind
         source: "${PWD}/database"
         target: "/var/www/html/database"
+
+  db:
+    container_name: shepherd-sql
+    image: mysql/mysql-server:5.6
+    volumes:
+      - type: "bind"
+        source: "${PWD}/init.sql"
+        target: "/docker-entrypoint-initdb.d/setup-docker-mysql.sql"
+    ports:
+      - "6513:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: docker_root_pass
+      MYSQL_DATABASE: test_db
+      MYSQL_USER: devuser
+      MYSQL_PASSWORD: devpass
+    networks:
+      - backend
