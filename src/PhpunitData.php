@@ -89,10 +89,10 @@ class PhpunitData
         string $git_commit,
         string $repository
     ) : bool {
-        $connection = self::getConnection();
+        $connection = DatabaseProvider::getConnection();
 
-        $connection->prepare(
-            'SELECT COUNT(*) as count
+        $stmt = $connection->prepare(
+            'SELECT COUNT(*)
                 FROM test_failures
                 WHERE test_name = :test_name
                 AND branch_name != :branch_name
@@ -100,12 +100,12 @@ class PhpunitData
                 AND repository = :repository'
         );
 
-        $connection->bindValue(':test_name', $test_name);
-        $connection->bindValue(':branch_name', $branch_name);
-        $connection->bindValue(':git_commit', $git_commit);
-        $connection->bindValue(':repository', $repository);
+        $stmt->bindValue(':test_name', $test_name);
+        $stmt->bindValue(':branch_name', $branch_name);
+        $stmt->bindValue(':git_commit', $git_commit);
+        $stmt->bindValue(':repository', $repository);
 
-        return $connection->fetchValue(PDO::FETCH_ASSOC)['count'] > 0;
+        return $stmt->fetchColumn() > 0;
     }
 
     private static function hasFailedBeforeOnBranch(
@@ -114,10 +114,10 @@ class PhpunitData
         string $git_commit,
         string $repository
     ) : bool {
-        $connection = self::getConnection();
+        $connection = DatabaseProvider::getConnection();
 
-        $connection->prepare(
-            'SELECT COUNT(*) as count
+        $stmt = $connection->prepare(
+            'SELECT COUNT(*)
                 FROM test_failures
                 WHERE test_name = :test_name
                 AND branch_name = :branch_name
@@ -125,19 +125,19 @@ class PhpunitData
                 AND repository = :repository'
         );
 
-        $connection->bindValue(':test_name', $test_name);
-        $connection->bindValue(':branch_name', $branch_name);
-        $connection->bindValue(':git_commit', $git_commit);
-        $connection->bindValue(':repository', $repository);
+        $stmt->bindValue(':test_name', $test_name);
+        $stmt->bindValue(':branch_name', $branch_name);
+        $stmt->bindValue(':git_commit', $git_commit);
+        $stmt->bindValue(':repository', $repository);
 
-        return $connection->fetchValue(PDO::FETCH_ASSOC)['count'] > 0;
+        return $stmt->fetchColumn() > 0;
     }
 
     private static function getTestFailures(string $git_commit, string $branch_name, string $repository) : array
     {
-        $connection = self::getConnection();
+        $connection = DatabaseProvider::getConnection();
 
-        $connection->prepare(
+        $stmt = $connection->prepare(
             'SELECT test_name, repository
                 FROM test_failures
                 WHERE git_commit = :git_commit
@@ -145,35 +145,28 @@ class PhpunitData
                 AND repository = :repository'
         );
 
-        $connection->bindValue(':git_commit', $git_commit);
-        $connection->bindValue(':branch_name', $test_name);
-        $connection->bindValue(':repository', $repository);
+        $stmt->bindValue(':git_commit', $git_commit);
+        $stmt->bindValue(':branch_name', $branch_name);
+        $stmt->bindValue(':repository', $repository);
 
-        return $connection->fetchColumn();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
     private static function hasRegisteredTestFailureForCommit(string $git_commit, string $test_name) : bool
     {
-        $connection = self::getConnection();
+        $connection = DatabaseProvider::getConnection();
 
-        $connection->prepare('SELECT COUNT(*) as count FROM test_failures WHERE git_commit = :git_commit AND test_name = :test_name');
+        $stmt = $connection->prepare(
+            'SELECT COUNT(*)
+                FROM test_failures
+                WHERE git_commit = :git_commit
+                AND test_name = :test_name'
+        );
 
-        $connection->bindValue(':git_commit', $git_commit);
-        $connection->bindValue(':test_name', $test_name);
+        $stmt->bindValue(':git_commit', $git_commit);
+        $stmt->bindValue(':test_name', $test_name);
 
-        return $connection->fetchValue(PDO::FETCH_ASSOC)['count'] > 0;
-    }
-
-    private static function hasRecentTestFailureInOtherBranches(string $test_name, string $branch_name) : bool
-    {
-        $connection = self::getConnection();
-
-        $connection->prepare('SELECT COUNT(*) as count FROM test_failures WHERE git_commit = :git_commit AND test_name = :test_name');
-
-        $connection->bindValue(':git_commit', $git_commit);
-        $connection->bindValue(':test_name', $test_name);
-
-        return $connection->fetchValue(PDO::FETCH_ASSOC)['count'] > 0;
+        return $stmt->fetchColumn() > 0;
     }
 
     private static function registerTestFailureForCommit(
@@ -182,18 +175,18 @@ class PhpunitData
         ?string $repository_name,
         string $branch
     ) : void {
-        $connection = self::getConnection();
+        $connection = DatabaseProvider::getConnection();
 
-        $connection->prepare('
+        $stmt = $connection->prepare('
             INSERT into test_failures (repository_name, git_commit, branch, test_name)
                 VALUES (:repository_name, :git_commit, :branch, :test_name)'
         );
 
-        $connection->bindValue(':git_commit', $git_commit);
-        $connection->bindValue(':branch', $branch);
-        $connection->bindValue(':repository_name', $repository_name);
-        $connection->bindValue(':test_name', $test_name);
+        $stmt->bindValue(':git_commit', $git_commit);
+        $stmt->bindValue(':branch', $branch);
+        $stmt->bindValue(':repository_name', $repository_name);
+        $stmt->bindValue(':test_name', $test_name);
 
-        $connection->execute();
+        $stmt->execute();
     }
 }

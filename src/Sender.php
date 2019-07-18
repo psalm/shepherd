@@ -2,6 +2,8 @@
 
 namespace Psalm\Shepherd;
 
+use PDO;
+
 class Sender
 {
     public static function updatePsalmReview(
@@ -102,12 +104,76 @@ class Sender
             throw new \UnexpectedValueException('$diff_string should be a string');
         }
 
-        /** @var array<int, array{severity: string, line_from: int, line_to: int, type: string, message: string,
-         *      file_name: string, file_path: string, snippet: string, from: int, to: int,
-         *      snippet_from: int, snippet_to: int, column_from: int, column_to: int, selected_text: string}>
-         */
-        $issues = $psalm_data['issues'];
+        $github_review = self::getGithubReviewForIssues($psalm_data['issues'], $diff_string, !!$review);
 
+        if (!$github_review) {
+            return;
+        }
+
+        if ($github_review->file_comments) {
+            try {
+                $review = $client
+                    ->api('pull_request')
+                    ->reviews()
+                    ->create(
+                        $repository_owner,
+                        $repository,
+                        $pull_request_number,
+                        [
+                            'commit_id' => $head_sha,
+                            'body' => '',
+                            'comments' => $github_review->file_comments,
+                            'event' => 'REQUEST_CHANGES',
+                        ]
+                    );
+            } catch (\Github\Exception\RuntimeException $e) {
+                throw new \RuntimeException(
+                    'Could not create PR review for ' . $pull_request_number . ' on ' . $repository_owner . '/' . $repository
+                );
+            }
+
+            $pr_review_path_dir = dirname($pr_review_path);
+
+            if (!file_exists($pr_review_path_dir)) {
+                mkdir($pr_review_path_dir, 0777, true);
+            }
+
+            file_put_contents($pr_review_path, json_encode($review));
+        }
+
+        try {
+            $comment = $client
+                ->api('issue')
+                ->comments()
+                ->create(
+                    $repository_owner,
+                    $repository,
+                    $pull_request_number,
+                    [
+                        'body' => $github_review->message,
+                    ]
+                );
+        } catch (\Github\Exception\RuntimeException $e) {
+            throw new \RuntimeException(
+                'Could not add comment for ' . $pull_request_number . ' on ' . $repository_owner . '/' . $repository
+            );
+        }
+
+        $pr_comment_path_dir = dirname($pr_comment_path);
+
+        if (!file_exists($pr_comment_path_dir)) {
+            mkdir($pr_comment_path_dir, 0777, true);
+        }
+
+        file_put_contents($pr_comment_path, json_encode($comment));
+    }
+
+    /** @param array<int, array{severity: string, line_from: int, line_to: int, type: string, message: string,
+     *      file_name: string, file_path: string, snippet: string, from: int, to: int,
+     *      snippet_from: int, snippet_to: int, column_from: int, column_to: int, selected_text: string}> $issues
+     */
+    private static function getGithubReviewForIssues(array $issues, string $diff_string, bool $had_review) : ?GithubReview
+    {
         $file_comments = [];
 
         $missed_errors = [];
@@ -173,68 +239,16 @@ class Sender
             }
         } elseif ($file_comments) {
             $message_body = 'Psalm found some errors';
-        } elseif ($review) {
+        } elseif ($had_review) {
             $message_body = 'Psalm didn’t find any errors!';
         } else {
-            return;
+            return null;
         }
 
-        if ($file_comments) {
-            try {
-                $review = $client
-                    ->api('pull_request')
-                    ->reviews()
-                    ->create(
-                        $repository_owner,
-                        $repository,
-                        $pull_request_number,
-                        [
-                            'commit_id' => $head_sha,
-                            'body' => '',
-                            'comments' => $file_comments,
-                            'event' => 'REQUEST_CHANGES',
-                        ]
-                    );
-            } catch (\Github\Exception\RuntimeException $e) {
-                throw new \RuntimeException(
-                    'Could not create PR review for ' . $pull_request_number . ' on ' . $repository_owner . '/' . $repository
-                );
-            }
-
-            $pr_review_path_dir = dirname($pr_review_path);
-
-            if (!file_exists($pr_review_path_dir)) {
-                mkdir($pr_review_path_dir, 0777, true);
-            }
-
-            file_put_contents($pr_review_path, json_encode($review));
-        }
-
-        try {
-            $comment = $client
-                ->api('issue')
-                ->comments()
-                ->create(
-                    $repository_owner,
-                    $repository,
-                    $pull_request_number,
-                    [
-                        'body' => $message_body,
-                    ]
-                );
-        } catch (\Github\Exception\RuntimeException $e) {
-            throw new \RuntimeException(
-                'Could not add comment for ' . $pull_request_number . ' on ' . $repository_owner . '/' . $repository
-            );
-        }
-
-        $pr_comment_path_dir = dirname($pr_comment_path);
-
-        if (!file_exists($pr_comment_path_dir)) {
-            mkdir($pr_comment_path_dir, 0777, true);
-        }
-
-        file_put_contents($pr_comment_path, json_encode($comment));
+        return new GithubReview(
+            $message_body,
+            $file_comments
+        );
     }
 
     public static function addGithubReview(
@@ -403,30 +417,80 @@ class Sender
     private static function storeGithubReviewForPullRequest(
         string $github_pr_url,
         string $tool,
-        int $review_id
+        int $github_review_id
     ) : void {
+        $connection = DatabaseProvider::getConnection();
 
+        $stmt = $connection->prepare(
+            'INSERT INTO github_pr_reviews (github_pr_url, tool, github_review_id)
+                VALUES (:github_pr_url, :tool, :github_review_id)'
+        );
+
+        $stmt->bindValue(':github_pr_url', $github_pr_url);
+        $stmt->bindValue(':tool', $tool);
+        $stmt->bindValue(':github_review_id', $github_review_id);
+
+        $stmt->execute();
     }
 
     private static function storeGithubCommentForPullRequest(
         string $github_pr_url,
         string $tool,
-        int $comment_id
+        int $github_comment_id
     ) : void {
+        $connection = DatabaseProvider::getConnection();
 
+        $stmt = $connection->prepare(
+            'INSERT INTO github_pr_comments (github_pr_url, tool, github_comment_id)
+                VALUES (:github_pr_url, :tool, :github_comment_id)'
+        );
+
+        $stmt->bindValue(':github_pr_url', $github_pr_url);
+        $stmt->bindValue(':tool', $tool);
+        $stmt->bindValue(':github_comment_id', $github_comment_id);
+
+        $stmt->execute();
     }
 
     private static function getGithubReviewIdForPullRequest(
         string $github_pr_url,
         string $tool
     ) : ?int {
-        return null;
+        $connection = DatabaseProvider::getConnection();
+
+        $stmt = $connection->prepare(
+            'SELECT github_review_id
+                FROM github_pr_reviews
+                WHERE github_pr_url = :github_pr_url
+                AND tool = :tool'
+        );
+
+        $stmt->bindValue(':github_pr_url', $github_pr_url);
+        $stmt->bindValue(':tool', $tool);
+
+        $id = $stmt->fetchColumn();
+
+        return $id ? (int) $id : null;
     }
 
     private static function getGithubCommentIdForPullRequest(
         string $github_pr_url,
         string $tool
     ) : ?int {
-        return null;
+        $connection = DatabaseProvider::getConnection();
+
+        $stmt = $connection->prepare(
+            'SELECT github_comment_id
+                FROM github_pr_comments
+                WHERE github_pr_url = :github_pr_url
+                AND tool = :tool'
+        );
+
+        $stmt->bindValue(':github_pr_url', $github_pr_url);
+        $stmt->bindValue(':tool', $tool);
+
+        $id = $stmt->fetchColumn();
+
+        return $id ? (int) $id : null;
     }
 }
