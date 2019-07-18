@@ -38,7 +38,7 @@ class PhpunitData
                 'phpunit',
                 Auth::getToken($repository),
                 GithubPullRequest::fromGithubData($gh_pr_data),
-                self::getFailureMessageForCommitAndBranch(
+                self::getGithubReviewForCommitAndBranch(
                     $git_commit,
                     $branch_name,
                     $repository->owner_name . '/' . $repository->repo_name
@@ -47,11 +47,11 @@ class PhpunitData
         }
     }
 
-    private static function getFailureMessageForCommitAndBranch(
+    private static function getGithubReviewForCommitAndBranch(
         string $git_commit,
         string $branch_name,
         string $repository
-    ) : string {
+    ) : GithubReview {
         $flaky_tests = [];
         $repeated_failure_tests = [];
         $first_time_failures = [];
@@ -80,7 +80,7 @@ class PhpunitData
             $message .= 'PHPUnit test ' . $test_name . ' has never failed before in any branch.' . PHP_EOL;
         }
 
-        return $message;
+        return new GithubReview($message, false);
     }
 
     private static function hasFailedBeforeOnOtherBranches(

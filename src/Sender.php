@@ -9,7 +9,7 @@ class Sender
     public static function updatePsalmReview(
         string $github_token,
         array $github_data,
-        array $psalm_data
+        GithubReview $github_review
     ) : void {
         $config = Config::getInstance();
 
@@ -85,28 +85,7 @@ class Sender
             }
         }
 
-        try {
-            $diff_string = $client
-                ->api('pull_request')
-                ->configure('diff', 'v3')
-                ->show(
-                    $repository_owner,
-                    $repository,
-                    $pull_request_number
-                );
-        } catch (\Github\Exception\RuntimeException $e) {
-            throw new \RuntimeException(
-                'Could not fetch pull request diff for ' . $pull_request_number . ' on ' . $repository_owner . '/' . $repository
-            );
-        }
-
-        if (!is_string($diff_string)) {
-            throw new \UnexpectedValueException('$diff_string should be a string');
-        }
-
-        $github_review = self::getGithubReviewForIssues($psalm_data['issues'], $diff_string, !!$review);
-
-        if (!$github_review) {
+        if ($github_review->checks_passed && !$review) {
             return;
         }
 
@@ -168,95 +147,42 @@ class Sender
         file_put_contents($pr_comment_path, json_encode($comment));
     }
 
-    /** @param array<int, array{severity: string, line_from: int, line_to: int, type: string, message: string,
-     *      file_name: string, file_path: string, snippet: string, from: int, to: int,
-     *      snippet_from: int, snippet_to: int, column_from: int, column_to: int, selected_text: string}> $issues
-     */
-    private static function getGithubReviewForIssues(array $issues, string $diff_string, bool $had_review) : ?GithubReview
+    public static function getGithubPullRequestDiff(string $github_token, GithubPullRequest $pull_request) : string
     {
-        $file_comments = [];
+        $config = Config::getInstance();
 
-        $missed_errors = [];
+        $client = new \Github\Client(null, null, $config->gh_enterprise_url);
+        $client->authenticate($github_token, null, \Github\Client::AUTH_HTTP_TOKEN);
 
-        foreach ($issues as $issue) {
-            if ($issue['severity'] !== 'error') {
-                continue;
-            }
+        $repository = $pull_request->repository->owner_name . '/' . $pull_request->repository->repo_name;
 
-            $file_name = $issue['file_name'];
-            $line_from = $issue['line_from'];
-
-            $diff_file_offset = DiffLineFinder::getGitHubPositionFromDiff(
-                $line_from,
-                $file_name,
-                $diff_string
+        try {
+            $diff_string = $client
+                ->api('pull_request')
+                ->configure('diff', 'v3')
+                ->show(
+                    $pull_request->repository->owner_name,
+                    $pull_request->repository->repo_name,
+                    $pull_request->number
+                );
+        } catch (\Github\Exception\RuntimeException $e) {
+            throw new \RuntimeException(
+                'Could not fetch pull request diff for ' . $pull_request->number . ' on ' . $repository
             );
-
-            if ($diff_file_offset !== null) {
-                $snippet = $issue['snippet'];
-                $selected_text = $issue['selected_text'];
-
-                $selection_start = $issue['from'] - $issue['snippet_from'];
-                $selection_length = $issue['to'] - $issue['from'];
-
-                $before_selection = substr($snippet, 0, $selection_start);
-
-                $after_selection = substr($snippet, $selection_start + $selection_length);
-
-                $before_lines = explode("\n", $before_selection);
-
-                $last_before_line_length = strlen(array_pop($before_lines));
-
-                $first_selected_line = explode("\n", $selected_text)[0];
-
-                if ($first_selected_line === $selected_text) {
-                    $first_selected_line .= explode("\n", $after_selection)[0];
-                }
-
-                $issue_string = $before_selection . $first_selected_line
-                    . "\n" . str_repeat(' ', $last_before_line_length) . str_repeat('^', strlen($selected_text));
-
-                $file_comments[] = [
-                    'path' => $file_name,
-                    'position' => $diff_file_offset,
-                    'body' => $issue['message'] . "\n```\n"
-                        . $issue_string . "\n```",
-                ];
-
-                continue;
-            }
-
-            $missed_errors[] = $file_name . ':' . $line_from . ':' . $issue['column_from'] . ' - ' . $issue['message'];
         }
 
-        if ($missed_errors) {
-            $comment_text = "\n\n```\n" . implode("\n", $missed_errors) . "\n```";
-
-            if ($file_comments) {
-                $message_body = 'Psalm also found errors in other files' . $comment_text;
-            } else {
-                $message_body = 'Psalm found errors in other files' . $comment_text;
-            }
-        } elseif ($file_comments) {
-            $message_body = 'Psalm found some errors';
-        } elseif ($had_review) {
-            $message_body = 'Psalm didn’t find any errors!';
-        } else {
-            return null;
+        if (!is_string($diff_string)) {
+            throw new \UnexpectedValueException('$diff_string should be a string');
         }
 
-        return new GithubReview(
-            $message_body,
-            $file_comments
-        );
+        return $diff_string;
     }
 
     public static function addGithubReview(
         string $review_type,
         string $github_token,
         GithubPullRequest $pull_request,
-        string $message,
-        array $file_comments = []
+        GithubReview $github_review
     ) : void {
         $config = Config::getInstance();
 
@@ -276,11 +202,11 @@ class Sender
             self::deleteComment($client, $pull_request, $comment_id);
         }
 
-        if ($file_comments) {
-            self::addGithubReviewComments($client, $pull_request, $review_type, $file_comments);
+        if ($github_review->file_comments) {
+            self::addGithubReviewComments($client, $pull_request, $review_type, $github_review->file_comments);
         }
 
-        self::addGithubReviewComment($client, $pull_request, $review_type, $message);
+        self::addGithubReviewComment($client, $pull_request, $review_type, $github_review->message);
     }
 
     private static function deleteCommentsForReview(
