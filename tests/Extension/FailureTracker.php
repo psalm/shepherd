@@ -30,10 +30,7 @@ final class FailureTracker implements AfterTestErrorHook, AfterTestFailureHook, 
 
     public function executeAfterLastTest(): void
     {
-        var_dump('executing after last test');
-
         if (!$this->failed_tests) {
-            var_dump('no failed tests');
             return;
         }
 
@@ -49,7 +46,7 @@ final class FailureTracker implements AfterTestErrorHook, AfterTestFailureHook, 
 
             $payload = json_encode($data);
 
-            $base_address = 'http://shepherd.dev';
+            $base_address = 'https://shepherd.dev';
 
             if (parse_url($base_address, PHP_URL_SCHEME) === null) {
                 $base_address = 'https://' . $base_address;
@@ -61,8 +58,6 @@ final class FailureTracker implements AfterTestErrorHook, AfterTestFailureHook, 
             curl_setopt($ch, CURLINFO_HEADER_OUT, true);
             curl_setopt($ch, CURLOPT_POST, true);
             curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
-
-            var_dump($payload);
 
             // Set HTTP Header for POST request
             curl_setopt(
