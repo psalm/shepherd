@@ -37,6 +37,8 @@ final class FailureTracker implements AfterTestErrorHook, AfterTestFailureHook, 
         $build_info = self::getBuildInfo();
         $git_info = self::getGitInfo();
 
+        var_dump('executing after last test');
+
         if ($build_info) {
             $data = [
                 'build' => $build_info,
@@ -58,6 +60,8 @@ final class FailureTracker implements AfterTestErrorHook, AfterTestFailureHook, 
             curl_setopt($ch, CURLINFO_HEADER_OUT, true);
             curl_setopt($ch, CURLOPT_POST, true);
             curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
+
+            var_dump($payload);
 
             // Set HTTP Header for POST request
             curl_setopt(
