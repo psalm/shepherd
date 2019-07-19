@@ -29,7 +29,7 @@ class GithubDiffLineTest extends TestCase
             [
                 1495,
                 'src/Psalm/Internal/Analyzer/ClassAnalyzer.php',
-                null
+                1
             ],
             [
                 1496,
