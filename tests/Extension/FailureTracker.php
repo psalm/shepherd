@@ -82,6 +82,8 @@ final class FailureTracker implements AfterTestErrorHook, AfterTestFailureHook, 
                     echo 'Git args: ' . var_export($git_info->toArray(), true) . PHP_EOL;
                     echo 'CI args: ' . var_export($build_info, true) . PHP_EOL;
                 }
+            } else {
+                var_dump('successfully sent');
             }
 
             // Close cURL session handle
