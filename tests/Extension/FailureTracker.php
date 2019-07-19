@@ -30,14 +30,15 @@ final class FailureTracker implements AfterTestErrorHook, AfterTestFailureHook, 
 
     public function executeAfterLastTest(): void
     {
+        var_dump('executing after last test');
+
         if (!$this->failed_tests) {
+            var_dump('no failed tests');
             return;
         }
 
         $build_info = self::getBuildInfo();
         $git_info = self::getGitInfo();
-
-        var_dump('executing after last test');
 
         if ($build_info) {
             $data = [
