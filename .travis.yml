@@ -30,7 +30,7 @@ install:
   - if [[ "$DEPS" = 'low' ]]; then travis_retry composer $DEFAULT_COMPOSER_FLAGS --prefer-lowest --prefer-stable update; fi
 
 script:
-  - vendor/bin/phpunit tests
+  - vendor/bin/phpunit
   - vendor/bin/psalm --shepherd
 
 # Base test matrix (php/env)
