@@ -192,6 +192,8 @@ class Sender
         $review_id = self::getGithubReviewIdForPullRequest($pull_request->url, $review_type);
         $comment_id = self::getGithubCommentIdForPullRequest($pull_request->url, $review_type);
 
+        echo('Adding Github Review' . PHP_EOL);
+
         if ($review_id) {
             // deletes review comments
             self::deleteCommentsForReview($client, $pull_request, $review_id);

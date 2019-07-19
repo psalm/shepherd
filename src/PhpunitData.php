@@ -13,6 +13,8 @@ class PhpunitData
 
         $repository = GithubData::getRepositoryForCommitAndPayload($git_commit, $payload);
 
+        echo('Handling test failure payload' . PHP_EOL);
+
         foreach ($test_names as $test_name) {
             if (self::hasRegisteredTestFailureForCommit($git_commit, $test_name)) {
                 continue;
@@ -27,13 +29,13 @@ class PhpunitData
         }
 
         if (!$repository) {
+            echo('Could not idenfiy repository' . PHP_EOL);
             return;
         }
 
         $gh_pr_data = GithubData::getPullRequestDataForCommitAndPayload($git_commit, $repository, $payload);
 
         if ($gh_pr_data) {
-
             Sender::addGithubReview(
                 'phpunit',
                 Auth::getToken($repository),
