@@ -46,7 +46,7 @@ final class FailureTracker implements AfterTestErrorHook, AfterTestFailureHook, 
 
             $payload = json_encode($data);
 
-            $base_address = 'http://psalmshepherd.vimeows.com:8080';
+            $base_address = 'http://shepherd.dev';
 
             if (parse_url($base_address, PHP_URL_SCHEME) === null) {
                 $base_address = 'https://' . $base_address;
