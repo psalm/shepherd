@@ -1,5 +1,5 @@
 <?php
-namespace Psalm\Tests;
+namespace Psalm\Shepherd\Test;
 
 use PHPUnit\Framework\TestCase;
 
@@ -29,7 +29,7 @@ class GithubDiffLineTest extends TestCase
             [
                 1495,
                 'src/Psalm/Internal/Analyzer/ClassAnalyzer.php',
-                1
+                null
             ],
             [
                 1496,

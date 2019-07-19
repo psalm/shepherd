@@ -192,6 +192,8 @@ class Sender
         $review_id = self::getGithubReviewIdForPullRequest($pull_request->url, $review_type);
         $comment_id = self::getGithubCommentIdForPullRequest($pull_request->url, $review_type);
 
+        error_log('Adding Github Review' . PHP_EOL);
+
         if ($review_id) {
             // deletes review comments
             self::deleteCommentsForReview($client, $pull_request, $review_id);
@@ -394,6 +396,8 @@ class Sender
         $stmt->bindValue(':github_pr_url', $github_pr_url);
         $stmt->bindValue(':tool', $tool);
 
+        $stmt->execute();
+
         $id = $stmt->fetchColumn();
 
         return $id ? (int) $id : null;
@@ -414,6 +418,8 @@ class Sender
 
         $stmt->bindValue(':github_pr_url', $github_pr_url);
         $stmt->bindValue(':tool', $tool);
+
+        $stmt->execute();
 
         $id = $stmt->fetchColumn();
 

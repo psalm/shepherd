@@ -77,14 +77,27 @@ class GithubData
 	{
 		if (!empty($payload['build']['CI_REPO_OWNER'])
 			&& !empty($payload['build']['CI_REPO_NAME'])
-			&& empty($payload['build']['CI_PR_REPO_OWNER'])
-			&& empty($payload['build']['CI_PR_REPO_NAME'])
-			&& ($payload['build']['CI_BRANCH'] ?? '') === 'master'
 		) {
-			return new GithubRepository(
-				$payload['build']['CI_REPO_OWNER'],
-				$payload['build']['CI_REPO_NAME']
-			);
+			if (empty($payload['build']['CI_PR_REPO_OWNER'])
+				&& empty($payload['build']['CI_PR_REPO_NAME'])
+				&& ($payload['build']['CI_BRANCH'] ?? '') === 'master'
+			) {
+				return new GithubRepository(
+					$payload['build']['CI_REPO_OWNER'],
+					$payload['build']['CI_REPO_NAME']
+				);
+			}
+
+			if (!empty($payload['build']['CI_PR_REPO_OWNER'])
+				&& !empty($payload['build']['CI_PR_REPO_NAME'])
+				&& $payload['build']['CI_PR_REPO_OWNER'] === $payload['build']['CI_REPO_OWNER']
+				&& $payload['build']['CI_PR_REPO_NAME'] === $payload['build']['CI_REPO_NAME']
+			) {
+				return new GithubRepository(
+					$payload['build']['CI_REPO_OWNER'],
+					$payload['build']['CI_REPO_NAME']
+				);
+			}
 		}
 
 		$github_master_storage_path = GithubData::getMasterStoragePath($git_commit_hash);
@@ -113,6 +126,8 @@ class GithubData
 				&& $payload['build']['CI_PR_NUMBER'] !== "false"
 			) {
 				$pr_number = (int) $payload['build']['CI_PR_NUMBER'];
+
+				echo 'Fetching data for PR ' . $pr_number . PHP_EOL;
 
 				$data = self::fetchPullRequestData(
 					$repository,
