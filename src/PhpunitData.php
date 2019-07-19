@@ -174,7 +174,7 @@ class PhpunitData
     private static function registerTestFailureForCommit(
         string $git_commit,
         string $test_name,
-        ?string $repository_name,
+        ?string $repository,
         string $branch
     ) : void {
         $connection = DatabaseProvider::getConnection();
@@ -182,13 +182,13 @@ class PhpunitData
         echo('Registering test failure for ' . $test_name . PHP_EOL);
 
         $stmt = $connection->prepare('
-            INSERT into test_failures (repository_name, git_commit, branch, test_name)
-                VALUES (:repository_name, :git_commit, :branch, :test_name)'
+            INSERT into test_failures (repository, git_commit, branch, test_name)
+                VALUES (:repository, :git_commit, :branch, :test_name)'
         );
 
         $stmt->bindValue(':git_commit', $git_commit);
         $stmt->bindValue(':branch', $branch);
-        $stmt->bindValue(':repository_name', $repository_name);
+        $stmt->bindValue(':repository', $repository);
         $stmt->bindValue(':test_name', $test_name);
 
         $stmt->execute();
