@@ -1,7 +1,12 @@
 {
-	"custom": {
-		"personal_token": "HARDCODED_API_TOKEN",
-		"webhook_secret": "OPTIONAL_SECRET"
-	},
-	"gh_enterprise_url": "OPTIONAL_CUSTOM_GITHUB_URL"
+    "custom": {
+        "personal_token": "HARDCODED_API_TOKEN",
+        "webhook_secret": "OPTIONAL_SECRET"
+    },
+    "gh_enterprise_url": "OPTIONAL_CUSTOM_GITHUB_URL",
+    "mysql": {
+        "dsn": "mysql:dbname=shepherd_web;host=db",
+        "user": "shepherd_mysql_user",
+        "password": "shepherd_mysql_development_password"
+    }
 }
