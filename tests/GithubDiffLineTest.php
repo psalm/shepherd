@@ -1,5 +1,5 @@
 <?php
-namespace Psalm\Tests;
+namespace Psalm\Shepherd\Test;
 
 use PHPUnit\Framework\TestCase;
 

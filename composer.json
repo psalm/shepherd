@@ -21,6 +21,11 @@
             "Psalm\\Shepherd\\": "src"
         }
     },
+    "autoload-dev": {
+        "psr-4": {
+            "Psalm\\Shepherd\\Test\\": "tests"
+        }
+    },
     "require-dev": {
         "phpunit/phpunit": "^7.0|^8.0"
     }
