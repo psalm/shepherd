@@ -179,6 +179,8 @@ class PhpunitData
     ) : void {
         $connection = DatabaseProvider::getConnection();
 
+        echo('Registering test failure for ' $test_name . PHP_EOL);
+
         $stmt = $connection->prepare('
             INSERT into test_failures (repository_name, git_commit, branch, test_name)
                 VALUES (:repository_name, :git_commit, :branch, :test_name)'
