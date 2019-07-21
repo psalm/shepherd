@@ -122,7 +122,7 @@ class GithubData
 		$github_pr_storage_path = self::getPullRequestStoragePath($git_commit_hash);
 
 		if (!file_exists($github_pr_storage_path)) {
-			if (isset($payload['build']['CI_PR_NUMBER'])
+			if (!empty($payload['build']['CI_PR_NUMBER'])
 				&& $payload['build']['CI_PR_NUMBER'] !== "false"
 			) {
 				$pr_number = (int) $payload['build']['CI_PR_NUMBER'];
