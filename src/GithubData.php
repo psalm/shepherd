@@ -127,8 +127,6 @@ class GithubData
 			) {
 				$pr_number = (int) $payload['build']['CI_PR_NUMBER'];
 
-				echo 'Fetching data for PR ' . $pr_number . PHP_EOL;
-
 				$data = self::fetchPullRequestData(
 					$repository,
 					$pr_number
