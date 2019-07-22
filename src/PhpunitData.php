@@ -17,11 +17,9 @@ class PhpunitData
             return;
         }
 
-        $gh_pr_data = GithubData::getPullRequestDataForCommitAndPayload($git_commit, $repository, $payload);
+        $github_pull_request = GithubData::getPullRequestForCommitAndPayload($git_commit, $repository, $payload);
 
-        if ($gh_pr_data) {
-            $github_pull_request = GithubPullRequest::fromGithubData($gh_pr_data);
-
+        if ($github_pull_request) {
             $branch = $github_pull_request->branch;
 
             foreach ($test_names as $test_name) {

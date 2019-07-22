@@ -8,7 +8,7 @@ class Sender
 {
     public static function updatePsalmReview(
         string $github_token,
-        array $github_data,
+        GithubPullRequest $github_pull_request,
         GithubReview $github_review
     ) : void {
         $config = Config::getInstance();
@@ -16,14 +16,14 @@ class Sender
         $client = new \Github\Client(null, null, $config->gh_enterprise_url);
         $client->authenticate($github_token, null, \Github\Client::AUTH_HTTP_TOKEN);
 
-        $repository = $github_data['pull_request']['base']['repo']['name'];
-        $repository_owner = $github_data['pull_request']['base']['repo']['owner']['login'];
-        $pull_request_number = $github_data['pull_request']['number'];
+        $repository = $github_pull_request->repository->repo_name;
+        $repository_owner = $github_pull_request->repository->owner_name;
+        $pull_request_number = $github_pull_request->number;
 
-        $head_sha = $github_data['pull_request']['head']['sha'];
+        $head_sha = $github_pull_request->head_commit;
 
-        $pr_review_path = dirname(__DIR__) . '/database/pr_reviews/' . parse_url($github_data['pull_request']['html_url'], PHP_URL_PATH);
-        $pr_comment_path = dirname(__DIR__) . '/database/pr_comments/' . parse_url($github_data['pull_request']['html_url'], PHP_URL_PATH);
+        $pr_review_path = dirname(__DIR__) . '/database/pr_reviews/' . parse_url($github_pull_request->url, PHP_URL_PATH);
+        $pr_comment_path = dirname(__DIR__) . '/database/pr_comments/' . parse_url($github_pull_request->url, PHP_URL_PATH);
 
         $review = null;
 

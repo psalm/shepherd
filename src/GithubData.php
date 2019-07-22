@@ -114,11 +114,11 @@ class GithubData
 		return null;
 	}
 
-	public static function getPullRequestDataForCommitAndPayload(
+	public static function getPullRequestForCommitAndPayload(
 		string $git_commit_hash,
 		GithubRepository $repository,
 		array $payload
-	) : ?array {
+	) : ?GithubPullRequest {
 		$github_pr_storage_path = self::getPullRequestStoragePath($git_commit_hash);
 
 		if (!file_exists($github_pr_storage_path)) {
@@ -137,7 +137,9 @@ class GithubData
 		}
 
 		if (file_exists($github_pr_storage_path)) {
-			return json_decode(file_get_contents($github_pr_storage_path), true);
+			$gh_pr_data = json_decode(file_get_contents($github_pr_storage_path), true);
+
+			return GithubPullRequest::fromGithubData($gh_pr_data);
 		}
 
 		return null;

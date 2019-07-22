@@ -31,16 +31,14 @@ class PsalmData
 			$repository
 		);
 
-		$gh_pr_data = GithubData::getPullRequestDataForCommitAndPayload($git_commit_hash, $repository, $payload);
+		$github_pull_request = GithubData::getPullRequestForCommitAndPayload($git_commit_hash, $repository, $payload);
 
-		if ($gh_pr_data) {
-			$github_pull_request = GithubPullRequest::fromGithubData($gh_pr_data);
-
+		if ($github_pull_request) {
 			$token = Auth::getToken($repository);
 
 			Sender::updatePsalmReview(
 				$token,
-				$gh_pr_data,
+				$github_pull_request,
 				self::getGithubReviewForIssues(
 		        	$payload['issues'],
 		        	Sender::getGithubPullRequestDiff($token, $github_pull_request)
