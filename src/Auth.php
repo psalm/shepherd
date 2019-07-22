@@ -4,7 +4,7 @@ namespace Psalm\Shepherd;
 
 class Auth
 {
-	public static function getToken(GithubRepository $repository) : string
+	public static function getToken(Model\GithubRepository $repository) : string
 	{
 		$config = Config::getInstance();
 
@@ -26,7 +26,7 @@ class Auth
 	}
 
 	/** @psalm-suppress UnusedParam */
-	private static function getTokenForRepo(GithubRepository $repository) : ?string
+	private static function getTokenForRepo(Model\GithubRepository $repository) : ?string
 	{
 		return null;
 	}

@@ -1,6 +1,6 @@
 <?php
 
-namespace Psalm\Shepherd;
+namespace Psalm\Shepherd\Model;
 
 class GithubRepository
 {

@@ -52,7 +52,7 @@ class PhpunitData
         string $git_commit,
         string $branch,
         string $repository
-    ) : GithubReview {
+    ) : Model\GithubReview {
         $flaky_tests = [];
         $repeated_failure_tests = [];
         $first_time_failures = [];
@@ -87,7 +87,7 @@ class PhpunitData
             $message .= 'PHPUnit test ' . $test_name . ' has never failed before in any branch.' . PHP_EOL;
         }
 
-        return new GithubReview($message, false);
+        return new Model\GithubReview($message, false);
     }
 
     private static function hasFailedBeforeOnOtherBranches(

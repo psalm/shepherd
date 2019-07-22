@@ -4,7 +4,7 @@ namespace Psalm\Shepherd;
 
 class PsalmData
 {
-	public static function storeJson(string $git_commit_hash, array $payload) : void
+	public static function handlePayload(string $git_commit_hash, array $payload) : void
 	{
 		$psalm_storage_path = self::getStoragePath($git_commit_hash);
 
@@ -36,7 +36,8 @@ class PsalmData
 		if ($github_pull_request) {
 			$token = Auth::getToken($repository);
 
-			Sender::updatePsalmReview(
+			Sender::addGitHubReview(
+				'psalm',
 				$token,
 				$github_pull_request,
 				self::getGithubReviewForIssues(
@@ -51,7 +52,7 @@ class PsalmData
      *      file_name: string, file_path: string, snippet: string, from: int, to: int,
      *      snippet_from: int, snippet_to: int, column_from: int, column_to: int, selected_text: string}> $issues
      */
-    private static function getGithubReviewForIssues(array $issues, string $diff_string) : GithubReview
+    private static function getGithubReviewForIssues(array $issues, string $diff_string) : Model\GithubReview
     {
         $file_comments = [];
 
@@ -122,16 +123,16 @@ class PsalmData
             $message_body = 'Psalm didn’t find any errors!';
         }
 
-        return new GithubReview(
+        return new Model\GithubReview(
             $message_body,
             !$missed_errors && !$file_comments,
             $file_comments
         );
     }
 
-	public static function storeMasterData(string $git_commit_hash, GithubRepository $repository) : void
+	private static function storeMasterData(string $git_commit_hash, Model\GithubRepository $repository) : void
 	{
-		$psalm_master_storage_path = self::getMasterStoragePath($repository, $git_commit_hash);
+		$psalm_master_storage_path = self::getMasterStoragePath($git_commit_hash, $repository);
 
 		if (file_exists($psalm_master_storage_path)) {
 			exit;
@@ -150,14 +151,14 @@ class PsalmData
 		error_log('Psalm master data saved for ' . $git_commit_hash . ' in ' . $psalm_master_storage_path);
 	}
 
-	public static function getMasterStoragePath(GithubRepository $repository, string $git_commit_hash) : string
+	private static function getMasterStoragePath(string $git_commit_hash, Model\GithubRepository $repository) : string
 	{
 		return dirname(__DIR__) . '/database/psalm_master_data/'
 			. strtolower($repository->owner_name . '/' . $repository->repo_name)
 			. '/' . $git_commit_hash . '.json';
 	}
 
-	public static function getStoragePath(string $git_commit_hash) : string
+	private static function getStoragePath(string $git_commit_hash) : string
 	{
 		return dirname(__DIR__) . '/database/psalm_data/' . $git_commit_hash . '.json';
 	}

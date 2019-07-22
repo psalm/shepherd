@@ -1,5 +1,7 @@
 <?php
-namespace Psalm\Shepherd;
+namespace Psalm\Shepherd\Model\Database;
+
+use Psalm\Shepherd\Model\GithubRepository;
 
 class GithubPullRequest
 {

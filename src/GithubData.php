@@ -38,42 +38,7 @@ class GithubData
 		error_log('GitHub data saved for ' . $git_commit_hash . ' in ' . $github_storage_path);
 	}
 
-	public static function getMasterStoragePath(string $git_commit_hash) : string
-	{
-		return dirname(__DIR__) . '/database/github_master_data/' . $git_commit_hash . '.json';
-	}
-
-	public static function getPullRequestStoragePath(string $git_commit_hash) : string
-	{
-		return dirname(__DIR__) . '/database/github_pr_data/' . $git_commit_hash . '.json';
-	}
-
-	private static function fetchPullRequestData(
-		GithubRepository $repository,
-		int $pr_number
-	) : array {
-		$config = Config::getInstance();
-		$github_token = Auth::getToken($repository);
-
-		$client = new \Github\Client(null, null, $config->gh_enterprise_url);
-        $client->authenticate($github_token, null, \Github\Client::AUTH_HTTP_TOKEN);
-
-        error_log('Fetching pull request data for ' . $repository->owner_name . '/' . $repository->repo_name . '/' . $pr_number);
-
-		$pr = $client
-		    ->api('pull_request')
-		    ->show(
-		    	$repository->owner_name,
-		    	$repository->repo_name,
-		    	$pr_number
-		    );
-
-		return [
-			'pull_request' => $pr,
-		];
-	}
-
-	public static function getRepositoryForCommitAndPayload(string $git_commit_hash, array $payload) : ?GithubRepository
+	public static function getRepositoryForCommitAndPayload(string $git_commit_hash, array $payload) : ?Model\GithubRepository
 	{
 		if (!empty($payload['build']['CI_REPO_OWNER'])
 			&& !empty($payload['build']['CI_REPO_NAME'])
@@ -82,7 +47,7 @@ class GithubData
 				&& empty($payload['build']['CI_PR_REPO_NAME'])
 				&& ($payload['build']['CI_BRANCH'] ?? '') === 'master'
 			) {
-				return new GithubRepository(
+				return new Model\GithubRepository(
 					$payload['build']['CI_REPO_OWNER'],
 					$payload['build']['CI_REPO_NAME']
 				);
@@ -93,19 +58,19 @@ class GithubData
 				&& $payload['build']['CI_PR_REPO_OWNER'] === $payload['build']['CI_REPO_OWNER']
 				&& $payload['build']['CI_PR_REPO_NAME'] === $payload['build']['CI_REPO_NAME']
 			) {
-				return new GithubRepository(
+				return new Model\GithubRepository(
 					$payload['build']['CI_REPO_OWNER'],
 					$payload['build']['CI_REPO_NAME']
 				);
 			}
 		}
 
-		$github_master_storage_path = GithubData::getMasterStoragePath($git_commit_hash);
+		$github_master_storage_path = self::getMasterStoragePath($git_commit_hash);
 
 		if (file_exists($github_master_storage_path)) {
 			$github_master_storage_data = json_decode(file_get_contents($github_master_storage_path), true);
 
-			return new GithubRepository(
+			return new Model\GithubRepository(
 				$github_master_storage_data['repository']['owner']['login'],
 				$github_master_storage_data['repository']['name']
 			);
@@ -116,9 +81,9 @@ class GithubData
 
 	public static function getPullRequestForCommitAndPayload(
 		string $git_commit_hash,
-		GithubRepository $repository,
+		Model\GithubRepository $repository,
 		array $payload
-	) : ?GithubPullRequest {
+	) : ?Model\Database\GithubPullRequest {
 		$github_pr_storage_path = self::getPullRequestStoragePath($git_commit_hash);
 
 		if (!file_exists($github_pr_storage_path)) {
@@ -127,7 +92,7 @@ class GithubData
 			) {
 				$pr_number = (int) $payload['build']['CI_PR_NUMBER'];
 
-				$data = self::fetchPullRequestData(
+				$data = GithubApi::fetchPullRequestData(
 					$repository,
 					$pr_number
 				);
@@ -139,9 +104,19 @@ class GithubData
 		if (file_exists($github_pr_storage_path)) {
 			$gh_pr_data = json_decode(file_get_contents($github_pr_storage_path), true);
 
-			return GithubPullRequest::fromGithubData($gh_pr_data);
+			return Model\Database\GithubPullRequest::fromGithubData($gh_pr_data);
 		}
 
 		return null;
+	}
+
+	private static function getMasterStoragePath(string $git_commit_hash) : string
+	{
+		return dirname(__DIR__) . '/database/github_master_data/' . $git_commit_hash . '.json';
+	}
+
+	private static function getPullRequestStoragePath(string $git_commit_hash) : string
+	{
+		return dirname(__DIR__) . '/database/github_pr_data/' . $git_commit_hash . '.json';
 	}
 }

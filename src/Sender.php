@@ -6,148 +6,7 @@ use PDO;
 
 class Sender
 {
-    public static function updatePsalmReview(
-        string $github_token,
-        GithubPullRequest $github_pull_request,
-        GithubReview $github_review
-    ) : void {
-        $config = Config::getInstance();
-
-        $client = new \Github\Client(null, null, $config->gh_enterprise_url);
-        $client->authenticate($github_token, null, \Github\Client::AUTH_HTTP_TOKEN);
-
-        $repository = $github_pull_request->repository->repo_name;
-        $repository_owner = $github_pull_request->repository->owner_name;
-        $pull_request_number = $github_pull_request->number;
-
-        $head_sha = $github_pull_request->head_commit;
-
-        $pr_review_path = dirname(__DIR__) . '/database/pr_reviews/' . parse_url($github_pull_request->url, PHP_URL_PATH);
-        $pr_comment_path = dirname(__DIR__) . '/database/pr_comments/' . parse_url($github_pull_request->url, PHP_URL_PATH);
-
-        $review = null;
-
-        if (file_exists($pr_review_path)) {
-            $review = json_decode(file_get_contents($pr_review_path), true);
-
-            try {
-                $comments = $client
-                    ->api('pull_request')
-                    ->reviews()
-                    ->comments(
-                        $repository_owner,
-                        $repository,
-                        $pull_request_number,
-                        $review['id']
-                    );
-            } catch (\Github\Exception\RuntimeException $e) {
-                throw new \RuntimeException(
-                    'Could not fetch comments for review ' . $review['id'] . ' for pull request ' . $pull_request_number . ' on ' . $repository_owner . '/' . $repository
-                );
-            }
-
-            if (is_array($comments)) {
-                foreach ($comments as $comment) {
-                    try {
-                        $client
-                            ->api('pull_request')
-                            ->comments()
-                            ->remove(
-                                $repository_owner,
-                                $repository,
-                                $comment['id']
-                            );
-                    } catch (\Github\Exception\RuntimeException $e) {
-                        error_log(
-                            'Could not remove PR comment (via PR API) ' . $comment['id'] . ' on ' . $repository_owner . '/' . $repository
-                        );
-                    }
-                }
-            }
-        }
-
-        if (file_exists($pr_comment_path)) {
-            $comment = json_decode(file_get_contents($pr_comment_path), true);
-
-            try {
-                $client
-                    ->api('issue')
-                    ->comments()
-                    ->remove(
-                        $repository_owner,
-                        $repository,
-                        $comment['id']
-                    );
-            } catch (\Github\Exception\RuntimeException $e) {
-                error_log(
-                    'Could not remove PR comment (via issues API) ' . $comment['id'] . ' on ' . $repository_owner . '/' . $repository
-                );
-            }
-        }
-
-        if ($github_review->checks_passed && !$review) {
-            return;
-        }
-
-        if ($github_review->file_comments) {
-            try {
-                $review = $client
-                    ->api('pull_request')
-                    ->reviews()
-                    ->create(
-                        $repository_owner,
-                        $repository,
-                        $pull_request_number,
-                        [
-                            'commit_id' => $head_sha,
-                            'body' => '',
-                            'comments' => $github_review->file_comments,
-                            'event' => 'REQUEST_CHANGES',
-                        ]
-                    );
-            } catch (\Github\Exception\RuntimeException $e) {
-                throw new \RuntimeException(
-                    'Could not create PR review for ' . $pull_request_number . ' on ' . $repository_owner . '/' . $repository
-                );
-            }
-
-            $pr_review_path_dir = dirname($pr_review_path);
-
-            if (!file_exists($pr_review_path_dir)) {
-                mkdir($pr_review_path_dir, 0777, true);
-            }
-
-            file_put_contents($pr_review_path, json_encode($review));
-        }
-
-        try {
-            $comment = $client
-                ->api('issue')
-                ->comments()
-                ->create(
-                    $repository_owner,
-                    $repository,
-                    $pull_request_number,
-                    [
-                        'body' => $github_review->message,
-                    ]
-                );
-        } catch (\Github\Exception\RuntimeException $e) {
-            throw new \RuntimeException(
-                'Could not add comment for ' . $pull_request_number . ' on ' . $repository_owner . '/' . $repository
-            );
-        }
-
-        $pr_comment_path_dir = dirname($pr_comment_path);
-
-        if (!file_exists($pr_comment_path_dir)) {
-            mkdir($pr_comment_path_dir, 0777, true);
-        }
-
-        file_put_contents($pr_comment_path, json_encode($comment));
-    }
-
-    public static function getGithubPullRequestDiff(string $github_token, GithubPullRequest $pull_request) : string
+    public static function getGithubPullRequestDiff(string $github_token, Model\Database\GithubPullRequest $pull_request) : string
     {
         $config = Config::getInstance();
 
@@ -181,8 +40,8 @@ class Sender
     public static function addGithubReview(
         string $review_type,
         string $github_token,
-        GithubPullRequest $pull_request,
-        GithubReview $github_review
+        Model\Database\GithubPullRequest $pull_request,
+        Model\GithubReview $github_review
     ) : void {
         $config = Config::getInstance();
 
@@ -213,7 +72,7 @@ class Sender
 
     private static function deleteCommentsForReview(
         \Github\Client $client,
-        GithubPullRequest $pull_request,
+        Model\Database\GithubPullRequest $pull_request,
         int $review_id
     ) : void {
         $repository = $pull_request->repository;
@@ -257,7 +116,7 @@ class Sender
 
     private static function deleteComment(
         \Github\Client $client,
-        GithubPullRequest $pull_request,
+        Model\Database\GithubPullRequest $pull_request,
         int $comment_id
     ) : void {
         $repository = $pull_request->repository;
@@ -281,7 +140,7 @@ class Sender
 
     private static function addGithubReviewComments(
         \Github\Client $client,
-        GithubPullRequest $pull_request,
+        Model\Database\GithubPullRequest $pull_request,
         string $tool,
         array $file_comments
     ) : void {
@@ -314,7 +173,7 @@ class Sender
 
     private static function addGithubReviewComment(
         \Github\Client $client,
-        GithubPullRequest $pull_request,
+        Model\Database\GithubPullRequest $pull_request,
         string $tool,
         string $message_body
     ) : void {

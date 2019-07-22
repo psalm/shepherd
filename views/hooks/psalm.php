@@ -20,4 +20,4 @@ if (!preg_match('/^[a-f0-9]+$/', $git_commit_hash)) {
 	throw new \UnexpectedValueException('Bad git commit hash given');
 }
 
-Psalm\Shepherd\PsalmData::storeJson($git_commit_hash, $payload);
+Psalm\Shepherd\PsalmData::handlePayload($git_commit_hash, $payload);
