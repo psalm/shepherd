@@ -76,15 +76,15 @@ class PhpunitData
         $message = '';
 
         foreach ($flaky_tests as $test_name) {
-            $message .= 'PHPUnit test ' . $test_name . ' has failed before in other branches' . PHP_EOL;
+            $message .= 'PHPUnit test `' . $test_name . '` has failed before in other branches' . PHP_EOL;
         }
 
         foreach ($repeated_failure_tests as $test_name) {
-            $message .= 'PHPUnit test ' . $test_name . ' has failed before in this branch' . PHP_EOL;
+            $message .= 'PHPUnit test `' . $test_name . '` has failed before in this branch' . PHP_EOL;
         }
 
         foreach ($first_time_failures as $test_name) {
-            $message .= 'PHPUnit test ' . $test_name . ' has never failed before in any branch.' . PHP_EOL;
+            $message .= 'PHPUnit test `' . $test_name . '` has never failed before in any branch.' . PHP_EOL;
         }
 
         return new Model\GithubReview($message, false);
