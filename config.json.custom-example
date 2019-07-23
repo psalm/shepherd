@@ -6,7 +6,7 @@
     "gh_enterprise_url": "OPTIONAL_CUSTOM_GITHUB_URL",
     "mysql": {
         "dsn": "mysql:dbname=shepherd_web;host=db",
-        "user": "shepherd_mysql_user",
+        "user": "shepherd_user",
         "password": "shepherd_mysql_development_password"
     }
 }

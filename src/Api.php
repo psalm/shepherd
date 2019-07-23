@@ -15,10 +15,10 @@ class Api
         $stmt = $connection->prepare(
             'SELECT mixed_count, nonmixed_count
                 FROM psalm_reports
-                INNER JOIN git_master_commits ON `git_master_commits`.`git_commit` = `psalm_reports`.`git_commit`
+                INNER JOIN github_master_commits ON `github_master_commits`.`git_commit` = `psalm_reports`.`git_commit`
                 WHERE owner_name = :owner_name
                 AND repo_name = :repo_name
-                ORDER BY `git_master_commits`.`created_on` DESC'
+                ORDER BY `github_master_commits`.`created_on` DESC'
         );
 
         $stmt->bindValue(':owner_name', $owner_name);
@@ -42,12 +42,12 @@ class Api
         $connection = DatabaseProvider::getConnection();
 
         $stmt = $connection->prepare(
-            'SELECT `git_master_commits`.`git_commit`, mixed_count, nonmixed_count, `git_master_commits`.created_on
+            'SELECT `github_master_commits`.`git_commit`, mixed_count, nonmixed_count, `github_master_commits`.created_on
                 FROM psalm_reports
-                INNER JOIN git_master_commits ON `git_master_commits`.`git_commit` = `psalm_reports`.`git_commit`
+                INNER JOIN github_master_commits ON `github_master_commits`.`git_commit` = `psalm_reports`.`git_commit`
                 WHERE owner_name = :owner_name
                 AND repo_name = :repo_name
-                ORDER BY `git_master_commits`.`created_on` DESC'
+                ORDER BY `github_master_commits`.`created_on` DESC'
         );
 
         $stmt->bindValue(':owner_name', $owner_name);
@@ -78,9 +78,9 @@ class Api
         $connection = DatabaseProvider::getConnection();
 
         $stmt = $connection->prepare(
-            'SELECT owner_name, repo_name, max(`psalm_reports`.created_on) as last_updated
+            'SELECT owner_name, repo_name, max(`github_master_commits`.created_on) as last_updated
                 FROM psalm_reports
-                INNER JOIN git_master_commits ON `git_master_commits`.`git_commit` = `psalm_reports`.`git_commit`
+                INNER JOIN github_master_commits ON `github_master_commits`.`git_commit` = `psalm_reports`.`git_commit`
                 GROUP BY owner_name, repo_name
                 ORDER BY last_updated DESC
                 LIMIT 5'

@@ -11,8 +11,8 @@ class GithubData
         $connection = DatabaseProvider::getConnection();
 
         $stmt = $connection->prepare(
-            'INSERT IGNORE INTO github_pull_requests (`owner_name`, `repo_name`, `number`, `head_commit`, `branch`, `url`)
-                VALUES (:git_commit, :owner_name, :repo_name)'
+            'INSERT IGNORE INTO github_pull_requests (`owner_name`, `repo_name`, `git_commit`, `number`, `branch`, `url`)
+                VALUES (:owner_name, :repo_name, :git_commit, :number, :branch, :url)'
         );
 
         $stmt->bindValue(':git_commit', $git_commit);
@@ -34,7 +34,11 @@ class GithubData
             $payload['repository']['name']
         );
 
-        self::setRepositoryForMasterCommit($git_commit, $repository);
+        self::setRepositoryForMasterCommit(
+            $git_commit,
+            $repository,
+            date('Y-m-d H:i:s', $payload['head']['date'] ?? date('U'))
+        );
 
         error_log('GitHub data saved for ' . $git_commit);
     }
@@ -95,18 +99,22 @@ class GithubData
         );
     }
 
-    public static function setRepositoryForMasterCommit(string $git_commit, Model\GithubRepository $repository) : void
-    {
+    public static function setRepositoryForMasterCommit(
+        string $git_commit,
+        Model\GithubRepository $repository,
+        string $created_on
+    ) : void {
         $connection = DatabaseProvider::getConnection();
 
         $stmt = $connection->prepare(
-            'INSERT IGNORE INTO github_master_commits (git_commit, owner_name, repo_name)
-                VALUES (:git_commit, :owner_name, :repo_name)'
+            'INSERT IGNORE INTO github_master_commits (git_commit, owner_name, repo_name, created_on)
+                VALUES (:git_commit, :owner_name, :repo_name, :created_on)'
         );
 
         $stmt->bindValue(':git_commit', $git_commit);
         $stmt->bindValue(':owner_name', $repository->owner_name);
         $stmt->bindValue(':repo_name', $repository->repo_name);
+        $stmt->bindValue(':created_on', $created_on);
 
         $stmt->execute();
     }

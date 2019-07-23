@@ -1,6 +1,6 @@
 CREATE DATABASE IF NOT EXISTS  `shepherd_web`;
 
-GRANT ALL ON `shepherd_web`.* TO 'shepherd_mysql_user'@'%' IDENTIFIED BY 'shepherd_mysql_development_password';
+GRANT ALL ON `shepherd_web`.* TO 'shepherd_user'@'%' IDENTIFIED BY 'shepherd_mysql_development_password';
 
 CREATE TABLE `shepherd_web`.`test_failures` (
   `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
@@ -59,7 +59,7 @@ CREATE TABLE `shepherd_web`.`psalm_reports` (
   UNIQUE KEY `git_commit` (`git_commit`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `shepherd_web`.`git_master_commits` (
+CREATE TABLE `shepherd_web`.`github_master_commits` (
   `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
   `git_commit` varchar(40) NOT NULL,
   `owner_name` varchar(127) NOT NULL DEFAULT '',

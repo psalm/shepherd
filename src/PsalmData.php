@@ -17,7 +17,11 @@ class PsalmData
                 $payload['build']['CI_REPO_NAME']
             );
 
-            GithubData::setRepositoryForMasterCommit($git_commit, $repository);
+            GithubData::setRepositoryForMasterCommit(
+                $git_commit,
+                $repository,
+                date('Y-m-d H:i:s', $payload['git']['head']['date'] ?? date('U'))
+            );
         }
 
         self::savePsalmData($git_commit, $payload['issues'], $payload['coverage'][0], $payload['coverage'][1]);
@@ -46,9 +50,8 @@ class PsalmData
             );
         }
     }
-
     
-    private static function savePsalmData(string $git_commit, array $issues, int $mixed_count, int $nonmixed_count) : void
+    public static function savePsalmData(string $git_commit, array $issues, int $mixed_count, int $nonmixed_count) : void
     {
         $connection = DatabaseProvider::getConnection();
 
