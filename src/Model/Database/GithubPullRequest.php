@@ -34,17 +34,20 @@ class GithubPullRequest
         $this->url = $url;
     }
 
-    public static function fromGithubData(array $github_data) : self
+    /**
+     * @param array{owner_name: string, repo_name: string, number: int, git_commit: string, branch: string, url: string} $database_data
+     */
+    public static function fromDatabaseData(array $database_data) : self
     {
         return new self(
             new GithubRepository(
-                $github_data['pull_request']['base']['repo']['owner']['login'],
-                $github_data['pull_request']['base']['repo']['name']
+                $database_data['owner_name'],
+                $database_data['repo_name']
             ),
-            $github_data['pull_request']['number'],
-            $github_data['pull_request']['head']['sha'],
-            $github_data['pull_request']['head']['ref'],
-            $github_data['pull_request']['html_url']
+            $database_data['number'],
+            $database_data['git_commit'],
+            $database_data['branch'],
+            $database_data['url']
         );
     }
 }

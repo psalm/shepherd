@@ -2,133 +2,96 @@
 
 namespace Psalm\Shepherd;
 
+use PDO;
+
 class Api
 {
-	public static function getTypeCoverage(string $repository) : ?string
-	{
-		$repository_data_dir = dirname(__DIR__) . '/database/psalm_master_data/' . $repository;
+    public static function getTypeCoverage(string $repository) : ?string
+    {
+        list($owner_name, $repo_name) = explode('/', $repository);
 
-		if (!file_exists($repository_data_dir)) {
-			return null;
-		}
+        $connection = DatabaseProvider::getConnection();
 
-		$ordered_files = self::getOrderedFilesInDir($repository_data_dir);
+        $stmt = $connection->prepare(
+            'SELECT mixed_count, nonmixed_count
+                FROM psalm_reports
+                INNER JOIN git_master_commits ON `git_master_commits`.`git_commit` = `psalm_reports`.`git_commit`
+                WHERE owner_name = :owner_name
+                AND repo_name = :repo_name
+                ORDER BY `git_master_commits`.`created_on` DESC'
+        );
 
-		$newest_file_path = reset($ordered_files);
+        $stmt->bindValue(':owner_name', $owner_name);
+        $stmt->bindValue(':repo_name', $repo_name);
 
-		$target = readlink($newest_file_path);
+        $stmt->execute();
 
-		if (!file_exists($target)) {
-			return null;
-		}
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
-		$payload = json_decode(file_get_contents($target), true);
+        if (!$row) {
+            return null;
+        }
 
-		list($mixed_count, $nonmixed_count) = $payload['coverage'];
+        return number_format(100 * $row['nonmixed_count'] / ($row['mixed_count'] + $row['nonmixed_count']), 1);
+    }
 
-		if (!$mixed_count && $nonmixed_count) {
-			return '100';
-		}
+    public static function getHistory(string $repository) : array
+    {
+        list($owner_name, $repo_name) = explode('/', $repository);
 
-		return number_format(100 * $nonmixed_count / ($mixed_count + $nonmixed_count), 1);
-	}
+        $connection = DatabaseProvider::getConnection();
 
-	/**
-	 * @return string[]
-	 */
-	private static function getOrderedFilesInDir(string $repository_data_dir) : array
-	{
-		$files = glob($repository_data_dir . '/*.json');
-		
-		usort($files, function(string $a, string $b) : int {
-		    return (int) (filemtime($a) < filemtime($b));
-		});
-		
-		return $files;
-	}
+        $stmt = $connection->prepare(
+            'SELECT `git_master_commits`.`git_commit`, mixed_count, nonmixed_count, `git_master_commits`.created_on
+                FROM psalm_reports
+                INNER JOIN git_master_commits ON `git_master_commits`.`git_commit` = `psalm_reports`.`git_commit`
+                WHERE owner_name = :owner_name
+                AND repo_name = :repo_name
+                ORDER BY `git_master_commits`.`created_on` DESC'
+        );
 
-	public static function getHistory(string $repository) : array
-	{
-		$repository_data_dir = dirname(__DIR__) . '/database/psalm_master_data/' . $repository;
+        $stmt->bindValue(':owner_name', $owner_name);
+        $stmt->bindValue(':repo_name', $repo_name);
 
-		if (!file_exists($repository_data_dir)) {
-			return [];
-		}
+        $stmt->execute();
 
-		$files = self::getOrderedFilesInDir($repository_data_dir);
+        $history = [];
 
-		$history = [];
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+            if (!$row['mixed_count'] && $row['nonmixed_count']) {
+                $c = 100;
+            } else {
+                $c = 100 * $row['nonmixed_count'] / ($row['mixed_count'] + $row['nonmixed_count']);
+            }
 
-		foreach ($files as $file) {
-			$target = readlink($file);
+            $history[$row['created_on']] = [$row['git_commit'], $c];
+        }
 
-			if (!file_exists($target)) {
-				continue;
-			}
+        return $history;
+    }
 
-			$git_commit_hash = explode(".", basename($file))[0];
+    /** @return string[] */
+    public static function getRecentGithubRepositories() : array
+    {
+        $repositories = [];
 
-			$payload = json_decode(file_get_contents($target), true);
+        $connection = DatabaseProvider::getConnection();
 
-			if (!isset($payload['git']['head']['date'])) {
-				continue;
-			}
+        $stmt = $connection->prepare(
+            'SELECT owner_name, repo_name, max(`psalm_reports`.created_on) as last_updated
+                FROM psalm_reports
+                INNER JOIN git_master_commits ON `git_master_commits`.`git_commit` = `psalm_reports`.`git_commit`
+                GROUP BY owner_name, repo_name
+                ORDER BY last_updated DESC
+                LIMIT 5'
+        );
 
-			$date = $payload['git']['head']['date'];
+        $stmt->execute();
 
-			list($mixed_count, $nonmixed_count) = $payload['coverage'];
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+            $repositories[] = $row['owner_name'] . '/' . $row['repo_name'];
+        }
 
-			if (!$mixed_count && $nonmixed_count) {
-				$c = 100;
-			} else {
-				$c = 100 * $nonmixed_count / ($mixed_count + $nonmixed_count);
-			}
-
-			$history[$date] = [$git_commit_hash, $c];
-		}
-
-		krsort($history);
-
-		return $history;
-	}
-
-	/** @return string[] */
-	public static function getRecentGithubRepositories() : array
-	{
-		$repositories = [];
-
-		$dir = dirname(__DIR__) . '/database/psalm_master_data/';
-
-		$owners = scandir($dir);
-
-		foreach ($owners as $file) {
-			if ($file[0] === '.') {
-				continue;
-			}
-
-			$owner_dir = $dir . DIRECTORY_SEPARATOR . $file;
-
-			if (is_dir($owner_dir)) {
-				$owner_repos = scandir($owner_dir);
-
-				foreach ($owner_repos as $repo_name) {
-					if ($repo_name[0] === '.') {
-						continue;
-					}
-
-					if (is_dir($owner_dir . DIRECTORY_SEPARATOR . $repo_name)) {
-						$dir_files = self::getOrderedFilesInDir($owner_dir . DIRECTORY_SEPARATOR . $repo_name);
-
-						$last_file = reset($dir_files);
-
-						$repositories[$file . '/' . $repo_name] = filemtime($last_file);
-					}
-				}
-			}
-		}
-
-		arsort($repositories);
-
-		return array_slice(array_keys($repositories), 0, 5);
-	}
+        return $repositories;
+    }
 }

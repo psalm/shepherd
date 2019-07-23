@@ -4,51 +4,68 @@ namespace Psalm\Shepherd;
 
 class PsalmData
 {
-	public static function handlePayload(string $git_commit_hash, array $payload) : void
-	{
-		$psalm_storage_path = self::getStoragePath($git_commit_hash);
+    public static function handlePayload(string $git_commit, array $payload) : void
+    {
+        if (!empty($payload['build']['CI_REPO_OWNER'])
+            && !empty($payload['build']['CI_REPO_NAME'])
+            && empty($payload['build']['CI_PR_REPO_OWNER'])
+            && empty($payload['build']['CI_PR_REPO_NAME'])
+            && ($payload['build']['CI_BRANCH'] ?? '') === 'master'
+        ) {
+            $repository = new Model\GithubRepository(
+                $payload['build']['CI_REPO_OWNER'],
+                $payload['build']['CI_REPO_NAME']
+            );
 
-		if (file_exists($psalm_storage_path)) {
-			return;
-		}
+            GithubData::setRepositoryForMasterCommit($git_commit, $repository);
+        }
 
-		if (!is_writable(dirname($psalm_storage_path))) {
-			throw new \UnexpectedValueException('Directory should be writable');
-		}
+        self::savePsalmData($git_commit, $payload['issues'], $payload['coverage'][0], $payload['coverage'][1]);
 
-		file_put_contents($psalm_storage_path, json_encode($payload));
+        error_log('Telemetry saved for ' . $git_commit);
 
-		error_log('Telemetry saved for ' . $git_commit_hash);
+        $repository = GithubData::getRepositoryForCommitAndPayload($git_commit, $payload);
 
-		$repository = GithubData::getRepositoryForCommitAndPayload($git_commit_hash, $payload);
+        if (!$repository) {
+            exit();
+        }
 
-		if (!$repository) {
-			return;
-		}
+        $github_pull_request = GithubData::getPullRequestForCommitAndPayload($git_commit, $repository, $payload);
 
-		self::storeMasterData(
-			$git_commit_hash,
-			$repository
-		);
+        if ($github_pull_request) {
+            $token = Auth::getToken($repository);
 
-		$github_pull_request = GithubData::getPullRequestForCommitAndPayload($git_commit_hash, $repository, $payload);
+            Sender::addGitHubReview(
+                'psalm',
+                $token,
+                $github_pull_request,
+                self::getGithubReviewForIssues(
+                    $payload['issues'],
+                    Sender::getGithubPullRequestDiff($token, $github_pull_request)
+                )
+            );
+        }
+    }
 
-		if ($github_pull_request) {
-			$token = Auth::getToken($repository);
+    
+    private static function savePsalmData(string $git_commit, array $issues, int $mixed_count, int $nonmixed_count) : void
+    {
+        $connection = DatabaseProvider::getConnection();
 
-			Sender::addGitHubReview(
-				'psalm',
-				$token,
-				$github_pull_request,
-				self::getGithubReviewForIssues(
-		        	$payload['issues'],
-		        	Sender::getGithubPullRequestDiff($token, $github_pull_request)
-		        )
-			);
-		}
-	}
+        $stmt = $connection->prepare(
+            'INSERT IGNORE INTO psalm_reports (`git_commit`, `issues`, `mixed_count`, `nonmixed_count`)
+                VALUES (:git_commit, :issues, :mixed_count, :nonmixed_count)'
+        );
 
-	/** @param array<int, array{severity: string, line_from: int, line_to: int, type: string, message: string,
+        $stmt->bindValue(':git_commit', $git_commit);
+        $stmt->bindValue(':issues', json_encode($issues));
+        $stmt->bindValue(':mixed_count', $mixed_count);
+        $stmt->bindValue(':nonmixed_count', $nonmixed_count);
+
+        $stmt->execute();
+    }
+
+    /** @param array<int, array{severity: string, line_from: int, line_to: int, type: string, message: string,
      *      file_name: string, file_path: string, snippet: string, from: int, to: int,
      *      snippet_from: int, snippet_to: int, column_from: int, column_to: int, selected_text: string}> $issues
      */
@@ -129,37 +146,4 @@ class PsalmData
             $file_comments
         );
     }
-
-	private static function storeMasterData(string $git_commit_hash, Model\GithubRepository $repository) : void
-	{
-		$psalm_master_storage_path = self::getMasterStoragePath($git_commit_hash, $repository);
-
-		if (file_exists($psalm_master_storage_path)) {
-			exit;
-		}
-
-		if (!file_exists(dirname($psalm_master_storage_path))) {
-			mkdir(dirname($psalm_master_storage_path), 0777, true);
-		}
-
-		if (!is_writable(dirname($psalm_master_storage_path))) {
-			throw new \UnexpectedValueException('Directory should be writable');
-		}
-
-		symlink(self::getStoragePath($git_commit_hash), $psalm_master_storage_path);
-
-		error_log('Psalm master data saved for ' . $git_commit_hash . ' in ' . $psalm_master_storage_path);
-	}
-
-	private static function getMasterStoragePath(string $git_commit_hash, Model\GithubRepository $repository) : string
-	{
-		return dirname(__DIR__) . '/database/psalm_master_data/'
-			. strtolower($repository->owner_name . '/' . $repository->repo_name)
-			. '/' . $git_commit_hash . '.json';
-	}
-
-	private static function getStoragePath(string $git_commit_hash) : string
-	{
-		return dirname(__DIR__) . '/database/psalm_data/' . $git_commit_hash . '.json';
-	}
 }

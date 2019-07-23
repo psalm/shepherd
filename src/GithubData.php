@@ -2,121 +2,162 @@
 
 namespace Psalm\Shepherd;
 
+use PDO;
+
 class GithubData
 {
-	public static function storePullRequestData(string $git_commit_hash, array $payload) : void
-	{
-		$github_storage_path = self::getPullRequestStoragePath($git_commit_hash);
+    public static function storePullRequestData(string $git_commit, array $github_data) : void
+    {
+        $connection = DatabaseProvider::getConnection();
 
-		if (file_exists($github_storage_path)) {
-			exit;
-		}
+        $stmt = $connection->prepare(
+            'INSERT IGNORE INTO github_pull_requests (`owner_name`, `repo_name`, `number`, `head_commit`, `branch`, `url`)
+                VALUES (:git_commit, :owner_name, :repo_name)'
+        );
 
-		if (!is_writable(dirname($github_storage_path))) {
-			throw new \UnexpectedValueException('Directory should be writable');
-		}
+        $stmt->bindValue(':git_commit', $git_commit);
+        $stmt->bindValue(':owner_name', $github_data['pull_request']['base']['repo']['owner']['login']);
+        $stmt->bindValue(':repo_name', $github_data['pull_request']['base']['repo']['name']);
+        $stmt->bindValue(':number', $github_data['pull_request']['number']);
+        $stmt->bindValue(':branch', $github_data['pull_request']['head']['ref']);
+        $stmt->bindValue(':url', $github_data['pull_request']['html_url']);
 
-		file_put_contents($github_storage_path, json_encode($payload));
+        $stmt->execute();
 
-		error_log('GitHub PR data saved for ' . $git_commit_hash);
-	}
+        error_log('GitHub PR data saved for ' . $git_commit);
+    }
 
-	public static function storeMasterData(string $git_commit_hash, array $payload) : void
-	{
-		$github_storage_path = self::getMasterStoragePath($git_commit_hash);
+    public static function storeMasterData(string $git_commit, array $payload) : void
+    {
+        $repository = new Model\GithubRepository(
+            $payload['repository']['owner']['login'],
+            $payload['repository']['name']
+        );
 
-		if (file_exists($github_storage_path)) {
-			exit;
-		}
+        self::setRepositoryForMasterCommit($git_commit, $repository);
 
-		if (!is_writable(dirname($github_storage_path))) {
-			throw new \UnexpectedValueException('Directory should be writable');
-		}
+        error_log('GitHub data saved for ' . $git_commit);
+    }
 
-		file_put_contents($github_storage_path, json_encode($payload));
+    public static function getRepositoryForCommitAndPayload(string $git_commit_hash, array $payload) : ?Model\GithubRepository
+    {
+        if (!empty($payload['build']['CI_REPO_OWNER'])
+            && !empty($payload['build']['CI_REPO_NAME'])
+        ) {
+            if (empty($payload['build']['CI_PR_REPO_OWNER'])
+                && empty($payload['build']['CI_PR_REPO_NAME'])
+                && ($payload['build']['CI_BRANCH'] ?? '') === 'master'
+            ) {
+                return new Model\GithubRepository(
+                    $payload['build']['CI_REPO_OWNER'],
+                    $payload['build']['CI_REPO_NAME']
+                );
+            }
 
-		error_log('GitHub data saved for ' . $git_commit_hash . ' in ' . $github_storage_path);
-	}
+            if (!empty($payload['build']['CI_PR_REPO_OWNER'])
+                && !empty($payload['build']['CI_PR_REPO_NAME'])
+                && $payload['build']['CI_PR_REPO_OWNER'] === $payload['build']['CI_REPO_OWNER']
+                && $payload['build']['CI_PR_REPO_NAME'] === $payload['build']['CI_REPO_NAME']
+            ) {
+                return new Model\GithubRepository(
+                    $payload['build']['CI_REPO_OWNER'],
+                    $payload['build']['CI_REPO_NAME']
+                );
+            }
+        }
 
-	public static function getRepositoryForCommitAndPayload(string $git_commit_hash, array $payload) : ?Model\GithubRepository
-	{
-		if (!empty($payload['build']['CI_REPO_OWNER'])
-			&& !empty($payload['build']['CI_REPO_NAME'])
-		) {
-			if (empty($payload['build']['CI_PR_REPO_OWNER'])
-				&& empty($payload['build']['CI_PR_REPO_NAME'])
-				&& ($payload['build']['CI_BRANCH'] ?? '') === 'master'
-			) {
-				return new Model\GithubRepository(
-					$payload['build']['CI_REPO_OWNER'],
-					$payload['build']['CI_REPO_NAME']
-				);
-			}
+        return self::getRepositoryForMasterCommit($git_commit_hash);
+    }
 
-			if (!empty($payload['build']['CI_PR_REPO_OWNER'])
-				&& !empty($payload['build']['CI_PR_REPO_NAME'])
-				&& $payload['build']['CI_PR_REPO_OWNER'] === $payload['build']['CI_REPO_OWNER']
-				&& $payload['build']['CI_PR_REPO_NAME'] === $payload['build']['CI_REPO_NAME']
-			) {
-				return new Model\GithubRepository(
-					$payload['build']['CI_REPO_OWNER'],
-					$payload['build']['CI_REPO_NAME']
-				);
-			}
-		}
+    private static function getRepositoryForMasterCommit(string $git_commit) : ?Model\GithubRepository
+    {
+        $connection = DatabaseProvider::getConnection();
 
-		$github_master_storage_path = self::getMasterStoragePath($git_commit_hash);
+        $stmt = $connection->prepare(
+            'SELECT owner_name, repo_name
+                FROM github_master_commits
+                WHERE git_commit = :git_commit'
+        );
 
-		if (file_exists($github_master_storage_path)) {
-			$github_master_storage_data = json_decode(file_get_contents($github_master_storage_path), true);
+        $stmt->bindValue(':git_commit', $git_commit);
 
-			return new Model\GithubRepository(
-				$github_master_storage_data['repository']['owner']['login'],
-				$github_master_storage_data['repository']['name']
-			);
-		}
+        $stmt->execute();
 
-		return null;
-	}
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
-	public static function getPullRequestForCommitAndPayload(
-		string $git_commit_hash,
-		Model\GithubRepository $repository,
-		array $payload
-	) : ?Model\Database\GithubPullRequest {
-		$github_pr_storage_path = self::getPullRequestStoragePath($git_commit_hash);
+        if (!$row) {
+            return null;
+        }
 
-		if (!file_exists($github_pr_storage_path)) {
-			if (!empty($payload['build']['CI_PR_NUMBER'])
-				&& $payload['build']['CI_PR_NUMBER'] !== "false"
-			) {
-				$pr_number = (int) $payload['build']['CI_PR_NUMBER'];
+        return new Model\GithubRepository(
+            $row['owner_name'],
+            $row['repo_name']
+        );
+    }
 
-				$data = GithubApi::fetchPullRequestData(
-					$repository,
-					$pr_number
-				);
+    public static function setRepositoryForMasterCommit(string $git_commit, Model\GithubRepository $repository) : void
+    {
+        $connection = DatabaseProvider::getConnection();
 
-				self::storePullRequestData($git_commit_hash, $data);
-			}
-		}
+        $stmt = $connection->prepare(
+            'INSERT IGNORE INTO github_master_commits (git_commit, owner_name, repo_name)
+                VALUES (:git_commit, :owner_name, :repo_name)'
+        );
 
-		if (file_exists($github_pr_storage_path)) {
-			$gh_pr_data = json_decode(file_get_contents($github_pr_storage_path), true);
+        $stmt->bindValue(':git_commit', $git_commit);
+        $stmt->bindValue(':owner_name', $repository->owner_name);
+        $stmt->bindValue(':repo_name', $repository->repo_name);
 
-			return Model\Database\GithubPullRequest::fromGithubData($gh_pr_data);
-		}
+        $stmt->execute();
+    }
 
-		return null;
-	}
+    public static function getPullRequestForCommitAndPayload(
+        string $git_commit_hash,
+        Model\GithubRepository $repository,
+        array $payload
+    ) : ?Model\Database\GithubPullRequest {
+        $github_pull_request = self::getPullRequestFromDatabase($git_commit_hash);
 
-	private static function getMasterStoragePath(string $git_commit_hash) : string
-	{
-		return dirname(__DIR__) . '/database/github_master_data/' . $git_commit_hash . '.json';
-	}
+        if (!$github_pull_request
+            && !empty($payload['build']['CI_PR_NUMBER'])
+            && $payload['build']['CI_PR_NUMBER'] !== "false"
+        ) {
+            $pr_number = (int) $payload['build']['CI_PR_NUMBER'];
 
-	private static function getPullRequestStoragePath(string $git_commit_hash) : string
-	{
-		return dirname(__DIR__) . '/database/github_pr_data/' . $git_commit_hash . '.json';
-	}
+            self::storePullRequestData(
+                $git_commit_hash,
+                GithubApi::fetchPullRequestData(
+                    $repository,
+                    $pr_number
+                )
+            );
+
+            $github_pull_request = self::getPullRequestFromDatabase($git_commit_hash);
+        }
+
+        return $github_pull_request;
+    }
+
+    private static function getPullRequestFromDatabase(string $git_commit) : ?Model\Database\GithubPullRequest
+    {
+        $connection = DatabaseProvider::getConnection();
+
+        $stmt = $connection->prepare(
+            'SELECT `owner_name`, `repo_name`, `number`, `git_commit`, `branch`, `url`
+                FROM `github_pull_requests`
+                WHERE git_commit = :git_commit'
+        );
+
+        $stmt->bindValue(':git_commit', $git_commit);
+
+        $stmt->execute();
+
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$row) {
+            return null;
+        }
+
+        return Model\Database\GithubPullRequest::fromDatabaseData($row);
+    }
 }
