@@ -37,6 +37,7 @@ foreach (glob('database/psalm_data/*.json') as $psalm_json_file) {
         && empty($psalm_data['build']['CI_PR_REPO_OWNER'])
         && empty($psalm_data['build']['CI_PR_REPO_NAME'])
         && ($psalm_data['build']['CI_BRANCH'] ?? '') === 'master'
+        && isset($psalm_data['git']['head']['date'])
     ) {
         $repository = new \Psalm\Shepherd\Model\GithubRepository(
             $psalm_data['build']['CI_REPO_OWNER'],
@@ -46,7 +47,7 @@ foreach (glob('database/psalm_data/*.json') as $psalm_json_file) {
         Psalm\Shepherd\GithubData::setRepositoryForMasterCommit(
         	$psalm_data['git']['head']['id'],
         	$repository,
-        	date('Y-m-d H:i:s', $psalm_data['git']['head']['date'] ?? date('U'))
+        	date('Y-m-d H:i:s', $psalm_data['git']['head']['date'])
         );
     }
 }
