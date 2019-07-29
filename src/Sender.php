@@ -51,8 +51,6 @@ class Sender
         $review_id = self::getGithubReviewIdForPullRequest($pull_request->url, $review_type);
         $comment_id = self::getGithubCommentIdForPullRequest($pull_request->url, $review_type);
 
-        error_log('Adding Github Review' . PHP_EOL);
-
         if ($review_id) {
             // deletes review comments
             self::deleteCommentsForReview($client, $pull_request, $review_id);
@@ -64,10 +62,14 @@ class Sender
         }
 
         if ($github_review->file_comments) {
+            error_log('Adding Github file comments on ' . $pull_request->url);
+
             self::addGithubReviewComments($client, $pull_request, $review_type, $github_review->file_comments);
         }
 
         if ($review_id || $comment_id || !$github_review->checks_passed) {
+            error_log('Adding Github Review on ' . $pull_request->url);
+
             self::addGithubReviewComment($client, $pull_request, $review_type, $github_review->message);
         }
     }
