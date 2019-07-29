@@ -12,6 +12,8 @@ $payload = json_decode(file_get_contents('php://input'), true);
 
 $git_commit_hash = $payload['git']['head']['id'] ?? null;
 
+error_log('git data on Psalm request: ' . json_encode($payload['git']));
+
 if (!$git_commit_hash) {
 	throw new \UnexpectedValueException('No git commit hash given');
 }
