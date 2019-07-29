@@ -70,6 +70,10 @@ class GithubData
             }
         }
 
+        if ($repository = self::getRepositoryForPullRequestCommit($git_commit_hash)) {
+            return $repository;
+        }
+
         return self::getRepositoryForMasterCommit($git_commit_hash);
     }
 
@@ -97,6 +101,17 @@ class GithubData
             $row['owner_name'],
             $row['repo_name']
         );
+    }
+
+    private static function getRepositoryForPullRequestCommit(string $git_commit) : ?Model\GithubRepository
+    {
+        $pull_request = self::getPullRequestFromDatabase($git_commit);
+
+        if (!$pull_request) {
+            return null;
+        }
+
+        return $pull_request->repository;
     }
 
     public static function setRepositoryForMasterCommit(

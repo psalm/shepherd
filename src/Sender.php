@@ -67,7 +67,9 @@ class Sender
             self::addGithubReviewComments($client, $pull_request, $review_type, $github_review->file_comments);
         }
 
-        self::addGithubReviewComment($client, $pull_request, $review_type, $github_review->message);
+        if ($review_id || $comment_id || !$github_review->checks_passed) {
+            self::addGithubReviewComment($client, $pull_request, $review_type, $github_review->message);
+        }
     }
 
     private static function deleteCommentsForReview(
