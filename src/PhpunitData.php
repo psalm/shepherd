@@ -10,6 +10,8 @@ class PhpunitData
     {
         $test_names = $payload['tests'];
 
+        error_log('Handling PHPUnit failure payload for ' . $git_commit);
+
         $repository = GithubData::getRepositoryForCommitAndPayload($git_commit, $payload);
 
         if (!$repository) {

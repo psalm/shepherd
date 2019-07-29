@@ -26,11 +26,12 @@ class PsalmData
 
         self::savePsalmData($git_commit, $payload['issues'], $payload['coverage'][0], $payload['coverage'][1]);
 
-        error_log('Telemetry saved for ' . $git_commit);
+        error_log('Psalm payload saved for ' . $git_commit);
 
         $repository = GithubData::getRepositoryForCommitAndPayload($git_commit, $payload);
 
         if (!$repository) {
+            error_log('No repository found for ' . $git_commit);
             exit();
         }
 
