@@ -32,7 +32,7 @@ CREATE TABLE `shepherd_web`.`github_pr_comments` (
   `github_comment_id` varchar(255) NOT NULL,
   `created_on` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `github_comment_tool` (`github_pr_url`,`tool`)
+  KEY `github_comment_tool` (`github_pr_url`,`tool`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `shepherd_web`.`github_pull_requests` (
