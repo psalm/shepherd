@@ -32,7 +32,13 @@ class Api
             return null;
         }
 
-        return number_format(100 * $row['nonmixed_count'] / ($row['mixed_count'] + $row['nonmixed_count']), 1);
+        $fraction = $row['nonmixed_count'] / ($row['mixed_count'] + $row['nonmixed_count']);
+
+        if ($fraction >= 0.9995) {
+        	return '100';
+        }
+
+        return number_format(100 * $fraction, 1);
     }
 
     public static function getHistory(string $repository) : array
