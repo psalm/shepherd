@@ -13,7 +13,7 @@ $expected_state = hash_hmac('sha256', $_SERVER['REMOTE_ADDR'], $config->client_s
 $state = $_GET['state'] ?? null;
 $code = $_GET['code'] ?? null;
 
-if ($state !== $expected_state) {
+if (!$state || $state !== $expected_state) {
 	throw new \UnexpectedValueException('States should match');
 }
 

@@ -34,11 +34,14 @@ class GitApiProvider implements \Psalm\Plugin\Hook\MethodReturnTypeProviderInter
         string $called_fq_classlike_name = null,
         string $called_method_name_lowercase = null
     ) {
+        $node_provider = $source->getNodeTypeProvider();
+
         if ($method_name_lowercase === 'api'
-            && isset($call_args[0]->value->inferredType)
-            && $call_args[0]->value->inferredType->isSingleStringLiteral()
+            && isset($call_args[0])
+            && ($first_arg_type = $node_provider->getType($call_args[0]->value))
+            && $first_arg_type->isSingleStringLiteral()
         ) {
-            switch ($call_args[0]->value->inferredType->getSingleStringLiteral()->value) {
+            switch ($first_arg_type->getSingleStringLiteral()->value) {
                 case 'me':
                 case 'current_user':
                 case 'currentUser':
