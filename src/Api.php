@@ -26,6 +26,7 @@ class Api
 
         $stmt->execute();
 
+        /** @var array<string, int> */
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if (!$row) {
@@ -63,6 +64,7 @@ class Api
 
         $history = [];
 
+        /** @var array{git_commit: string, mixed_count: int, nonmixed_count: int, created_on: string} $row */
         foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
             if (!$row['mixed_count'] && $row['nonmixed_count']) {
                 $c = 100;
@@ -94,6 +96,7 @@ class Api
 
         $stmt->execute();
 
+        /** @var array{owner_name: string, repo_name: string} $row */
         foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
             $repositories[] = $row['owner_name'] . '/' . $row['repo_name'];
         }

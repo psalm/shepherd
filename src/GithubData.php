@@ -91,6 +91,7 @@ class GithubData
 
         $stmt->execute();
 
+        /** @var array{owner_name: string, repo_name: string}|null */
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if (!$row) {
@@ -175,6 +176,7 @@ class GithubData
 
         $stmt->execute();
 
+        /** @var array{owner_name: string, repo_name: string, number: int, git_commit: string, branch: string, url: string}|null */
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if (!$row) {
