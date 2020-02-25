@@ -213,6 +213,15 @@ class Sender
         $connection = DatabaseProvider::getConnection();
 
         $stmt = $connection->prepare(
+            'DELETE FROM github_pr_reviews where github_pr_url = :github_pr_url and tool = :tool'
+        );
+
+        $stmt->bindValue(':github_pr_url', $github_pr_url);
+        $stmt->bindValue(':tool', $tool);
+
+        $stmt->execute();
+
+        $stmt = $connection->prepare(
             'INSERT INTO github_pr_reviews (github_pr_url, tool, github_review_id)
                 VALUES (:github_pr_url, :tool, :github_review_id)'
         );

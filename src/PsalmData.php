@@ -40,7 +40,7 @@ class PsalmData
         if ($github_pull_request) {
             $token = Auth::getToken($repository);
 
-            Sender::addGitHubReview(
+            Sender::addGithubReview(
                 'psalm',
                 $token,
                 $github_pull_request,
