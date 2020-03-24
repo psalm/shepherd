@@ -13,9 +13,7 @@ COPY assets /var/www/html/assets
 
 RUN COMPOSER_ALLOW_SUPERUSER=1 \
     COMPOSER_HOME="/composer" \
-    composer install
-
-COPY vendor /var/www/html/vendor
+    composer install --no-dev
 
 COPY docker/php/vhost.conf /etc/apache2/sites-available/000-default.conf
 
