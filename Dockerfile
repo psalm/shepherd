@@ -1,6 +1,7 @@
 FROM php:7.4-apache
 
-RUN apt-get -y update && apt-get -y install git && apt-get clean
+RUN apt-get update && apt-get install --no-install-recommends -y curl git \
+    openssl zip unzip wget libzip-dev && rm -rf /var/lib/apt/lists/*
 
 COPY --from=composer:1.9 /usr/bin/composer /usr/bin/composer
 
