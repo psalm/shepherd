@@ -1,6 +1,6 @@
 FROM php:7.4-apache
 
-RUN apk add --no-cache tini git
+RUN apt-get install tini git
 
 COPY --from=composer:1.9 /usr/bin/composer /usr/bin/composer
 
