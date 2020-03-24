@@ -1,4 +1,12 @@
-FROM php:7.3-apache
+FROM php:7.4-apache
+
+RUN apk add --no-cache tini git
+
+COPY --from=composer:1.9 /usr/bin/composer /usr/bin/composer
+
+RUN COMPOSER_ALLOW_SUPERUSER=1 \
+    COMPOSER_HOME="/composer" \
+    composer install
 
 COPY src /var/www/html/src
 COPY vendor /var/www/html/vendor
@@ -6,14 +14,6 @@ COPY views /var/www/html/views
 COPY composer.* /var/www/html/
 COPY .htaccess /var/www/html
 COPY assets /var/www/html/assets
-
-RUN mkdir -p /var/www/html/database/github_commits && \
-	mkdir -p /var/www/html/database/github_master_data && \
-	mkdir -p /var/www/html/database/github_pr_data && \
-	mkdir -p /var/www/html/database/pr_comments && \
-	mkdir -p /var/www/html/database/pr_reviews && \
-	mkdir -p /var/www/html/database/psalm_data && \
-	mkdir -p /var/www/html/database/psalm_master_data
 
 COPY docker/php/vhost.conf /etc/apache2/sites-available/000-default.conf
 
