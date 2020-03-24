@@ -1,6 +1,6 @@
 FROM php:7.4-apache
 
-RUN apt-get install tini git
+RUN apt-get -y update && apt-get -y install git && apt-get clean
 
 COPY --from=composer:1.9 /usr/bin/composer /usr/bin/composer
 
