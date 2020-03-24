@@ -33,7 +33,8 @@ abstract class Config
 
     }
 
-    private static function loadConfigFromFile($config_path){
+    /** @return Config\Custom|Config\OAuthApp */
+    private static function loadConfigFromFile(String $config_path) {
       /**
        * @var array{
        *     oauth_app?: array{
@@ -60,8 +61,10 @@ abstract class Config
      *
      * TODO: hopefully this entire class gets replaced by something like
      * https://github.com/vlucas/phpdotenv at some point.
-     */
-    private static function loadConfigFromEnv(){
+     *
+     * @return Config\Custom|Config\OAuthApp
+     **/
+    private static function loadConfigFromEnv() {
 
       // initialize an empty config
       $config = array();
@@ -96,7 +99,8 @@ abstract class Config
 
     }
 
-    private static function initializeConfig($config){
+    /** @return Config\Custom|Config\OAuthApp */
+    private static function initializeConfig(Array $config) {
       if (isset($config['custom']['personal_token'])) {
         return self::$config = new Config\Custom(
           $config['custom']['personal_token'],
