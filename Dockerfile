@@ -5,7 +5,6 @@ COPY vendor /var/www/html/vendor
 COPY views /var/www/html/views
 COPY composer.* /var/www/html/
 COPY .htaccess /var/www/html
-COPY config.json /var/www/html
 COPY assets /var/www/html/assets
 
 RUN mkdir -p /var/www/html/database/github_commits && \

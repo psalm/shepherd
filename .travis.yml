@@ -36,3 +36,9 @@ script:
 # Base test matrix (php/env)
 matrix:
   fast_finish: true
+
+deploy:
+  provider: script
+  script: make deploy
+  on:
+    tags: true

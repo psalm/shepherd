@@ -1,3 +1,6 @@
+DOCKER_REPO=vimeo/shepherd
+DOCKER_TAG=$(TRAVIS_TAG)
+
 help: ## Prints this help
 	@grep -E '^([a-zA-Z0-9_-]|\%|\/)+:.*?## .*$$' Makefile | sort | awk 'BEGIN {FS = ":.*?## "}; {sub(/\%/, "<blah>", $$1)}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
 
@@ -38,5 +41,9 @@ dev-ssh: ## SSH into your current development environment
 	docker exec -it shepherd-php /bin/bash
 
 deploy:
-	docker build . -t $(name)
-	docker push $(name)
+	docker build . -t $(DOCKER_REPO):$(DOCKER_TAG)
+	echo "$(DOCKER_PASSWORD)" |  docker login -u "$(DOCKER_USERNAME)" --password-stdin
+	docker push $(DOCKER_REPO):$(DOCKER_TAG)
+	# optionally push this build as :latest tag as well
+	# docker tag $(DOCKER_REPO):$(DOCKER_TAG) $(DOCKER_REPO):latest
+	# docker push $(DOCKER_REPO):latest
