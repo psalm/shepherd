@@ -33,7 +33,12 @@ class Api
             return null;
         }
 
-        $fraction = $row['nonmixed_count'] / ($row['mixed_count'] + $row['nonmixed_count']);
+        $total = $row['mixed_count'] + $row['nonmixed_count'];
+        if (!$total) {
+            return '0';
+        }
+
+        $fraction = $row['nonmixed_count'] / $total;
 
         if ($fraction >= 0.9995) {
         	return '100';
