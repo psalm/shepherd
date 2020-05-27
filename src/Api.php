@@ -66,10 +66,13 @@ class Api
 
         /** @var array{git_commit: string, mixed_count: int, nonmixed_count: int, created_on: string} $row */
         foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+            $total = ($row['mixed_count'] + $row['nonmixed_count']);
             if (!$row['mixed_count'] && $row['nonmixed_count']) {
                 $c = 100;
+            } elseif($total) {
+                $c = 100 * $row['nonmixed_count'] / $total;
             } else {
-                $c = 100 * $row['nonmixed_count'] / ($row['mixed_count'] + $row['nonmixed_count']);
+                $c = 0;
             }
 
             $history[$row['created_on']] = [$row['git_commit'], $c];
