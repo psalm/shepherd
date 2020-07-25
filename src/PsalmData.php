@@ -10,18 +10,17 @@ class PsalmData
             && !empty($payload['build']['CI_REPO_NAME'])
             && empty($payload['build']['CI_PR_REPO_OWNER'])
             && empty($payload['build']['CI_PR_REPO_NAME'])
-            && ($payload['build']['CI_BRANCH'] ?? '') === 'master'
         ) {
             $repository = new Model\GithubRepository(
                 $payload['build']['CI_REPO_OWNER'],
                 $payload['build']['CI_REPO_NAME']
             );
 
-            GithubData::setRepositoryForMasterCommit(
-                $git_commit,
-                $repository,
-                date('Y-m-d H:i:s', $payload['git']['head']['date'] ?? date('U'))
-            );
+            if (($payload['build']['CI_BRANCH'] ?? '') === GithubApi::fetchDefaultBranch($repository)) {
+                /** @var string $date */
+                $date = date('Y-m-d H:i:s', $payload['git']['head']['date'] ?? date('U'));
+                GithubData::setRepositoryForMasterCommit($git_commit, $repository, $date);
+            }
         }
 
         self::savePsalmData($git_commit, $payload['issues'], $payload['coverage'][0], $payload['coverage'][1]);
