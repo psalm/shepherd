@@ -34,11 +34,9 @@ class GithubData
             $payload['repository']['name']
         );
 
-        self::setRepositoryForMasterCommit(
-            $git_commit,
-            $repository,
-            date('Y-m-d H:i:s', $payload['head']['date'] ?? date('U'))
-        );
+        /** @var string $date */
+        $date = date('Y-m-d H:i:s', $payload['head']['date'] ?? date('U'));
+        self::setRepositoryForMasterCommit($git_commit, $repository, $date);
 
         error_log('GitHub data saved for ' . $git_commit);
     }
@@ -50,12 +48,15 @@ class GithubData
         ) {
             if (empty($payload['build']['CI_PR_REPO_OWNER'])
                 && empty($payload['build']['CI_PR_REPO_NAME'])
-                && ($payload['build']['CI_BRANCH'] ?? '') === 'master'
             ) {
-                return new Model\GithubRepository(
+                $repository = new Model\GithubRepository(
                     $payload['build']['CI_REPO_OWNER'],
                     $payload['build']['CI_REPO_NAME']
                 );
+
+                if (($payload['build']['CI_BRANCH'] ?? '') === GithubApi::fetchDefaultBranch($repository)) {
+                    return $repository;
+                }
             }
 
             if (!empty($payload['build']['CI_PR_REPO_OWNER'])
