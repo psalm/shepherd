@@ -21,15 +21,16 @@ $github_url = $config->gh_enterprise_url ?: 'https://github.com';
 <html>
 <head>
 <title>Shepherd - <?php echo $repository ?></title>
-<link rel="stylesheet" href="/assets/styles/main.css">
-<link rel="stylesheet" type="text/css" href="https://cloud.typography.com/751592/7707372/css/fonts.css" />
+<link rel="stylesheet" href="/assets/styles/main.css?2">
+<link rel="preconnect" href="https://fonts.gstatic.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400&family=IBM+Plex+Sans&display=swap" rel="stylesheet">
 <meta name="viewport" content="initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
 <link rel="icon" type="image/png" href="/assets/img/favicon.png">
 </head>
 <body>
 	<nav>
 		<div class="container">
-			<h1><a href="/"><?php require('../assets/img/logo.svg'); ?> Shepherd</a></h1>
+			<h1><a href="/">Shepherd</a></h1>
 		</div>
 	</nav>
 
@@ -61,8 +62,5 @@ $github_url = $config->gh_enterprise_url ?: 'https://github.com';
 			</table>
 		</div>
 	</div>
-	<footer>
-    	<p>Not quite sure what to put here yet</p>
-	</footer>
 </body>
 </html>

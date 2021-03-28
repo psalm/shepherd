@@ -1,5 +1,5 @@
 body {
-    font-family: "Operator SSm A", "Operator SSm B";
+    font-family: 'IBM Plex Sans', sans-serif;
     line-height: 1.5em;
     margin: 0;
     padding: 0;
@@ -20,33 +20,48 @@ body {
 
 nav {
     overflow: hidden;
-    background-position: 0 100%;
-    background-repeat: repeat-x;
-    background-size: 11px 4px;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 10'%3E%3Cpath fill='none' stroke='%23434343' stroke-width='3' d='M0 8.5c8 0 8-7 16-7s8 7 16 7 8-7 16-7 8 7 16 7' class='st0'/%3E%3C/svg%3E");
-    padding: 0 20px;   
+    background-position: 0 10px;
+    background-repeat: no-repeat;
+    background-size: 48px 48px;
+    padding: 10px 20px;
+    background-color: #ccc;
+    border-bottom: 2px solid #666;
 }
 
 h1 {
     margin: 20px 0 20px 20px;
     float: left;
-    font-size: 50px;
-    font-family: "Operator SSm A", "Operator SSm B";
-    font-weight: normal;
+    font-size: 40px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 400;
+    text-shadow: 0px 2px 0 white;
+    position: relative;
 }
 
 h2, h3 {
-    font-family: "Operator SSm A", "Operator SSm B";
+    font-family: 'IBM Plex Sans', sans-serif;
     font-weight: normal;
 }
 
 h1 a {
-    color: #434343;
+    color: #000;
     text-decoration: none;
+}
+
+h1 a:after {
+    content: '';
+    display: block;
+    width: 48px;
+    height: 48px;
+    position: absolute;
+    top: -12px;
+    right: -60px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='48' viewBox='0 0 31 31'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cpath d='M15.3456 1.0014c-.7453-.0151-1.3938.425-1.9659.8543-.4419.3342-.9465.6678-1.5252.6318-.8315-.0358-1.6584-.3646-2.4929-.166-.7056.1443-1.204.7321-1.5298 1.3382-.3328.5846-.603 1.2898-1.2495 1.5982-.7596.3628-1.6656.3838-2.347.917-.6112.4461-.8385 1.2254-.8719 1.9496-.0512.6567.02 1.3957-.4186 1.9438-.5156.6388-1.2885 1.048-1.6842 1.7884-.3628.6206-.3098 1.3932-.047 2.0403.2293.648.6547 1.2827.5568 1.9993-.134.8112-.6744 1.4996-.7525 2.3268-.0966.6811.2075 1.3572.684 1.8326.4492.4965 1.0787.836 1.4005 1.441.3046.671.1558 1.431.2915 2.1376.0921.6733.462 1.324 1.0694 1.6562.6806.4178 1.5185.435 2.2115.8204.6152.3752.8414 1.1017 1.2099 1.6806.3534.6155.932 1.1598 1.6622 1.2488.8154.13 1.6032-.2211 2.4143-.21.6908.0294 1.227.5282 1.775.8902.5133.361 1.1184.6606 1.7635.5994.7748-.055 1.4085-.5524 2.0116-.9933.4013-.3026.8858-.5394 1.401-.488.834.0608 1.6765.3786 2.5107.1401.721-.1878 1.1896-.8285 1.5148-1.4577.2996-.5624.5994-1.2025 1.2164-1.4769.7335-.336 1.5953-.3654 2.2575-.8619.6059-.4196.8643-1.1669.9097-1.8753.0674-.6775-.0369-1.4393.3997-2.0177.5148-.6587 1.3064-1.0703 1.7095-1.823.3646-.6202.307-1.3921.0487-2.04-.2346-.6612-.6755-1.3136-.5492-2.0464.158-.8256.7141-1.5352.7555-2.391.0663-.71-.3126-1.374-.817-1.8445-.4542-.4657-1.0771-.8108-1.3302-1.4392-.2511-.7189-.0938-1.5021-.2824-2.2346-.1352-.6693-.5921-1.2601-1.217-1.541-.6681-.3446-1.4635-.3604-2.1027-.7667-.62-.4412-.8214-1.2207-1.2475-1.8171-.3622-.565-.9483-1.0232-1.636-1.073-.7977-.0963-1.5649.2414-2.3587.2188-.6567-.0408-1.1696-.5103-1.6938-.8559-.4873-.3377-1.0411-.6593-1.6547-.6342h0z' stroke='%23000' fill='%23FFF' fill-rule='nonzero'%3E%3C/path%3E%3Cpath d='M10.9053 8.6924c-1.822-.911-3.6442-.911-5.2385 0 1.5943 2.2776 3.4164 2.9609 5.2385 2.2776.911 2.2776 1.1388 8.427 4.3274 8.427s3.6441-5.9217 4.5551-8.6547c1.5943.6832 3.1886-.2278 4.783-2.2776-1.8221-.6833-3.4164-.6833-5.2385 0-.6833-1.5943-2.0498-2.2776-4.0996-2.2776s-2.7331.6833-4.3274 2.5053z' stroke='%23000' stroke-width='.911' fill='%23000' fill-rule='nonzero'%3E%3C/path%3E%3Cpath d='M13.8661 14.8419c.2278.6833.911.911 1.5943.911s1.1388-.2277 1.3666-.911' stroke='%23FFF' stroke-width='.5'%3E%3C/path%3E%3Cpath fill='%23FFF' fill-rule='nonzero' d='M14.9617 15.9006h.7697l-.154 1.34h-.4618z'%3E%3C/path%3E%3Cpath d='M14.0232 17.5643c.362-.2158.8031-.3238 1.3234-.3238.5202 0 1.0136.108 1.4804.3238' stroke='%23FFF' stroke-width='.5'%3E%3C/path%3E%3Ccircle stroke='%23000' stroke-width='.3' fill='%23FFF' cx='12.8199' cy='10.5608' r='1.9453'%3E%3C/circle%3E%3Ccircle stroke='%23000' stroke-width='.3' fill='%23FFF' cx='17.7112' cy='10.5608' r='1.9453'%3E%3C/circle%3E%3Ccircle fill='%23000' cx='13.0776' cy='10.5608' r='1.1259'%3E%3C/circle%3E%3Ccircle fill='%23000' cx='17.552' cy='10.5608' r='1.1259'%3E%3C/circle%3E%3C/g%3E%3C/svg%3E");
 }
 
 h1 svg {
 	vertical-align: text-top;
+    margin-right: -10px;
 }
 
 nav ul {
@@ -66,7 +81,6 @@ nav ul li a {
     text-decoration: none;
     display: block;
     padding: 10px;
-    font-family: "Operator SSm A", "Operator SSm B";
     font-style: normal;
     font-weight: 400;
     font-size: 16px;
@@ -80,7 +94,7 @@ nav ul li a svg {
 }
 
 code {
-    font-family: "Operator Mono SSm A", "Operator Mono SSm B";
+    font-family: "IBM Plex Mono";
     font-style: normal;
     font-weight: 400;
     line-height: 1.6em;
@@ -101,7 +115,7 @@ code {
     list-style: none;
     margin: 0;
     padding: 0;
-    font-family: "Operator Mono SSm A", "Operator Mono SSm B";
+    font-family: "IBM Plex Mono";
     font-size: 14px;
 }
 
