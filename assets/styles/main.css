@@ -24,9 +24,9 @@ nav {
     background-color: #ccc;
     border-bottom: 2px solid #666;
 
-    background-image: repeating-linear-gradient(45deg, #000 25%, transparent 25%, transparent 75%, #000 75%, #000), repeating-linear-gradient(45deg, #000 25%, #FFF 25%, #FFF 75%, #666 75%, #666);
-    background-position: 0 0, 2px 2px;
-    background-size: 4px 4px;
+    background-image: repeating-linear-gradient(45deg, #666 25%, transparent 25%, transparent 75%, #666 75%, #666), repeating-linear-gradient(45deg, #666 25%, #FFF 25%, #FFF 75%, #666 75%, #666);
+    background-position: 0 0, 1px 1px;
+    background-size: 2px 2px;
 }
 
 h1 {
