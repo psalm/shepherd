@@ -20,12 +20,13 @@ body {
 
 nav {
     overflow: hidden;
-    background-position: 0 10px;
-    background-repeat: no-repeat;
-    background-size: 48px 48px;
     padding: 10px 20px;
     background-color: #ccc;
     border-bottom: 2px solid #666;
+
+    background-image: repeating-linear-gradient(45deg, #000 25%, transparent 25%, transparent 75%, #000 75%, #000), repeating-linear-gradient(45deg, #000 25%, #FFF 25%, #FFF 75%, #666 75%, #666);
+    background-position: 0 0, 2px 2px;
+    background-size: 4px 4px;
 }
 
 h1 {
