@@ -23,7 +23,7 @@ class PsalmData
             }
         }
 
-        self::savePsalmData($git_commit, $payload['issues'], $payload['coverage'][0], $payload['coverage'][1]);
+        self::savePsalmData($git_commit, $payload['issues'], $payload['coverage'][0], $payload['coverage'][1], $payload['level'] ?? null);
 
         error_log('Psalm payload saved for ' . $git_commit);
 
@@ -51,19 +51,20 @@ class PsalmData
         }
     }
     
-    public static function savePsalmData(string $git_commit, array $issues, int $mixed_count, int $nonmixed_count) : void
+    public static function savePsalmData(string $git_commit, array $issues, int $mixed_count, int $nonmixed_count, ?int $level) : void
     {
         $connection = DatabaseProvider::getConnection();
 
         $stmt = $connection->prepare(
-            'INSERT IGNORE INTO psalm_reports (`git_commit`, `issues`, `mixed_count`, `nonmixed_count`)
-                VALUES (:git_commit, :issues, :mixed_count, :nonmixed_count)'
+            'INSERT IGNORE INTO psalm_reports (`git_commit`, `issues`, `mixed_count`, `nonmixed_count`, `level`)
+                VALUES (:git_commit, :issues, :mixed_count, :nonmixed_count, :level)'
         );
 
         $stmt->bindValue(':git_commit', $git_commit);
         $stmt->bindValue(':issues', json_encode($issues));
         $stmt->bindValue(':mixed_count', $mixed_count);
         $stmt->bindValue(':nonmixed_count', $nonmixed_count);
+        $stmt->bindValue(':level', $level);
 
         $stmt->execute();
     }
