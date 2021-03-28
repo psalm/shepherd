@@ -31,6 +31,7 @@ require '../vendor/autoload.php';
 					<a href="/github/<?php echo $github_repository ?>"/>
 						<?php echo $github_repository ?></a><br>
 						<img src="/github/<?php echo $github_repository ?>/coverage.svg">
+						<img src="/github/<?php echo $github_repository ?>/level.svg">
 					</a>
 				</li>
 			<?php endforeach; ?>
