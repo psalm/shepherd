@@ -21,7 +21,6 @@ class GitApiProvider implements \Psalm\Plugin\Hook\MethodReturnTypeProviderInter
 
     /**
      * @param  array<PhpParser\Node\Arg>    $call_args
-     * @return ?Type\Union
      */
     public static function getMethodReturnType(
         StatementsSource $source,
@@ -33,7 +32,7 @@ class GitApiProvider implements \Psalm\Plugin\Hook\MethodReturnTypeProviderInter
         array $template_type_parameters = null,
         string $called_fq_classlike_name = null,
         string $called_method_name_lowercase = null
-    ) {
+    ): ?Type\Union {
         $node_provider = $source->getNodeTypeProvider();
 
         if ($method_name_lowercase === 'api'
@@ -177,5 +176,7 @@ class GitApiProvider implements \Psalm\Plugin\Hook\MethodReturnTypeProviderInter
             
             return Type::parseString($api);
         }
+
+        return null;
     }
 }

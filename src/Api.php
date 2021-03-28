@@ -47,6 +47,36 @@ class Api
         return number_format(100 * $fraction, 1);
     }
 
+    public static function getLevel(string $repository) : ?int
+    {
+        list($owner_name, $repo_name) = explode('/', $repository);
+
+        $connection = DatabaseProvider::getConnection();
+
+        $stmt = $connection->prepare(
+            'SELECT level
+                FROM psalm_reports
+                INNER JOIN github_master_commits ON `github_master_commits`.`git_commit` = `psalm_reports`.`git_commit`
+                WHERE owner_name = :owner_name
+                AND repo_name = :repo_name
+                ORDER BY `github_master_commits`.`created_on` DESC'
+        );
+
+        $stmt->bindValue(':owner_name', $owner_name);
+        $stmt->bindValue(':repo_name', $repo_name);
+
+        $stmt->execute();
+
+        /** @var array<string, int> */
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$row) {
+            return null;
+        }
+
+        return $row['level'];
+    }
+
     public static function getHistory(string $repository) : array
     {
         list($owner_name, $repo_name) = explode('/', $repository);
