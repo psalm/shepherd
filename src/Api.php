@@ -110,7 +110,7 @@ class Api
                 $c = 0;
             }
 
-            $history[$row['created_on']] = [$row['git_commit'], $c];
+            $history[$row['created_on']] = [$row['git_commit'], $c, $total];
         }
 
         return $history;
