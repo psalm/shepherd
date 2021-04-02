@@ -18,7 +18,6 @@ function formatLargeNummber(int $x) : string {
 		$x_array = \explode(',', $x_number_format);
 		$x_parts = ['K', 'M', 'B', 'T'];
 		$x_count_parts = count($x_array) - 1;
-		$x_display = $x;
 		$x_display = $x_array[0] . ((int) $x_array[1][0] !== 0 ? '.' . $x_array[1][0] : '');
 		$x_display .= $x_parts[$x_count_parts - 1];
 
@@ -55,7 +54,7 @@ $github_url = $config->gh_enterprise_url ?: 'https://github.com';
 			<h2><a href="<?php echo $github_url . '/' . $repository ?>"><?php echo $repository ?></a></h2>
 
 			<p><img src="/github/<?php echo $repository ?>/coverage.svg"> <img src="/github/<?php echo $repository ?>/level.svg"></p>
-			
+
 			<h3>Type coverage history</h3>
 
 			<table>
