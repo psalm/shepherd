@@ -9,4 +9,5 @@ database/pr_comments/*.json
 database/pr_reviews/*.json
 database/psalm_data/*.json
 database/psalm_master_data/*.json
+views/shields/cache/*.svg
 config.json
