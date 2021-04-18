@@ -12,7 +12,8 @@ if (strpos($repository, '..') !== false) {
 	throw new \UnexpectedValueException('Unexpected values in repository name');
 }
 
-function formatLargeNummber(int $x) : string {
+function formatLargeNummber(int $x): string
+{
 	if ($x > 1000) {
 		$x_number_format = number_format($x);
 		$x_array = \explode(',', $x_number_format);

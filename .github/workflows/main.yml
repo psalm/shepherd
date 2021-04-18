@@ -2,6 +2,14 @@ name: CI
 
 on: [push, pull_request]
 jobs:
+  php_cs_fixer:
+    name: PHP CS Fixer
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name:  PHP CS Fixer
+      uses: docker://oskarstark/php-cs-fixer-ga
+
   psalm:
     name: Psalm
     runs-on: ubuntu-latest

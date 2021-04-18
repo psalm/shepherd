@@ -4,150 +4,150 @@ namespace Psalm\Shepherd;
 
 class PsalmData
 {
-    public static function handlePayload(string $git_commit, array $payload) : void
-    {
-        if (!empty($payload['build']['CI_REPO_OWNER'])
-            && !empty($payload['build']['CI_REPO_NAME'])
-            && empty($payload['build']['CI_PR_REPO_OWNER'])
-            && empty($payload['build']['CI_PR_REPO_NAME'])
-        ) {
-            $repository = new Model\GithubRepository(
-                $payload['build']['CI_REPO_OWNER'],
-                $payload['build']['CI_REPO_NAME']
-            );
+	public static function handlePayload(string $git_commit, array $payload): void
+	{
+		if (!empty($payload['build']['CI_REPO_OWNER'])
+			&& !empty($payload['build']['CI_REPO_NAME'])
+			&& empty($payload['build']['CI_PR_REPO_OWNER'])
+			&& empty($payload['build']['CI_PR_REPO_NAME'])
+		) {
+			$repository = new Model\GithubRepository(
+				$payload['build']['CI_REPO_OWNER'],
+				$payload['build']['CI_REPO_NAME']
+			);
 
-            if (($payload['build']['CI_BRANCH'] ?? '') === GithubApi::fetchDefaultBranch($repository)) {
-                /** @var string $date */
-                $date = date('Y-m-d H:i:s', $payload['git']['head']['date'] ?? date('U'));
-                GithubData::setRepositoryForMasterCommit($git_commit, $repository, $date);
-            }
-        }
+			if (($payload['build']['CI_BRANCH'] ?? '') === GithubApi::fetchDefaultBranch($repository)) {
+				/** @var string $date */
+				$date = date('Y-m-d H:i:s', $payload['git']['head']['date'] ?? date('U'));
+				GithubData::setRepositoryForMasterCommit($git_commit, $repository, $date);
+			}
+		}
 
-        self::savePsalmData($git_commit, $payload['issues'], $payload['coverage'][0], $payload['coverage'][1], $payload['level'] ?? null);
+		self::savePsalmData($git_commit, $payload['issues'], $payload['coverage'][0], $payload['coverage'][1], $payload['level'] ?? null);
 
-        error_log('Psalm payload saved for ' . $git_commit);
+		error_log('Psalm payload saved for ' . $git_commit);
 
-        $repository = GithubData::getRepositoryForCommitAndPayload($git_commit, $payload);
+		$repository = GithubData::getRepositoryForCommitAndPayload($git_commit, $payload);
 
-        if (!$repository) {
-            error_log('No repository found for ' . $git_commit);
-            exit();
-        }
+		if (!$repository) {
+			error_log('No repository found for ' . $git_commit);
+			exit();
+		}
 
-        $github_pull_request = GithubData::getPullRequestForCommitAndPayload($git_commit, $repository, $payload);
+		$github_pull_request = GithubData::getPullRequestForCommitAndPayload($git_commit, $repository, $payload);
 
-        if ($github_pull_request) {
-            $token = Auth::getToken($repository);
+		if ($github_pull_request) {
+			$token = Auth::getToken($repository);
 
-            Sender::addGithubReview(
-                'psalm',
-                $token,
-                $github_pull_request,
-                self::getGithubReviewForIssues(
-                    $payload['issues'],
-                    Sender::getGithubPullRequestDiff($token, $github_pull_request)
-                )
-            );
-        }
-    }
-    
-    public static function savePsalmData(string $git_commit, array $issues, int $mixed_count, int $nonmixed_count, ?int $level) : void
-    {
-        $connection = DatabaseProvider::getConnection();
+			Sender::addGithubReview(
+				'psalm',
+				$token,
+				$github_pull_request,
+				self::getGithubReviewForIssues(
+					$payload['issues'],
+					Sender::getGithubPullRequestDiff($token, $github_pull_request)
+				)
+			);
+		}
+	}
 
-        $stmt = $connection->prepare(
-            'INSERT IGNORE INTO psalm_reports (`git_commit`, `issues`, `mixed_count`, `nonmixed_count`, `level`)
+	public static function savePsalmData(string $git_commit, array $issues, int $mixed_count, int $nonmixed_count, ?int $level): void
+	{
+		$connection = DatabaseProvider::getConnection();
+
+		$stmt = $connection->prepare(
+			'INSERT IGNORE INTO psalm_reports (`git_commit`, `issues`, `mixed_count`, `nonmixed_count`, `level`)
                 VALUES (:git_commit, :issues, :mixed_count, :nonmixed_count, :level)'
-        );
+		);
 
-        $stmt->bindValue(':git_commit', $git_commit);
-        $stmt->bindValue(':issues', json_encode($issues));
-        $stmt->bindValue(':mixed_count', $mixed_count);
-        $stmt->bindValue(':nonmixed_count', $nonmixed_count);
-        $stmt->bindValue(':level', $level);
+		$stmt->bindValue(':git_commit', $git_commit);
+		$stmt->bindValue(':issues', json_encode($issues));
+		$stmt->bindValue(':mixed_count', $mixed_count);
+		$stmt->bindValue(':nonmixed_count', $nonmixed_count);
+		$stmt->bindValue(':level', $level);
 
-        $stmt->execute();
-    }
+		$stmt->execute();
+	}
 
-    /** @param array<int, array{severity: string, line_from: int, line_to: int, type: string, message: string,
-     *      file_name: string, file_path: string, snippet: string, from: int, to: int,
-     *      snippet_from: int, snippet_to: int, column_from: int, column_to: int, selected_text: string}> $issues
-     */
-    private static function getGithubReviewForIssues(array $issues, string $diff_string) : Model\GithubReview
-    {
-        $file_comments = [];
+	/** @param array<int, array{severity: string, line_from: int, line_to: int, type: string, message: string,
+	 *      file_name: string, file_path: string, snippet: string, from: int, to: int,
+	 *      snippet_from: int, snippet_to: int, column_from: int, column_to: int, selected_text: string}> $issues
+	 */
+	private static function getGithubReviewForIssues(array $issues, string $diff_string): Model\GithubReview
+	{
+		$file_comments = [];
 
-        $missed_errors = [];
+		$missed_errors = [];
 
-        foreach ($issues as $issue) {
-            if ($issue['severity'] !== 'error') {
-                continue;
-            }
+		foreach ($issues as $issue) {
+			if ($issue['severity'] !== 'error') {
+				continue;
+			}
 
-            $file_name = $issue['file_name'];
-            $line_from = $issue['line_from'];
+			$file_name = $issue['file_name'];
+			$line_from = $issue['line_from'];
 
-            $diff_file_offset = DiffLineFinder::getGitHubPositionFromDiff(
-                $line_from,
-                $file_name,
-                $diff_string
-            );
+			$diff_file_offset = DiffLineFinder::getGitHubPositionFromDiff(
+				$line_from,
+				$file_name,
+				$diff_string
+			);
 
-            if ($diff_file_offset !== null) {
-                $snippet = $issue['snippet'];
-                $selected_text = $issue['selected_text'];
+			if ($diff_file_offset !== null) {
+				$snippet = $issue['snippet'];
+				$selected_text = $issue['selected_text'];
 
-                $selection_start = $issue['from'] - $issue['snippet_from'];
-                $selection_length = $issue['to'] - $issue['from'];
+				$selection_start = $issue['from'] - $issue['snippet_from'];
+				$selection_length = $issue['to'] - $issue['from'];
 
-                $before_selection = substr($snippet, 0, $selection_start);
+				$before_selection = substr($snippet, 0, $selection_start);
 
-                $after_selection = substr($snippet, $selection_start + $selection_length);
+				$after_selection = substr($snippet, $selection_start + $selection_length);
 
-                $before_lines = explode("\n", $before_selection);
+				$before_lines = explode("\n", $before_selection);
 
-                $last_before_line_length = strlen(array_pop($before_lines));
+				$last_before_line_length = strlen(array_pop($before_lines));
 
-                $first_selected_line = explode("\n", $selected_text)[0];
+				$first_selected_line = explode("\n", $selected_text)[0];
 
-                if ($first_selected_line === $selected_text) {
-                    $first_selected_line .= explode("\n", $after_selection)[0];
-                }
+				if ($first_selected_line === $selected_text) {
+					$first_selected_line .= explode("\n", $after_selection)[0];
+				}
 
-                $issue_string = $before_selection . $first_selected_line
-                    . "\n" . str_repeat(' ', $last_before_line_length) . str_repeat('^', strlen($selected_text));
+				$issue_string = $before_selection . $first_selected_line
+					. "\n" . str_repeat(' ', $last_before_line_length) . str_repeat('^', strlen($selected_text));
 
-                $file_comments[] = [
-                    'path' => $file_name,
-                    'position' => $diff_file_offset,
-                    'body' => $issue['message'] . "\n```\n"
-                        . $issue_string . "\n```",
-                ];
+				$file_comments[] = [
+					'path' => $file_name,
+					'position' => $diff_file_offset,
+					'body' => $issue['message'] . "\n```\n"
+						. $issue_string . "\n```",
+				];
 
-                continue;
-            }
+				continue;
+			}
 
-            $missed_errors[] = $file_name . ':' . $line_from . ':' . $issue['column_from'] . ' - ' . $issue['message'];
-        }
+			$missed_errors[] = $file_name . ':' . $line_from . ':' . $issue['column_from'] . ' - ' . $issue['message'];
+		}
 
-        if ($missed_errors) {
-            $comment_text = "\n\n```\n" . implode("\n", $missed_errors) . "\n```";
+		if ($missed_errors) {
+			$comment_text = "\n\n```\n" . implode("\n", $missed_errors) . "\n```";
 
-            if ($file_comments) {
-                $message_body = 'Psalm also found errors in other files' . $comment_text;
-            } else {
-                $message_body = 'Psalm found errors in other files' . $comment_text;
-            }
-        } elseif ($file_comments) {
-            $message_body = 'Psalm found some errors';
-        } else {
-            $message_body = 'Psalm didn’t find any errors!';
-        }
+			if ($file_comments) {
+				$message_body = 'Psalm also found errors in other files' . $comment_text;
+			} else {
+				$message_body = 'Psalm found errors in other files' . $comment_text;
+			}
+		} elseif ($file_comments) {
+			$message_body = 'Psalm found some errors';
+		} else {
+			$message_body = 'Psalm didn’t find any errors!';
+		}
 
-        return new Model\GithubReview(
-            $message_body,
-            !$missed_errors && !$file_comments,
-            $file_comments
-        );
-    }
+		return new Model\GithubReview(
+			$message_body,
+			!$missed_errors && !$file_comments,
+			$file_comments
+		);
+	}
 }

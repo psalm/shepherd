@@ -19,14 +19,14 @@ $client = new \Github\Client(null, null, $config->gh_enterprise_url);
 $client->authenticate($github_token, null, \Github\Client::AUTH_HTTP_TOKEN);
 
 $repos = $client
-    ->api('me')
-    ->setPerPage(200)
-    ->repositories(
-    	'all',
-    	'full_name',
-    	'asc',
-    	'public'
-    );
+	->api('me')
+	->setPerPage(200)
+	->repositories(
+		'all',
+		'full_name',
+		'asc',
+		'public'
+	);
 
 /** @psalm-suppress ForbiddenCode */
 var_dump($repos);

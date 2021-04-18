@@ -14,8 +14,8 @@ class OAuthApp extends \Psalm\Shepherd\Config
 	public $public_access_oauth_token;
 
 	/**
-     * @param array{dsn: string, user: string, password: string} $mysql
-     */
+	 * @param array{dsn: string, user: string, password: string} $mysql
+	 */
 	public function __construct(
 		string $client_id,
 		string $client_secret,

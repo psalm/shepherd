@@ -4,7 +4,7 @@ namespace Psalm\Shepherd;
 
 class Auth
 {
-	public static function getToken(Model\GithubRepository $repository) : string
+	public static function getToken(Model\GithubRepository $repository): string
 	{
 		$config = Config::getInstance();
 
@@ -26,18 +26,18 @@ class Auth
 	}
 
 	/** @psalm-suppress UnusedParam */
-	private static function getTokenForRepo(Model\GithubRepository $repository) : ?string
+	private static function getTokenForRepo(Model\GithubRepository $repository): ?string
 	{
 		return null;
 	}
 
-	public static function fetchTokenFromGithub(string $code, string $state, Config\OAuthApp $config) : string
+	public static function fetchTokenFromGithub(string $code, string $state, Config\OAuthApp $config): string
 	{
 		$params = [
-		    'client_id' => $config->client_id,
-		    'client_secret' => $config->client_secret,
-		    'code' => $code,
-		    'state' => $state,
+			'client_id' => $config->client_id,
+			'client_secret' => $config->client_secret,
+			'code' => $code,
+			'state' => $state,
 		];
 
 		$payload = http_build_query($params);
@@ -54,13 +54,13 @@ class Auth
 
 		// Set HTTP Header for POST request
 		curl_setopt(
-		    $ch,
-		    CURLOPT_HTTPHEADER,
-		    [
-		        'Accept: application/json',
-		        'Content-Type: application/x-www-form-urlencoded',
-		        'Content-Length: ' . strlen($payload)
-		    ]
+			$ch,
+			CURLOPT_HTTPHEADER,
+			[
+				'Accept: application/json',
+				'Content-Type: application/x-www-form-urlencoded',
+				'Content-Length: ' . strlen($payload)
+			]
 		);
 
 		// Submit the POST request
@@ -70,7 +70,7 @@ class Auth
 		curl_close($ch);
 
 		if (!$response) {
-		    throw new \UnexpectedValueException('Response should exist');
+			throw new \UnexpectedValueException('Response should exist');
 		}
 
 		$response_data = json_decode($response, true);

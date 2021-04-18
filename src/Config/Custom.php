@@ -11,8 +11,8 @@ class Custom extends \Psalm\Shepherd\Config
 	public $webhook_secret;
 
 	/**
-     * @param array{dsn: string, user: string, password: string} $mysql
-     */
+	 * @param array{dsn: string, user: string, password: string} $mysql
+	 */
 	public function __construct(
 		string $personal_token,
 		?string $webhook_secret,
