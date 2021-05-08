@@ -13,57 +13,57 @@ $config = Psalm\Shepherd\Config::getInstance();
 $raw_post = file_get_contents('php://input');
 
 switch ($_SERVER['CONTENT_TYPE']) {
-	case 'application/x-www-form-urlencoded':
-		$raw_payload = $_POST['payload'];
-		break;
+    case 'application/x-www-form-urlencoded':
+        $raw_payload = $_POST['payload'];
+        break;
 
-	case 'application/json':
-		$raw_payload = $raw_post;
-		break;
+    case 'application/json':
+        $raw_payload = $raw_post;
+        break;
 
-	default:
-		throw new \UnexpectedValueException('Unrecognised payload');
+    default:
+        throw new UnexpectedValueException('Unrecognised payload');
 }
 
 if ($config instanceof Psalm\Shepherd\Config\Custom && $config->webhook_secret) {
-	$hash = 'sha1=' . hash_hmac('sha1', $raw_post, $config->webhook_secret, false);
+    $hash = 'sha1=' . hash_hmac('sha1', $raw_post, $config->webhook_secret, false);
 
-	if (!isset($_SERVER['HTTP_X_HUB_SIGNATURE'])) {
-		throw new \Exception('Missing signature header');
-	}
+    if (!isset($_SERVER['HTTP_X_HUB_SIGNATURE'])) {
+        throw new Exception('Missing signature header');
+    }
 
-	if (!hash_equals($hash, $_SERVER['HTTP_X_HUB_SIGNATURE'])) {
-		throw new \Exception('Mismatching signature');
-	}
+    if (!hash_equals($hash, $_SERVER['HTTP_X_HUB_SIGNATURE'])) {
+        throw new Exception('Mismatching signature');
+    }
 }
 
 $payload = json_decode($raw_payload, true);
 
 if (!isset($payload['pull_request'])) {
-	if (($_SERVER['HTTP_X_GITHUB_EVENT'] ?? '') === 'push'
-		&& ($payload['ref'] ?? '') === 'refs/heads/master'
-		&& isset($payload['repository'])
-	) {
-		Psalm\Shepherd\GithubData::storeMasterData(
-			$payload['after'],
-			$payload
-		);
-	}
+    if (($_SERVER['HTTP_X_GITHUB_EVENT'] ?? '') === 'push'
+        && ($payload['ref'] ?? '') === 'refs/heads/master'
+        && isset($payload['repository'])
+    ) {
+        Psalm\Shepherd\GithubData::storeMasterData(
+            $payload['after'],
+            $payload
+        );
+    }
 
-	return;
+    return;
 }
 
 $git_commit_hash = $payload['pull_request']['head']['sha'] ?? null;
 
 if (!$git_commit_hash) {
-	return;
+    return;
 }
 
 if (!preg_match('/^[a-f0-9]+$/', $git_commit_hash)) {
-	throw new \UnexpectedValueException('Bad git commit hash given');
+    throw new UnexpectedValueException('Bad git commit hash given');
 }
 
 Psalm\Shepherd\GithubData::storePullRequestData(
-	$git_commit_hash,
-	$payload
+    $git_commit_hash,
+    $payload
 );

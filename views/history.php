@@ -5,26 +5,27 @@ require '../vendor/autoload.php';
 $repository = $_SERVER['QUERY_STRING'];
 
 if (!preg_match('/^[-\d\w._]+\/[-\d\w._]+$/', $repository)) {
-	throw new \UnexpectedValueException('Repsitory format not recognised');
+    throw new UnexpectedValueException('Repsitory format not recognised');
 }
 
 if (strpos($repository, '..') !== false) {
-	throw new \UnexpectedValueException('Unexpected values in repository name');
+    throw new UnexpectedValueException('Unexpected values in repository name');
 }
 
-function formatLargeNummber(int $x) : string {
-	if ($x > 1000) {
-		$x_number_format = number_format($x);
-		$x_array = \explode(',', $x_number_format);
-		$x_parts = ['K', 'M', 'B', 'T'];
-		$x_count_parts = count($x_array) - 1;
-		$x_display = $x_array[0] . ((int) $x_array[1][0] !== 0 ? '.' . $x_array[1][0] : '');
-		$x_display .= $x_parts[$x_count_parts - 1];
+function formatLargeNummber(int $x) : string
+{
+    if ($x > 1000) {
+        $x_number_format = number_format($x);
+        $x_array = explode(',', $x_number_format);
+        $x_parts = ['K', 'M', 'B', 'T'];
+        $x_count_parts = count($x_array) - 1;
+        $x_display = $x_array[0] . ((int) $x_array[1][0] !== 0 ? '.' . $x_array[1][0] : '');
+        $x_display .= $x_parts[$x_count_parts - 1];
 
-		return $x_display;
-	}
+        return $x_display;
+    }
 
-	return (string) $x;
+    return (string) $x;
 }
 
 $pct = Psalm\Shepherd\Api::getHistory($repository);
@@ -43,41 +44,41 @@ $github_url = $config->gh_enterprise_url ?: 'https://github.com';
 <link rel="icon" type="image/png" href="/assets/img/favicon.png">
 </head>
 <body>
-	<nav>
-		<div class="container">
-			<h1><a href="/">Shepherd</a></h1>
-		</div>
-	</nav>
+    <nav>
+        <div class="container">
+            <h1><a href="/">Shepherd</a></h1>
+        </div>
+    </nav>
 
-	<div class="container front">
-		<div class="coverage_list">
-			<h2><a href="<?php echo $github_url . '/' . $repository ?>"><?php echo $repository ?></a></h2>
+    <div class="container front">
+        <div class="coverage_list">
+            <h2><a href="<?php echo $github_url . '/' . $repository ?>"><?php echo $repository ?></a></h2>
 
-			<p><img src="/github/<?php echo $repository ?>/coverage.svg"> <img src="/github/<?php echo $repository ?>/level.svg"></p>
+            <p><img src="/github/<?php echo $repository ?>/coverage.svg"> <img src="/github/<?php echo $repository ?>/level.svg"></p>
 
-			<h3>Type coverage history</h3>
+            <h3>Type coverage history</h3>
 
-			<table>
-				<thead>
-					<tr>
-						<th>Date</th>
-						<th>Commit</th>
-						<th>Type Coverage</th>
-						<th>Analysed Expression #</th>
-					</tr>
-				</thead>
-				<tbody>
-					<?php foreach ($pct as $date => [$commit, $coverage, $total]) : ?>
-					<tr>
-						<td><?php echo date('F j Y, H:i:s', strtotime($date)) ?></td>
-						<td><a href="<?php echo $github_url . '/' . $repository . '/commit/' . $commit ?>"><?php echo substr($commit, 0, 7) ?></a></td>
-						<td><?php echo number_format($coverage, 3) ?>%</td>
-						<td><?php echo formatLargeNummber($total) ?></td>
-					</tr>
-					<?php endforeach; ?>
-				</tbody>
-			</table>
-		</div>
-	</div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Commit</th>
+                        <th>Type Coverage</th>
+                        <th>Analysed Expression #</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($pct as $date => [$commit, $coverage, $total]) : ?>
+                    <tr>
+                        <td><?php echo date('F j Y, H:i:s', strtotime($date)) ?></td>
+                        <td><a href="<?php echo $github_url . '/' . $repository . '/commit/' . $commit ?>"><?php echo substr($commit, 0, 7) ?></a></td>
+                        <td><?php echo number_format($coverage, 3) ?>%</td>
+                        <td><?php echo formatLargeNummber($total) ?></td>
+                    </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
+    </div>
 </body>
 </html>
