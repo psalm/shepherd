@@ -3,6 +3,8 @@
 namespace Psalm\Shepherd;
 
 use PDO;
+use function error_log;
+use function date;
 
 class GithubData
 {
@@ -11,7 +13,8 @@ class GithubData
         $connection = DatabaseProvider::getConnection();
 
         $stmt = $connection->prepare(
-            'INSERT IGNORE INTO github_pull_requests (`owner_name`, `repo_name`, `git_commit`, `number`, `branch`, `url`)
+            'INSERT IGNORE INTO github_pull_requests
+                (`owner_name`, `repo_name`, `git_commit`, `number`, `branch`, `url`)
                 VALUES (:owner_name, :repo_name, :git_commit, :number, :branch, :url)'
         );
 
@@ -41,8 +44,10 @@ class GithubData
         error_log('GitHub data saved for ' . $git_commit);
     }
 
-    public static function getRepositoryForCommitAndPayload(string $git_commit_hash, array $payload) : ?Model\GithubRepository
-    {
+    public static function getRepositoryForCommitAndPayload(
+        string $git_commit_hash,
+        array $payload
+    ): ?Model\GithubRepository {
         if (!empty($payload['build']['CI_REPO_OWNER'])
             && !empty($payload['build']['CI_REPO_NAME'])
         ) {

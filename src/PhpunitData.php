@@ -3,6 +3,8 @@
 namespace Psalm\Shepherd;
 
 use PDO;
+use function error_log;
+use const PHP_EOL;
 
 class PhpunitData
 {
@@ -62,7 +64,9 @@ class PhpunitData
         $test_failures = self::getTestFailures($git_commit, $branch, $repository);
 
         if (!$test_failures) {
-            throw new \UnexpectedValueException('Could not find any test failures for ' . $git_commit . ', ' . $branch . ' and ' . $repository);
+            throw new \UnexpectedValueException(
+                'Could not find any test failures for ' . $git_commit . ', ' . $branch . ' and ' . $repository
+            );
         }
 
         foreach ($test_failures as $test_name) {
@@ -198,8 +202,7 @@ class PhpunitData
 
         $stmt = $connection->prepare('
             INSERT IGNORE into test_failures (repository, git_commit, branch, test_name)
-                VALUES (:repository, :git_commit, :branch, :test_name)'
-        );
+                VALUES (:repository, :git_commit, :branch, :test_name)');
 
         $stmt->bindValue(':git_commit', $git_commit);
         $stmt->bindValue(':branch', $branch);

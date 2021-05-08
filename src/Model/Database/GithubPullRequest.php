@@ -35,7 +35,14 @@ class GithubPullRequest
     }
 
     /**
-     * @param array{owner_name: string, repo_name: string, number: int, git_commit: string, branch: string, url: string} $database_data
+     * @param array{
+     *        owner_name: string,
+     *        repo_name: string,
+     *        number: int,
+     *        git_commit: string,
+     *        branch: string,
+     *        url: string
+     *  } $database_data
      */
     public static function fromDatabaseData(array $database_data) : self
     {

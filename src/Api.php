@@ -3,6 +3,8 @@
 namespace Psalm\Shepherd;
 
 use PDO;
+use function explode;
+use function number_format;
 
 class Api
 {
@@ -41,7 +43,7 @@ class Api
         $fraction = $row['nonmixed_count'] / $total;
 
         if ($fraction >= 0.9995) {
-        	return '100';
+            return '100';
         }
 
         return number_format(100 * $fraction, 1);
@@ -84,7 +86,10 @@ class Api
         $connection = DatabaseProvider::getConnection();
 
         $stmt = $connection->prepare(
-            'SELECT `github_master_commits`.`git_commit`, mixed_count, nonmixed_count, `github_master_commits`.created_on
+            'SELECT `github_master_commits`.`git_commit`,
+                    mixed_count,
+                    nonmixed_count,
+                    `github_master_commits`.created_on
                 FROM psalm_reports
                 INNER JOIN github_master_commits ON `github_master_commits`.`git_commit` = `psalm_reports`.`git_commit`
                 WHERE owner_name = :owner_name
@@ -104,7 +109,7 @@ class Api
             $total = ($row['mixed_count'] + $row['nonmixed_count']);
             if (!$row['mixed_count'] && $row['nonmixed_count']) {
                 $c = 100;
-            } elseif($total) {
+            } elseif ($total) {
                 $c = 100 * $row['nonmixed_count'] / $total;
             } else {
                 $c = 0;

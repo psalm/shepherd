@@ -3,6 +3,7 @@
 namespace Psalm\Shepherd;
 
 use Github\Client;
+use function error_log;
 
 class GithubApi
 {
@@ -26,7 +27,12 @@ class GithubApi
     ): array {
         $client = static::createAuthenticatedClient($repository);
 
-        error_log('Fetching pull request data for ' . $repository->owner_name . '/' . $repository->repo_name . '/' . $pr_number);
+        error_log(
+            'Fetching pull request data for '
+                . $repository->owner_name
+                . '/' . $repository->repo_name
+                . '/' . $pr_number
+        );
 
         $pr = $client
             ->api('pull_request')
@@ -47,7 +53,7 @@ class GithubApi
         $github_token = Auth::getToken($repository);
 
         $client = new Client(null, null, $config->gh_enterprise_url);
-        $client->authenticate($github_token, null, \Github\Client::AUTH_HTTP_TOKEN);
+        $client->authenticate($github_token, null, \Github\Client::AUTH_ACCESS_TOKEN);
 
         return $client;
     }

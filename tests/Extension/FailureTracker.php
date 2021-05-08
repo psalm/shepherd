@@ -6,6 +6,24 @@ use PHPUnit\Runner\AfterLastTestHook;
 use PHPUnit\Runner\AfterTestFailureHook;
 use PHPUnit\Runner\AfterTestErrorHook;
 use Psalm\SourceControl\Git\GitInfo;
+use function json_encode;
+use function parse_url;
+use const PHP_URL_SCHEME;
+use function curl_init;
+use function curl_setopt;
+use const CURLOPT_RETURNTRANSFER;
+use const CURLINFO_HEADER_OUT;
+use const CURLOPT_POST;
+use const CURLOPT_POSTFIELDS;
+use const CURLOPT_HTTPHEADER;
+use function strlen;
+use function curl_exec;
+use function fwrite;
+use const STDERR;
+use const PHP_EOL;
+use function var_export;
+use function var_dump;
+use function curl_close;
 
 final class FailureTracker implements AfterTestErrorHook, AfterTestFailureHook, AfterLastTestHook
 {

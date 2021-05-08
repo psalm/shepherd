@@ -2,6 +2,7 @@
 namespace Psalm\Shepherd\Test;
 
 use PHPUnit\Framework\TestCase;
+use function file_get_contents;
 
 class GithubDiffLineTest extends TestCase
 {

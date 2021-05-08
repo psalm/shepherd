@@ -2,6 +2,16 @@
 
 namespace Psalm\Shepherd;
 
+use function date;
+use function error_log;
+use function json_encode;
+use function substr;
+use function explode;
+use function strlen;
+use function array_pop;
+use function str_repeat;
+use function implode;
+
 class PsalmData
 {
     public static function handlePayload(string $git_commit, array $payload) : void
@@ -23,7 +33,13 @@ class PsalmData
             }
         }
 
-        self::savePsalmData($git_commit, $payload['issues'], $payload['coverage'][0], $payload['coverage'][1], $payload['level'] ?? null);
+        self::savePsalmData(
+            $git_commit,
+            $payload['issues'],
+            $payload['coverage'][0],
+            $payload['coverage'][1],
+            $payload['level'] ?? null
+        );
 
         error_log('Psalm payload saved for ' . $git_commit);
 
@@ -51,8 +67,13 @@ class PsalmData
         }
     }
     
-    public static function savePsalmData(string $git_commit, array $issues, int $mixed_count, int $nonmixed_count, ?int $level) : void
-    {
+    public static function savePsalmData(
+        string $git_commit,
+        array $issues,
+        int $mixed_count,
+        int $nonmixed_count,
+        ?int $level
+    ) : void {
         $connection = DatabaseProvider::getConnection();
 
         $stmt = $connection->prepare(

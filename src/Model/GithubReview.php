@@ -4,7 +4,7 @@ namespace Psalm\Shepherd\Model;
 
 class GithubReview
 {
-	/** @var string */
+    /** @var string */
     public $message;
 
     /**

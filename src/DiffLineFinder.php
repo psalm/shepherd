@@ -2,17 +2,19 @@
 
 namespace Psalm\Shepherd;
 
+use function count;
+
 class DiffLineFinder
 {
-	public static function getGitHubPositionFromDiff(
+    public static function getGitHubPositionFromDiff(
         int $input_line,
         string $file_name,
         string $diff_string
     ) : ?int {
-		$diff_parser = new \SebastianBergmann\Diff\Parser();
+        $diff_parser = new \SebastianBergmann\Diff\Parser();
         $diffs = $diff_parser->parse($diff_string);
 
-		foreach ($diffs as $diff) {
+        foreach ($diffs as $diff) {
             if ($diff->getTo() === 'b/' . $file_name) {
                 $diff_file_offset = 0;
 
@@ -45,5 +47,5 @@ class DiffLineFinder
         }
 
         return null;
-	}
+    }
 }

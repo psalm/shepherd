@@ -2,79 +2,95 @@
 
 namespace Psalm\Shepherd;
 
+use function http_build_query;
+use function curl_init;
+use function curl_setopt;
+use const CURLOPT_RETURNTRANSFER;
+use const CURLINFO_HEADER_OUT;
+use const CURLOPT_POST;
+use const CURLOPT_POSTFIELDS;
+use const CURLOPT_SSL_VERIFYPEER;
+use const CURLOPT_HTTPHEADER;
+use function strlen;
+use function curl_exec;
+use function curl_close;
+use function json_decode;
+
 class Auth
 {
-	public static function getToken(Model\GithubRepository $repository) : string
-	{
-		$config = Config::getInstance();
+    public static function getToken(Model\GithubRepository $repository) : string
+    {
+        $config = Config::getInstance();
 
-		if ($config instanceof Config\Custom) {
-			return $config->personal_token;
-		}
+        if ($config instanceof Config\Custom) {
+            return $config->personal_token;
+        }
 
-		$repo_token = self::getTokenForRepo($repository);
+        $repo_token = self::getTokenForRepo($repository);
 
-		if ($repo_token) {
-			return $repo_token;
-		}
+        if ($repo_token) {
+            return $repo_token;
+        }
 
-		if ($config->public_access_oauth_token) {
-			return $config->public_access_oauth_token;
-		}
+        if ($config->public_access_oauth_token) {
+            return $config->public_access_oauth_token;
+        }
 
-		throw new \UnexpectedValueException('Could not find valid token for ' . $repository->owner_name . '/' . $repository->repo_name);
-	}
+        throw new \UnexpectedValueException(
+            'Could not find valid token for ' . $repository->owner_name . '/' . $repository->repo_name
+        );
+    }
 
-	/** @psalm-suppress UnusedParam */
-	private static function getTokenForRepo(Model\GithubRepository $repository) : ?string
-	{
-		return null;
-	}
+    /** @psalm-suppress UnusedParam */
+    private static function getTokenForRepo(Model\GithubRepository $repository) : ?string
+    {
+        return null;
+    }
 
-	public static function fetchTokenFromGithub(string $code, string $state, Config\OAuthApp $config) : string
-	{
-		$params = [
-		    'client_id' => $config->client_id,
-		    'client_secret' => $config->client_secret,
-		    'code' => $code,
-		    'state' => $state,
-		];
+    public static function fetchTokenFromGithub(string $code, string $state, Config\OAuthApp $config) : string
+    {
+        $params = [
+            'client_id' => $config->client_id,
+            'client_secret' => $config->client_secret,
+            'code' => $code,
+            'state' => $state,
+        ];
 
-		$payload = http_build_query($params);
+        $payload = http_build_query($params);
 
-		$github_url = $config->gh_enterprise_url ?: 'https://github.com';
+        $github_url = $config->gh_enterprise_url ?: 'https://github.com';
 
-		// Prepare new cURL resource
-		$ch = curl_init($github_url . '/login/oauth/access_token');
-		curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-		curl_setopt($ch, CURLINFO_HEADER_OUT, true);
-		curl_setopt($ch, CURLOPT_POST, true);
-		curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
-		curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
+        // Prepare new cURL resource
+        $ch = curl_init($github_url . '/login/oauth/access_token');
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLINFO_HEADER_OUT, true);
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
 
-		// Set HTTP Header for POST request
-		curl_setopt(
-		    $ch,
-		    CURLOPT_HTTPHEADER,
-		    [
-		        'Accept: application/json',
-		        'Content-Type: application/x-www-form-urlencoded',
-		        'Content-Length: ' . strlen($payload)
-		    ]
-		);
+        // Set HTTP Header for POST request
+        curl_setopt(
+            $ch,
+            CURLOPT_HTTPHEADER,
+            [
+                'Accept: application/json',
+                'Content-Type: application/x-www-form-urlencoded',
+                'Content-Length: ' . strlen($payload)
+            ]
+        );
 
-		// Submit the POST request
-		$response = (string) curl_exec($ch);
+        // Submit the POST request
+        $response = (string) curl_exec($ch);
 
-		// Close cURL session handle
-		curl_close($ch);
+        // Close cURL session handle
+        curl_close($ch);
 
-		if (!$response) {
-		    throw new \UnexpectedValueException('Response should exist');
-		}
+        if (!$response) {
+            throw new \UnexpectedValueException('Response should exist');
+        }
 
-		$response_data = json_decode($response, true);
+        $response_data = json_decode($response, true);
 
-		return $response_data['access_token'];
-	}
+        return $response_data['access_token'];
+    }
 }

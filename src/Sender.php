@@ -2,16 +2,20 @@
 
 namespace Psalm\Shepherd;
 
-use PDO;
+use function is_string;
+use function error_log;
+use function is_array;
 
 class Sender
 {
-    public static function getGithubPullRequestDiff(string $github_token, Model\Database\GithubPullRequest $pull_request) : string
-    {
+    public static function getGithubPullRequestDiff(
+        string $github_token,
+        Model\Database\GithubPullRequest $pull_request
+    ) : string {
         $config = Config::getInstance();
 
         $client = new \Github\Client(null, null, $config->gh_enterprise_url);
-        $client->authenticate($github_token, null, \Github\Client::AUTH_HTTP_TOKEN);
+        $client->authenticate($github_token, null, \Github\Client::AUTH_ACCESS_TOKEN);
 
         $repository = $pull_request->repository->owner_name . '/' . $pull_request->repository->repo_name;
 
@@ -46,7 +50,7 @@ class Sender
         $config = Config::getInstance();
 
         $client = new \Github\Client(null, null, $config->gh_enterprise_url);
-        $client->authenticate($github_token, null, \Github\Client::AUTH_HTTP_TOKEN);
+        $client->authenticate($github_token, null, \Github\Client::AUTH_ACCESS_TOKEN);
 
         $review_id = self::getGithubReviewIdForPullRequest($pull_request->url, $review_type);
         $comment_id = self::getGithubCommentIdForPullRequest($pull_request->url, $review_type);
@@ -94,7 +98,9 @@ class Sender
                 );
         } catch (\Github\Exception\RuntimeException $e) {
             throw new \RuntimeException(
-                'Could not fetch comments for review ' . $review_id . ' for pull request ' . $pull_request->number . ' on ' . $repository_slug
+                'Could not fetch comments for review '
+                    . $review_id . ' for pull request '
+                    . $pull_request->number . ' on ' . $repository_slug
             );
         }
 

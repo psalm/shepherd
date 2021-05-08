@@ -16,11 +16,10 @@ if (!$github_token) {
 }
 
 $client = new \Github\Client(null, null, $config->gh_enterprise_url);
-$client->authenticate($github_token, null, \Github\Client::AUTH_HTTP_TOKEN);
+$client->authenticate($github_token, null, \Github\Client::AUTH_ACCESS_TOKEN);
 
 $repos = $client
     ->api('me')
-    ->setPerPage(200)
     ->repositories(
     	'all',
     	'full_name',
