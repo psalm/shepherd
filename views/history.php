@@ -12,8 +12,7 @@ if (strpos($repository, '..') !== false) {
     throw new UnexpectedValueException('Unexpected values in repository name');
 }
 
-function formatLargeNummber(int $x) : string
-{
+$formatLargeNummber = function (int $x) : string {
     if ($x > 1000) {
         $x_number_format = number_format($x);
         $x_array = explode(',', $x_number_format);
@@ -26,7 +25,7 @@ function formatLargeNummber(int $x) : string
     }
 
     return (string) $x;
-}
+};
 
 $pct = Psalm\Shepherd\Api::getHistory($repository);
 
@@ -73,7 +72,7 @@ $github_url = $config->gh_enterprise_url ?: 'https://github.com';
                         <td><?php echo date('F j Y, H:i:s', strtotime($date)) ?></td>
                         <td><a href="<?php echo $github_url . '/' . $repository . '/commit/' . $commit ?>"><?php echo substr($commit, 0, 7) ?></a></td>
                         <td><?php echo number_format($coverage, 3) ?>%</td>
-                        <td><?php echo formatLargeNummber($total) ?></td>
+                        <td><?php echo $formatLargeNummber($total) ?></td>
                     </tr>
                     <?php endforeach; ?>
                 </tbody>

@@ -18,6 +18,10 @@
         <exclude-pattern>*</exclude-pattern>
     </rule>
 
+    <rule ref="Generic.Files.LineLength">
+        <exclude-pattern>views</exclude-pattern>
+    </rule>
+
     <rule ref="SlevomatCodingStandard.Namespaces.UnusedUses">
         <properties>
             <property name="searchAnnotations" type="boolean" value="true"/>
@@ -25,4 +29,5 @@
     </rule>
     <file>src/</file>
     <file>tests/</file>
+    <file>views</file>
 </ruleset>
