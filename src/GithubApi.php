@@ -4,6 +4,13 @@ namespace Psalm\Shepherd;
 
 use Github\Client;
 use function error_log;
+use function array_filter;
+use function strpos;
+use function array_values;
+use function explode;
+use function substr;
+use function trim;
+use function var_dump;
 
 class GithubApi
 {
@@ -58,27 +65,162 @@ class GithubApi
         return $client;
     }
 
-    public static function fetchPsalmIssuesData() : array
+    public static function fetchPsalmIssuesData(?string $after) : array
     {
-        $query = 'query { 
-          repository(owner: "vimeo", name: "psalm") {
-            openIssues: issues(states: OPEN, last: 100) {
-              nodes {
-                bodyText,
-                comments(first: 3) {
-                  nodes {
-                    bodyText,
-                    author {
-                      login
+        $query = 'query($afterCursor: String) {
+            repository(owner: "vimeo", name: "psalm") {
+                issues(states: OPEN, first: 30, after: $afterCursor) {
+                    pageInfo {
+                        startCursor
+                        hasNextPage
+                        endCursor
                     }
-                  }
+                    nodes {
+                        number,
+                        bodyText,
+                        comments(first: 3) {
+                            nodes {
+                                body,
+                                author {
+                                    login
+                                }
+                            }
+                        }
+                    }
                 }
-              }
             }
-          }
         }';
 
         $client = static::createAuthenticatedClient(new Model\GithubRepository('vimeo', 'psalm'));
-        return $client->api('graphql')->execute($query);
+
+        $different_issues = [];
+
+        $data = $client->api('graphql')->execute($query, ['afterCursor' => $after])['data'];
+
+        foreach ($data['repository']['issues']['nodes'] as $issue) {
+            foreach ($issue['comments']['nodes'] as $comment) {
+                if ($comment['author']['login'] === 'psalm-github-bot'
+                    && strpos($comment['body'], 'I found these snippets:') !== false
+                ) {
+                    $body = $comment['body'];
+
+                    $lines = array_values(
+                        array_filter(
+                            explode("\n", $body),
+                            function ($line) {
+                                return $line !== 'I found these snippets:'
+                                    && $line !== '<details>'
+                                    && $line !== '</details>';
+                            }
+                        )
+                    );
+
+                    $link = null;
+
+                    $in_php = false;
+                    $in_results = false;
+
+                    $psalm_result = '';
+
+                    $psalm_results = [];
+
+                    foreach ($lines as $line) {
+                        if (strpos($line, '<summary>') === 0) {
+                            $link = substr($line, 9, -10);
+                            continue;
+                        }
+
+                        if (strpos($line, 'Psalm output') === 0) {
+                            continue;
+                        }
+
+                        if ($line === '```php') {
+                            $in_php = true;
+                            continue;
+                        }
+
+                        if ($line === '```') {
+                            if ($in_php) {
+                                $in_php = false;
+                                continue;
+                            }
+
+                            if ($in_results) {
+                                $in_results = false;
+
+                                if ($link === null) {
+                                    throw new \UnexpectedValueException('No link');
+                                }
+
+                                $psalm_results[$link] = trim($psalm_result);
+
+                                continue;
+                            }
+
+                            $in_results = true;
+                            $psalm_result = '';
+                            continue;
+                        }
+
+                        if ($in_results) {
+                            $psalm_result .= $line . "\n";
+                        }
+                    }
+
+                    foreach ($psalm_results as $link => $psalm_result) {
+                        $current_result = self::formatSnippetResult(
+                            json_decode(
+                                file_get_contents($link . '/results'),
+                                true
+                            )
+                        );
+
+                        $current_result_normalised = str_ireplace(
+                            'class, interface or enum named',
+                            'classlike',
+                            $current_result
+                        );
+
+                        $psalm_result_normalised = str_ireplace(
+                            ['class or interface', 'class, interface or enum named'],
+                            'classlike',
+                            $psalm_result
+                        );
+
+                        if ($current_result_normalised !== $psalm_result_normalised) {
+                            $different_issues[$issue['number']][$link] = [$current_result, $psalm_result];
+                        }
+                    }
+
+                    continue;
+                }
+            }
+        }
+
+        return [$different_issues, $data['repository']['issues']['pageInfo']['endCursor']];
+    }
+
+    private static function formatSnippetResult(array $data): string {
+        if ($data['results'] === null) {
+            return '';
+        }
+
+        if ($data['results'] === []) {
+            return 'No issues!';
+        }
+
+        return implode(
+            "\n\n",
+            array_map(
+                function (array $issue) {
+                    return strtoupper($issue['severity'])
+                        . ': ' . $issue['type']
+                        . ' - ' .$issue['line_from']
+                        . ':' . $issue['column_from']
+                        . ' - ' . $issue['message'];
+                },
+                $data['results']
+            )
+        );
     }
 }

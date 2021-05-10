@@ -1,6 +1,6 @@
 <?php
 require '../vendor/autoload.php';
-$issue_data = Psalm\Shepherd\GithubApi::fetchPsalmIssuesData();
+$issue_data = Psalm\Shepherd\GithubApi::fetchPsalmIssuesData($_GET['after'] ?? null);
 ?>
 <html>
 <head>
@@ -19,15 +19,12 @@ $issue_data = Psalm\Shepherd\GithubApi::fetchPsalmIssuesData();
     </nav>
 
     <div class="container front">
-        <div class="intro">
-            <p>Shepherd is a currently-experimental service to handle CI output from <a href="https://psalm.dev">Psalm</a>.</p>
-            <p>It's being actively developed at <a href="https://github.com/psalm/shepherd">github.com/psalm/shepherd</a>.</p>
-        </div>
         <div class="coverage_list">
+            <pre><?php var_dump($issue_data[0]); ?></pre>
+            <p>
+                <a href="/psalm_open_issues?after=<?= $issue_data[1] ?>">Next</a>
+            </p>
         </div>
     </div>
-    <script>
-        let open_issues = JSON.parse('<?= str_replace('\\', '\\\\', json_encode($issue_data, JSON_HEX_APOS)); ?>');
-    </script>
 </body>
 </html>
