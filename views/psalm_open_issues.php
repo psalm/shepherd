@@ -20,7 +20,18 @@ $issue_data = Psalm\Shepherd\GithubApi::fetchPsalmIssuesData($_GET['after'] ?? n
 
     <div class="container front">
         <div class="coverage_list">
-            <pre><?php var_dump($issue_data[0]); ?></pre>
+            <?php foreach ($issue_data[0] as $issue_id => $changes) : ?>
+                <p><a href="https://github.com/vimeo/psalm/issues/<?= $issue_id ?>">Link to issue</a></p>
+
+                <?php foreach ($changes as $psalm_link => [$current_result, $original_result]): ?>
+                    <p><a href="<?=$psalm_link ?>">Psalm link</a></p>
+                    <p>Before:</p>
+                    <pre><?= $original_result ?></pre>
+                    <p>Current:</p>
+                    <pre><?= $current_result ?></pre>
+                <?php endforeach ?>
+            <?php endforeach ?>
+
             <p>
                 <a href="/psalm_open_issues?after=<?= $issue_data[1] ?>">Next</a>
             </p>
