@@ -22,6 +22,7 @@ RewriteRule ^github/([-\d\w._]+\/[-\d\w._]+)/coverage.svg$ views/shields/coverag
 RewriteRule ^github/([-\d\w._]+\/[-\d\w._]+)/coverage$ views/coverage_data.php?$1 [L,QSA]
 RewriteRule ^github/([-\d\w._]+\/[-\d\w._]+)/level.svg$ views/shields/level.php?$1 [L,QSA]
 RewriteRule ^github/([-\d\w._]+\/[-\d\w._]+)$ views/history.php?$1 [L,QSA]
+RewriteRule ^psalm_open_issues$ views/psalm_open_issues.php [L,QSA]
 
 # legacy
 RewriteRule ^telemetry$ hooks/psalm [L,QSA]

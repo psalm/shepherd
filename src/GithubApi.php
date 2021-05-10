@@ -57,4 +57,28 @@ class GithubApi
 
         return $client;
     }
+
+    public static function fetchPsalmIssuesData() : array
+    {
+        $query = 'query { 
+          repository(owner: "vimeo", name: "psalm") {
+            openIssues: issues(states: OPEN, last: 100) {
+              nodes {
+                bodyText,
+                comments(first: 3) {
+                  nodes {
+                    bodyText,
+                    author {
+                      login
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }';
+
+        $client = static::createAuthenticatedClient(new Model\GithubRepository('vimeo', 'psalm'));
+        return $client->api('graphql')->execute($query);
+    }
 }
