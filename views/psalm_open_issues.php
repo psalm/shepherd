@@ -26,9 +26,9 @@ $issue_data = Psalm\Shepherd\GithubApi::fetchPsalmIssuesData($_GET['after'] ?? n
                 <?php foreach ($changes as $psalm_link => [$current_result, $original_result]) : ?>
                     <p><a href="<?=$psalm_link ?>">Psalm link</a></p>
                     <p>Before:</p>
-                    <pre><?= $original_result ?></pre>
+                    <pre><?= htmlentities($original_result) ?></pre>
                     <p>Current:</p>
-                    <pre><?= $current_result ?></pre>
+                    <pre><?= htmlentities($current_result) ?></pre>
                 <?php endforeach ?>
             <?php endforeach ?>
 
