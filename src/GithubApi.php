@@ -177,7 +177,7 @@ class GithubApi
                             json_decode(
                                 file_get_contents($link . '/results'),
                                 true
-                            )
+                            ) ?: []
                         );
 
                         $current_result_normalised = str_ireplace(
