@@ -10,7 +10,12 @@ use function array_values;
 use function explode;
 use function substr;
 use function trim;
-use function var_dump;
+use function json_decode;
+use function file_get_contents;
+use function str_ireplace;
+use function implode;
+use function array_map;
+use function strtoupper;
 
 class GithubApi
 {
@@ -176,14 +181,23 @@ class GithubApi
                         );
 
                         $current_result_normalised = str_ireplace(
-                            'class, interface or enum named',
-                            'classlike',
+                            [
+                                'class, interface or enum named',
+                                ' or the value is not used',
+                                'Variable $'
+                            ],
+                            ['', '', '$'],
                             $current_result
                         );
 
                         $psalm_result_normalised = str_ireplace(
-                            ['class or interface', 'class, interface or enum named'],
-                            'classlike',
+                            [
+                                'class or interface',
+                                'class, interface or enum named',
+                                ' or the value is not used',
+                                'Variable $'
+                            ],
+                            ['', '', '', '$'],
                             $psalm_result
                         );
 
@@ -200,7 +214,8 @@ class GithubApi
         return [$different_issues, $data['repository']['issues']['pageInfo']['endCursor']];
     }
 
-    private static function formatSnippetResult(array $data): string {
+    private static function formatSnippetResult(array $data): string
+    {
         if ($data['results'] === null) {
             return '';
         }
