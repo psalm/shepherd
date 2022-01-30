@@ -149,7 +149,7 @@ class GithubApi
                             $old_commit_pos = strpos($line, 'Psalm output (using commit ');
 
                             if ($old_commit_pos !== false) {
-                                $old_commit = substr(trim($line), 27, -1);
+                                $old_commit = substr(trim($line), 27, 7);
                             }
                             continue;
                         }
@@ -190,11 +190,11 @@ class GithubApi
                     foreach ($psalm_results as $link => $psalm_result) {
                         $link_parts = \explode("/", $link);
                         $hash = \end($link_parts);
-                        $data = ['hash' => $hash, 'result_cache' => $psalm_result, 'cache_commit' => $old_commit ?: null];
+                        $update_data = ['hash' => $hash, 'result_cache' => $psalm_result, 'cache_commit' => $old_commit ?: null];
 
                         $insert_sql = 'UPDATE `codes` SET `result_cache` = :result_cache, `cache_commit` = :cache_commit WHERE `hash` = :hash LIMIT 1';
                         $stmt = $pdo->prepare($insert_sql);
-                        $stmt->execute($data);
+                        $stmt->execute($update_data);
 
                         $current_result = self::formatSnippetResult(
                             json_decode(
