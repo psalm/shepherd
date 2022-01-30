@@ -188,28 +188,23 @@ class GithubApi
                     }
 
                     foreach ($psalm_results as $link => $psalm_result) {
-                        $link_parts = \explode("/", $link);
-                        $hash = \end($link_parts);
-                        $update_data = ['hash' => $hash, 'result_cache' => $psalm_result, 'cache_commit' => $old_commit ?: null];
-
-                        $insert_sql = 'UPDATE `codes` SET `result_cache` = :result_cache, `cache_commit` = :cache_commit WHERE `hash` = :hash LIMIT 1';
-                        $stmt = $pdo->prepare($insert_sql);
-                        $stmt->execute($update_data);
-
+                        $recent_cache_commit = '';
                         $current_result = self::formatSnippetResult(
                             json_decode(
                                 file_get_contents($link . '/results'),
                                 true
-                            ) ?: []
+                            ) ?: [],
+                            $recent_cache_commit
                         );
 
                         $current_result_normalised = str_ireplace(
                             [
                                 'class, interface or enum named',
                                 ' or the value is not used',
-                                'Variable $'
+                                'Variable $',
+                                '"',
                             ],
-                            ['', '', '$'],
+                            ['', '', '$', '\''],
                             $current_result
                         );
 
@@ -218,15 +213,43 @@ class GithubApi
                                 'class or interface',
                                 'class, interface or enum named',
                                 ' or the value is not used',
-                                'Variable $'
+                                'Variable $',
+                                '"',
                             ],
-                            ['', '', '', '$'],
+                            ['', '', '', '$', '\''],
                             $psalm_result
                         );
 
+                        $posted_commit = $old_commit;
+
                         if ($current_result_normalised !== $psalm_result_normalised) {
                             $different_issues[$issue['number']][$link] = [$current_result, $psalm_result];
+                        } else {
+                            $psalm_result = $current_result;
+                            $posted_commit = $recent_cache_commit;
                         }
+
+                        $link_parts = \explode("/", $link);
+                        $hash = \end($link_parts);
+                        $update_data = [
+                            'hash' => $hash,
+                            'posted_cache' => $psalm_result,
+                            'posted_cache_commit' => $posted_commit ?: null,
+                            'recent_cache' => $current_result,
+                            'recent_cache_commit' => $recent_cache_commit
+                        ];
+
+                        $insert_sql = 'UPDATE `codes`
+                                        SET `posted_cache` = :result_cache,
+                                            `posted_cache_commit` = :cache_commit,
+                                            `recent_cache` = :current_cache,
+                                            `recent_cache_commit` = :recent_cache_commit
+                                        WHERE `hash` = :hash
+                                        LIMIT 1';
+                        $stmt = $pdo->prepare($insert_sql);
+                        $stmt->execute($update_data);
+
+                        
                     }
 
                     continue;
@@ -237,8 +260,12 @@ class GithubApi
         return [$different_issues, $data['repository']['issues']['pageInfo']['endCursor']];
     }
 
-    private static function formatSnippetResult(array $data): string
+    private static function formatSnippetResult(array $data, string &$commit): string
     {
+        $version = $data['version'];
+
+        $commit = substr($version, 11, 7);
+
         if ($data['results'] === null) {
             return '';
         }

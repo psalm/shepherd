@@ -10,7 +10,7 @@
         }
     ],
     "require": {
-        "php": "^7.2|^8.0",
+        "php": "^7.3|^8.0",
         "sebastian/diff": "^4.0",
         "vimeo/psalm": "dev-master",
         "knplabs/github-api": "^3.0",

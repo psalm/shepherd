@@ -5,6 +5,8 @@ namespace Psalm\Shepherd\PsalmPlugin;
 use PhpParser;
 use Psalm\CodeLocation;
 use Psalm\Context;
+use Psalm\Plugin\EventHandler\Event\MethodReturnTypeProviderEvent;
+use Psalm\Plugin\EventHandler\MethodReturnTypeProviderInterface;
 use Psalm\StatementsSource;
 use Psalm\Type;
 use Github\Api;
@@ -12,7 +14,7 @@ use Github\Api;
 /**
  * @psalm-suppress UnusedClass
  */
-class GitApiProvider implements \Psalm\Plugin\Hook\MethodReturnTypeProviderInterface
+class GitApiProvider implements MethodReturnTypeProviderInterface
 {
     public static function getClassLikeNames() : array
     {
@@ -22,17 +24,11 @@ class GitApiProvider implements \Psalm\Plugin\Hook\MethodReturnTypeProviderInter
     /**
      * @param  array<PhpParser\Node\Arg>    $call_args
      */
-    public static function getMethodReturnType(
-        StatementsSource $source,
-        string $fq_classlike_name,
-        string $method_name_lowercase,
-        array $call_args,
-        Context $context,
-        CodeLocation $code_location,
-        array $template_type_parameters = null,
-        string $called_fq_classlike_name = null,
-        string $called_method_name_lowercase = null
-    ): ?Type\Union {
+    public static function getMethodReturnType(MethodReturnTypeProviderEvent $event): ?Type\Union {
+        $source = $event->getSource();
+        $method_name_lowercase = $event->getMethodNameLowercase();
+        $call_args = $event->getCallArgs();
+    
         $node_provider = $source->getNodeTypeProvider();
 
         if ($method_name_lowercase === 'api'
