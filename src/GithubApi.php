@@ -110,6 +110,8 @@ class GithubApi
             die('Connection to database failed');
         }
 
+        $updates = [];
+
         foreach ($data['repository']['issues']['nodes'] as $issue) {
             foreach ($issue['comments']['nodes'] as $comment) {
                 if ($comment['author']['login'] === 'psalm-github-bot'
@@ -231,7 +233,7 @@ class GithubApi
 
                         $link_parts = \explode("/", $link);
                         $hash = \end($link_parts);
-                        $update_data = [
+                        $updates[] = [
                             'hash' => $hash,
                             'posted_cache' => $psalm_result,
                             'posted_cache_commit' => $posted_commit ?: null,
@@ -239,24 +241,24 @@ class GithubApi
                             'recent_cache_commit' => $recent_cache_commit,
                             'github_issue' => $issue['number'],
                         ];
-
-                        $insert_sql = 'UPDATE `codes`
-                                        SET `posted_cache` = :posted_cache,
-                                            `posted_cache_commit` = :posted_cache_commit,
-                                            `recent_cache` = :recent_cache,
-                                            `recent_cache_commit` = :recent_cache_commit,
-                                            `github_issue` = :github_issue
-                                        WHERE `hash` = :hash
-                                        LIMIT 1';
-                        $stmt = $pdo->prepare($insert_sql);
-                        $stmt->execute($update_data);
-
-                        
                     }
 
                     continue;
                 }
             }
+        }
+
+        foreach ($updates as $update) {
+            $insert_sql = 'UPDATE `codes`
+                            SET `posted_cache` = :posted_cache,
+                                `posted_cache_commit` = :posted_cache_commit,
+                                `recent_cache` = :recent_cache,
+                                `recent_cache_commit` = :recent_cache_commit,
+                                `github_issue` = :github_issue
+                            WHERE `hash` = :hash
+                            LIMIT 1';
+            $stmt = $pdo->prepare($insert_sql);
+            $stmt->execute($update);
         }
 
         return [$different_issues, $data['repository']['issues']['pageInfo']['endCursor']];
