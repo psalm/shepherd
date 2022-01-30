@@ -236,14 +236,16 @@ class GithubApi
                             'posted_cache' => $psalm_result,
                             'posted_cache_commit' => $posted_commit ?: null,
                             'recent_cache' => $current_result,
-                            'recent_cache_commit' => $recent_cache_commit
+                            'recent_cache_commit' => $recent_cache_commit,
+                            'github_issue' => $issue['number'],
                         ];
 
                         $insert_sql = 'UPDATE `codes`
-                                        SET `posted_cache` = :result_cache,
-                                            `posted_cache_commit` = :cache_commit,
-                                            `recent_cache` = :current_cache,
-                                            `recent_cache_commit` = :recent_cache_commit
+                                        SET `posted_cache` = :posted_cache,
+                                            `posted_cache_commit` = :posted_cache_commit,
+                                            `recent_cache` = :recent_cache,
+                                            `recent_cache_commit` = :recent_cache_commit,
+                                            `github_issue` = :github_issue
                                         WHERE `hash` = :hash
                                         LIMIT 1';
                         $stmt = $pdo->prepare($insert_sql);
