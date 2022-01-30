@@ -106,7 +106,7 @@ class GithubApi
 
         try {
             $pdo = new \PDO($db_config['dsn'], $db_config['user'], $db_config['password']);
-        } catch (PDOException $e) {
+        } catch (\PDOException $e) {
             die('Connection to database failed');
         }
 
@@ -188,6 +188,8 @@ class GithubApi
                     }
 
                     foreach ($psalm_results as $link => $psalm_result) {
+                        $link_parts = \explode("/", $link);
+                        $hash = \last($link_parts);
                         $data = ['hash' => $hash, 'result_cache' => $psalm_result, 'cache_commit' => $old_commit ?: null];
 
                         $insert_sql = 'UPDATE `codes` SET `result_cache` = :result_cache, `cache_commit` = :cache_commit WHERE `hash` = :hash LIMIT 1';
