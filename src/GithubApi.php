@@ -102,6 +102,14 @@ class GithubApi
 
         $data = $client->api('graphql')->execute($query, ['afterCursor' => $after])['data'];
 
+        $db_config = json_decode(dirname(__DIR__) . '/config.json')['mysql_psalm_dev'];
+
+        try {
+            $pdo = new PDO($db_config['dsn'], $db_config['user'], $db_config['password']);
+        } catch (PDOException $e) {
+            die('Connection to database failed');
+        }
+
         foreach ($data['repository']['issues']['nodes'] as $issue) {
             foreach ($issue['comments']['nodes'] as $comment) {
                 if ($comment['author']['login'] === 'psalm-github-bot'
@@ -129,6 +137,8 @@ class GithubApi
 
                     $psalm_results = [];
 
+                    $old_commit = '';
+
                     foreach ($lines as $line) {
                         if (strpos($line, '<summary>') === 0) {
                             $link = substr($line, 9, -10);
@@ -136,6 +146,11 @@ class GithubApi
                         }
 
                         if (strpos($line, 'Psalm output') === 0) {
+                            $old_commit_pos = strpos($line, 'Psalm output (using commit ');
+
+                            if ($old_commit_pos !== false) {
+                                $old_commit = substr(trim($line), 27, -1);
+                            }
                             continue;
                         }
 
@@ -173,6 +188,12 @@ class GithubApi
                     }
 
                     foreach ($psalm_results as $link => $psalm_result) {
+                        $data = ['hash' => $hash, 'result_cache' => $psalm_result, 'cache_commit' => $old_commit ?: null];
+
+                        $insert_sql = 'UPDATE `codes` SET `result_cache` = :result_cache, `cache_commit` = :cache_commit WHERE `hash` = :hash LIMIT 1';
+                        $stmt = $pdo->prepare($insert_sql);
+                        $stmt->execute($data);
+
                         $current_result = self::formatSnippetResult(
                             json_decode(
                                 file_get_contents($link . '/results'),
