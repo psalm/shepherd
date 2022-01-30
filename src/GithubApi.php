@@ -102,7 +102,7 @@ class GithubApi
 
         $data = $client->api('graphql')->execute($query, ['afterCursor' => $after])['data'];
 
-        $db_config = json_decode(file_get_contents(dirname(__DIR__) . '/config.json'))['mysql_psalm_dev'];
+        $db_config = json_decode(file_get_contents(dirname(__DIR__) . '/config.json'), true)['mysql_psalm_dev'];
 
         try {
             $pdo = new \PDO($db_config['dsn'], $db_config['user'], $db_config['password']);
