@@ -216,12 +216,11 @@ class GithubApi
                             [
                                 'class or interface',
                                 'class, interface or enum named',
-                                'class, interface or enum',
                                 ' or the value is not used',
                                 'Variable $',
                                 '"',
                             ],
-                            ['', '', '', '', '$', '\''],
+                            ['', '', '', '$', '\''],
                             $current_result
                         );
 
@@ -229,13 +228,13 @@ class GithubApi
                             [
                                 'class or interface',
                                 'class, interface or enum named',
-                                'class, interface or enum',
                                 ' or the value is not used',
+                                'and in any private',
                                 'Variable $',
                                 '"',
                                 'an possibly',
                             ],
-                            ['', '', '', '', '$', '\'', 'a possibly'],
+                            ['', '', '', 'or in any private', '$', '\'', 'a possibly'],
                             $posted_result
                         );
 
