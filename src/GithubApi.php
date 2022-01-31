@@ -235,6 +235,18 @@ class GithubApi
                             $psalm_result
                         );
 
+                        $current_result_normalised = preg_replace(
+                            '/string\(([A-Za-z0-9]+)\)/',
+                            '\'$1\'',
+                            $current_result_normalised
+                        );
+
+                        $psalm_result_normalised = preg_replace(
+                            '/string\(([A-Za-z0-9]+)\)/',
+                            '\'$1\'',
+                            $psalm_result_normalised
+                        );
+
                         $posted_commit = $old_commit;
 
                         if ($current_result_normalised !== $psalm_result_normalised) {
