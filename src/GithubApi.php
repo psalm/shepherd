@@ -233,8 +233,9 @@ class GithubApi
                                 'Variable $',
                                 '"',
                                 'an possibly',
+                                'and in any methods',
                             ],
-                            ['', '', '', 'or in any private', '$', '\'', 'a possibly'],
+                            ['', '', '', 'or in any private', '$', '\'', 'a possibly', 'or in any methods'],
                             $posted_result
                         );
 
