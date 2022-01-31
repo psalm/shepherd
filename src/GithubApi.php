@@ -220,8 +220,9 @@ class GithubApi
                                 'Variable $',
                                 '"',
                                 'empty',
+                                'InvalidScalarArgument',
                             ],
-                            ['', '', '', '$', '\'', 'never'],
+                            ['', '', '', '$', '\'', 'never', 'InvalidArgument'],
                             $current_result
                         );
 
@@ -236,8 +237,9 @@ class GithubApi
                                 'an possibly',
                                 'and in any methods',
                                 'empty',
+                                'InvalidScalarArgument',
                             ],
-                            ['', '', '', 'or in any private', '$', '\'', 'a possibly', 'or in any methods', 'never'],
+                            ['', '', '', 'or in any private', '$', '\'', 'a possibly', 'or in any methods', 'never', 'InvalidArgument'],
                             $posted_result
                         );
 
