@@ -124,6 +124,7 @@ class GithubApi
                     if ($stmt->fetchColumn() > 0) {
                         $select_sql = 'SELECT COUNT(*) FROM `codes` WHERE `github_issue` = :github_issue AND `posted_cache` != `recent_cache`';
                         $stmt = $pdo->prepare($select_sql);
+                        $stmt->execute(['github_issue' => $issue['number']]);
                         if ($stmt->fetchColumn() == 0) {
                             continue 2;
                         }
