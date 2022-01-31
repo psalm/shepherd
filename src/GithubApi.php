@@ -219,8 +219,9 @@ class GithubApi
                                 ' or the value is not used',
                                 'Variable $',
                                 '"',
+                                'empty',
                             ],
-                            ['', '', '', '$', '\''],
+                            ['', '', '', '$', '\'', 'never'],
                             $current_result
                         );
 
@@ -234,8 +235,9 @@ class GithubApi
                                 '"',
                                 'an possibly',
                                 'and in any methods',
+                                'empty',
                             ],
-                            ['', '', '', 'or in any private', '$', '\'', 'a possibly', 'or in any methods'],
+                            ['', '', '', 'or in any private', '$', '\'', 'a possibly', 'or in any methods', 'never'],
                             $posted_result
                         );
 
