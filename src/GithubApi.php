@@ -219,8 +219,9 @@ class GithubApi
                                 ' or the value is not used',
                                 'Variable $',
                                 '"',
+                                'an possibly',
                             ],
-                            ['', '', '', '$', '\''],
+                            ['', '', '', '$', '\'', 'a possibly'],
                             $current_result
                         );
 
