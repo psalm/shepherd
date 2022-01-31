@@ -221,8 +221,9 @@ class GithubApi
                                 '"',
                                 'empty',
                                 'InvalidScalarArgument',
+                                '@psalm-immutable',
                             ],
-                            ['', '', '', '$', '\'', 'never', 'InvalidArgument'],
+                            ['', '', '', '$', '\'', 'never', 'InvalidArgument', 'immutable'],
                             $current_result
                         );
 
@@ -238,8 +239,9 @@ class GithubApi
                                 'and in any methods',
                                 'empty',
                                 'InvalidScalarArgument',
+                                '@psalm-immutable',
                             ],
-                            ['', '', '', 'or in any private', '$', '\'', 'a possibly', 'or in any methods', 'never', 'InvalidArgument'],
+                            ['', '', '', 'or in any private', '$', '\'', 'a possibly', 'or in any methods', 'never', 'InvalidArgument', 'immutable'],
                             $posted_result
                         );
 
