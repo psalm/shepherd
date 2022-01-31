@@ -214,12 +214,13 @@ class GithubApi
 
                         $current_result_normalised = str_ireplace(
                             [
+                                'class or interface',
                                 'class, interface or enum named',
                                 ' or the value is not used',
                                 'Variable $',
                                 '"',
                             ],
-                            ['', '', '$', '\''],
+                            ['', '', '', '$', '\''],
                             $current_result
                         );
 
