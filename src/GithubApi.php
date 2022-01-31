@@ -240,10 +240,20 @@ class GithubApi
                             '\'$1\'',
                             $current_result_normalised
                         );
+                        $current_result_normalised = preg_replace(
+                            '/int\(([A-Za-z0-9]+)\)/',
+                            '$1',
+                            $current_result_normalised
+                        );
 
                         $psalm_result_normalised = preg_replace(
                             '/string\(([A-Za-z0-9]+)\)/',
                             '\'$1\'',
+                            $psalm_result_normalised
+                        );
+                        $psalm_result_normalised = preg_replace(
+                            '/int\(([A-Za-z0-9]+)\)/',
+                            '$1',
                             $psalm_result_normalised
                         );
 
