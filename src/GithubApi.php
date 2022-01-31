@@ -148,9 +148,9 @@ class GithubApi
                     $in_php = false;
                     $in_results = false;
 
-                    $psalm_result = '';
+                    $posted_result = '';
 
-                    $psalm_results = [];
+                    $posted_results = [];
 
                     $old_commit = '';
 
@@ -187,22 +187,22 @@ class GithubApi
                                     throw new \UnexpectedValueException('No link');
                                 }
 
-                                $psalm_results[$link] = trim($psalm_result);
+                                $posted_results[$link] = trim($posted_result);
 
                                 continue;
                             }
 
                             $in_results = true;
-                            $psalm_result = '';
+                            $posted_result = '';
                             continue;
                         }
 
                         if ($in_results) {
-                            $psalm_result .= $line . "\n";
+                            $posted_result .= $line . "\n";
                         }
                     }
 
-                    foreach ($psalm_results as $link => $psalm_result) {
+                    foreach ($posted_results as $link => $posted_result) {
                         $recent_cache_commit = '';
                         $current_result = self::formatSnippetResult(
                             json_decode(
@@ -219,22 +219,22 @@ class GithubApi
                                 ' or the value is not used',
                                 'Variable $',
                                 '"',
-                                'an possibly',
                             ],
-                            ['', '', '', '$', '\'', 'a possibly'],
+                            ['', '', '', '$', '\''],
                             $current_result
                         );
 
-                        $psalm_result_normalised = str_ireplace(
+                        $posted_result_normalised = str_ireplace(
                             [
                                 'class or interface',
                                 'class, interface or enum named',
                                 ' or the value is not used',
                                 'Variable $',
                                 '"',
+                                'an possibly',
                             ],
-                            ['', '', '', '$', '\''],
-                            $psalm_result
+                            ['', '', '', '$', '\'', 'a possibly'],
+                            $posted_result
                         );
 
                         $current_result_normalised = preg_replace(
@@ -248,23 +248,23 @@ class GithubApi
                             $current_result_normalised
                         );
 
-                        $psalm_result_normalised = preg_replace(
+                        $posted_result_normalised = preg_replace(
                             '/string\(([A-Za-z0-9]+)\)/',
                             '\'$1\'',
-                            $psalm_result_normalised
+                            $posted_result_normalised
                         );
-                        $psalm_result_normalised = preg_replace(
+                        $posted_result_normalised = preg_replace(
                             '/int\(([A-Za-z0-9]+)\)/',
                             '$1',
-                            $psalm_result_normalised
+                            $posted_result_normalised
                         );
 
                         $posted_commit = $old_commit;
 
-                        if ($current_result_normalised !== $psalm_result_normalised) {
-                            $different_issues[$issue['number']][$link] = [$current_result, $psalm_result];
+                        if ($current_result_normalised !== $posted_result_normalised) {
+                            $different_issues[$issue['number']][$link] = [$current_result, $posted_result];
                         } else {
-                            $psalm_result = $current_result;
+                            $posted_result = $current_result;
                             $posted_commit = $recent_cache_commit;
                         }
 
@@ -272,7 +272,7 @@ class GithubApi
                         $hash = \end($link_parts);
                         $updates[] = [
                             'hash' => $hash,
-                            'posted_cache' => $psalm_result,
+                            'posted_cache' => $posted_result,
                             'posted_cache_commit' => $posted_commit ?: null,
                             'recent_cache' => $current_result,
                             'recent_cache_commit' => $recent_cache_commit,
