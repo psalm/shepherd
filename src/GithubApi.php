@@ -244,7 +244,7 @@ class GithubApi
                         );
 
                         $current_result_normalised = preg_replace(
-                            '/string\(([A-Za-z0-9]+)\)/',
+                            '/string\(([A-Za-z0-9_]+)\)/',
                             '\'$1\'',
                             $current_result_normalised
                         );
@@ -255,7 +255,7 @@ class GithubApi
                         );
 
                         $posted_result_normalised = preg_replace(
-                            '/string\(([A-Za-z0-9]+)\)/',
+                            '/string\(([A-Za-z0-9_]+)\)/',
                             '\'$1\'',
                             $posted_result_normalised
                         );
