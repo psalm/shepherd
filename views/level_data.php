@@ -46,7 +46,7 @@ if ($level === 1) {
 }
 
 $data += [
-    'message' => $level,
+    'message' => (string)$level,
     'color' => $color,
 ];
 
