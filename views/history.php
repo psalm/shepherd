@@ -69,7 +69,7 @@ $github_url = $config->gh_enterprise_url ?: 'https://github.com';
                 <tbody>
                     <?php foreach ($pct as $date => [$commit, $coverage, $total]) : ?>
                     <tr>
-                        <td><?php echo date('F j Y, H:i:s', strtotime($date)) ?></td>
+                        <td><?php echo date('F j Y, H:i:s T', strtotime($date)) ?></td>
                         <td><a href="<?php echo $github_url . '/' . $repository . '/commit/' . $commit ?>"><?php echo substr($commit, 0, 7) ?></a></td>
                         <td><?php echo number_format($coverage, 3) ?>%</td>
                         <td><?php echo $formatLargeNummber($total) ?></td>
@@ -81,3 +81,4 @@ $github_url = $config->gh_enterprise_url ?: 'https://github.com';
     </div>
 </body>
 </html>
+
