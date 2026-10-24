@@ -15,8 +15,11 @@ use function strlen;
 use function curl_exec;
 use function curl_close;
 use function json_decode;
+use function is_array;
+use function is_string;
+use function preg_match;
 
-class Auth
+final class Auth
 {
     public static function getToken(Model\GithubRepository $repository) : string
     {
@@ -28,11 +31,11 @@ class Auth
 
         $repo_token = self::getTokenForRepo($repository);
 
-        if ($repo_token) {
+        if ($repo_token !== null) {
             return $repo_token;
         }
 
-        if ($config->public_access_oauth_token) {
+        if ($config->public_access_oauth_token !== null && $config->public_access_oauth_token !== '') {
             return $config->public_access_oauth_token;
         }
 
@@ -41,12 +44,20 @@ class Auth
         );
     }
 
-    /** @psalm-suppress UnusedParam */
+    /**
+     * @psalm-suppress UnusedParam
+     * @psalm-pure
+     */
     private static function getTokenForRepo(Model\GithubRepository $repository) : ?string
     {
         return null;
     }
 
+    /**
+     * The returned token is checked against GitHub's token format, so it is safe to put in a cookie.
+     *
+     * @psalm-taint-escape cookie
+     */
     public static function fetchTokenFromGithub(string $code, string $state, Config\OAuthApp $config) : string
     {
         $params = [
@@ -58,10 +69,14 @@ class Auth
 
         $payload = http_build_query($params);
 
-        $github_url = $config->gh_enterprise_url ?: 'https://github.com';
+        $github_url = $config->getGithubUrl();
 
         // Prepare new cURL resource
         $ch = curl_init($github_url . '/login/oauth/access_token');
+        if ($ch === false) {
+            throw new \RuntimeException('Could not initialise cURL');
+        }
+
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLINFO_HEADER_OUT, true);
         curl_setopt($ch, CURLOPT_POST, true);
@@ -90,7 +105,12 @@ class Auth
         }
 
         $response_data = json_decode($response, true);
+        $token = is_array($response_data) ? ($response_data['access_token'] ?? null) : null;
 
-        return $response_data['access_token'];
+        if (!is_string($token) || !preg_match('/^[A-Za-z0-9_]+$/', $token)) {
+            throw new \UnexpectedValueException('GitHub did not return a valid access token');
+        }
+
+        return $token;
     }
 }

@@ -10,11 +10,11 @@ error_reporting(E_ALL);
 
 $config = Psalm\Shepherd\Config::getInstance();
 
-$raw_post = file_get_contents('php://input');
+$raw_post = Psalm\Shepherd\Config::readFile('php://input');
 
-switch ($_SERVER['CONTENT_TYPE']) {
+switch ($_SERVER['CONTENT_TYPE'] ?? '') {
     case 'application/x-www-form-urlencoded':
-        $raw_payload = $_POST['payload'];
+        $raw_payload = $_POST['payload'] ?? null;
         break;
 
     case 'application/json':
@@ -25,7 +25,10 @@ switch ($_SERVER['CONTENT_TYPE']) {
         throw new UnexpectedValueException('Unrecognised payload');
 }
 
-if ($config instanceof Psalm\Shepherd\Config\Custom && $config->webhook_secret) {
+if ($config instanceof Psalm\Shepherd\Config\Custom
+    && $config->webhook_secret !== null
+    && $config->webhook_secret !== ''
+) {
     $hash = 'sha1=' . hash_hmac('sha1', $raw_post, $config->webhook_secret, false);
 
     if (!isset($_SERVER['HTTP_X_HUB_SIGNATURE'])) {
@@ -37,7 +40,15 @@ if ($config instanceof Psalm\Shepherd\Config\Custom && $config->webhook_secret) 
     }
 }
 
+if (!is_string($raw_payload)) {
+    throw new UnexpectedValueException('Unrecognised payload');
+}
+
 $payload = json_decode($raw_payload, true);
+
+if (!is_array($payload)) {
+    throw new UnexpectedValueException('Payload is not valid JSON');
+}
 
 if (!isset($payload['pull_request'])) {
     if (($_SERVER['HTTP_X_GITHUB_EVENT'] ?? '') === 'push'
@@ -55,7 +66,7 @@ if (!isset($payload['pull_request'])) {
 
 $git_commit_hash = $payload['pull_request']['head']['sha'] ?? null;
 
-if (!$git_commit_hash) {
+if (!is_string($git_commit_hash) || $git_commit_hash === '') {
     return;
 }
 

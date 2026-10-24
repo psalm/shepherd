@@ -2,7 +2,7 @@
 
 namespace Psalm\Shepherd\Config;
 
-class Custom extends \Psalm\Shepherd\Config
+final class Custom extends \Psalm\Shepherd\Config
 {
     /** @var string */
     public $personal_token;
@@ -12,6 +12,8 @@ class Custom extends \Psalm\Shepherd\Config
 
     /**
      * @param array{dsn: string, user: string, password: string} $mysql
+     *
+     * @psalm-capabilities read-props
      */
     public function __construct(
         string $personal_token,

@@ -2,7 +2,7 @@
 
 require '../vendor/autoload.php';
 
-$repository = $_SERVER['QUERY_STRING'];
+$repository = $_SERVER['QUERY_STRING'] ?? '';
 
 if (!preg_match('/^[-\d\w._]+\/[-\d\w._]+$/', $repository)) {
     throw new UnexpectedValueException('Repsitory format not recognised');
@@ -21,7 +21,7 @@ $data = [
     'label' => 'psalm-level',
 ];
 
-if (!$level) {
+if ($level === null || $level === 0) {
     $data += [
         'message' => 'unknown',
         'color' => '#aaa'

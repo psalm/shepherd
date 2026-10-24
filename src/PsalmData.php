@@ -12,22 +12,21 @@ use function array_pop;
 use function str_repeat;
 use function implode;
 
-class PsalmData
+final class PsalmData
 {
     public static function handlePayload(string $git_commit, array $payload) : void
     {
-        if (!empty($payload['build']['CI_REPO_OWNER'])
-            && !empty($payload['build']['CI_REPO_NAME'])
-            && empty($payload['build']['CI_PR_REPO_OWNER'])
-            && empty($payload['build']['CI_PR_REPO_NAME'])
+        $repo_owner = GithubData::getBuildValue($payload, 'CI_REPO_OWNER');
+        $repo_name = GithubData::getBuildValue($payload, 'CI_REPO_NAME');
+
+        if ($repo_owner !== null
+            && $repo_name !== null
+            && GithubData::getBuildValue($payload, 'CI_PR_REPO_OWNER') === null
+            && GithubData::getBuildValue($payload, 'CI_PR_REPO_NAME') === null
         ) {
-            $repository = new Model\GithubRepository(
-                $payload['build']['CI_REPO_OWNER'],
-                $payload['build']['CI_REPO_NAME']
-            );
+            $repository = new Model\GithubRepository($repo_owner, $repo_name);
 
             if (($payload['build']['CI_BRANCH'] ?? '') === GithubApi::fetchDefaultBranch($repository)) {
-                /** @var string $date */
                 $date = date('Y-m-d H:i:s', $payload['git']['head']['date'] ?? date('U'));
                 GithubData::setRepositoryForMasterCommit($git_commit, $repository, $date);
             }

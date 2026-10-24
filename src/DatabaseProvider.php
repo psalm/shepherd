@@ -4,8 +4,9 @@ namespace Psalm\Shepherd;
 
 use PDO;
 use PDOException;
+use function error_log;
 
-class DatabaseProvider
+final class DatabaseProvider
 {
     /** @var ?PDO */
     private static $connection = null;
@@ -21,7 +22,8 @@ class DatabaseProvider
         try {
             $pdo = new PDO($db_config['dsn'], $db_config['user'], $db_config['password']);
         } catch (PDOException $e) {
-            die('Connection to database failed - ' . $e->getMessage());
+            error_log('Connection to database failed - ' . $e->getMessage());
+            die('Connection to database failed');
         }
 
         $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);

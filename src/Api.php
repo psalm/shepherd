@@ -6,7 +6,7 @@ use PDO;
 use function explode;
 use function number_format;
 
-class Api
+final class Api
 {
     public static function getTypeCoverage(string $repository) : ?string
     {
@@ -40,13 +40,13 @@ class Api
             return '0';
         }
 
-        $fraction = $row['nonmixed_count'] / $total;
+        $fraction = (float) $row['nonmixed_count'] / (float) $total;
 
         if ($fraction >= 0.9995) {
             return '100';
         }
 
-        return number_format(100 * $fraction, 1);
+        return number_format(100.0 * $fraction, 1);
     }
 
     public static function getLevel(string $repository) : ?int

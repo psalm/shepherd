@@ -2,7 +2,6 @@
 
 namespace Psalm\Shepherd\PsalmPlugin;
 
-use PhpParser;
 use Psalm\CodeLocation;
 use Psalm\Context;
 use Psalm\Plugin\EventHandler\Event\MethodReturnTypeProviderEvent;
@@ -14,16 +13,18 @@ use Github\Api;
 /**
  * @psalm-suppress UnusedClass
  */
-class GitApiProvider implements MethodReturnTypeProviderInterface
+final class GitApiProvider implements MethodReturnTypeProviderInterface
 {
+    /**
+     * @psalm-pure
+     */
+    #[\Override]
     public static function getClassLikeNames() : array
     {
         return [\Github\Client::class];
     }
 
-    /**
-     * @param  array<PhpParser\Node\Arg>    $call_args
-     */
+    #[\Override]
     public static function getMethodReturnType(MethodReturnTypeProviderEvent $event): ?Type\Union {
         $source = $event->getSource();
         $method_name_lowercase = $event->getMethodNameLowercase();

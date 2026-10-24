@@ -24,6 +24,16 @@ abstract class Config
      */
     public $mysql;
 
+    /** @psalm-capabilities read-props */
+    public function getGithubUrl() : string
+    {
+        if ($this->gh_enterprise_url === null || $this->gh_enterprise_url === '') {
+            return 'https://github.com';
+        }
+
+        return $this->gh_enterprise_url;
+    }
+
     /** @return Config\Custom|Config\OAuthApp */
     public static function getInstance() : Config
     {
@@ -56,11 +66,22 @@ abstract class Config
        *     mysql: array{dsn: string, user: string, password: string}
        * }
        */
-        $config = json_decode(file_get_contents($config_path), true);
+        $config = json_decode(self::readFile($config_path), true);
 
         return self::initializeConfig($config);
     }
-    
+
+    public static function readFile(string $path) : string
+    {
+        $contents = file_get_contents($path);
+
+        if ($contents === false) {
+            throw new \RuntimeException('Could not read ' . $path);
+        }
+
+        return $contents;
+    }
+
     /**
      * This is a crazy method meant to pull SHEPHERD_ vars from $_ENV
      * into a structure mirroring self::loadConfigFromFilie for use with
@@ -75,13 +96,18 @@ abstract class Config
     {
 
         // initialize an empty config
-        $config = array();
+        $config = [];
+        /** @var array<string, array<string, string>> */
+        $config_groups = [];
 
         // search each ENV
         foreach ($_ENV as $var_name => $val) {
             // for shepherd vars
             if (strpos($var_name, 'SHEPHERD') === 0) {
                 $var_parts = explode('_', $var_name, 2);
+                if (!isset($var_parts[1])) {
+                    continue;
+                }
                 // save the suffix, we'll need it later to tell if its a config group, or root level config item
                 $var_name_suffix = $var_parts[1];
                 // this var is either a config group, or root level item
@@ -95,8 +121,8 @@ abstract class Config
                         $key_name = strtolower(
                             substr($var_name_suffix, strlen($config_group) + 1)
                         );
-                        // set the item as a child of the config group in the $config structure initialized earlier
-                        $config[$group_name][$key_name] = $val;
+                        // set the item as a child of the config group
+                        $config_groups[$group_name][$key_name] = (string) $val;
                     }
                 }
                 // if the item was not a config group item, set it as a root level item in $config
@@ -107,7 +133,7 @@ abstract class Config
         }
 
         // initialize the config with all the SHEPHERD_ vars we got from $_ENV
-        return self::initializeConfig($config);
+        return self::initializeConfig($config_groups + $config);
     }
 
     /** @return Config\Custom|Config\OAuthApp */

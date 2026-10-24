@@ -8,21 +8,21 @@ if (!$config instanceof Psalm\Shepherd\Config\OAuthApp) {
     throw new UnexpectedValueException('Cannot use oauth flow if config not proper');
 }
 
-$expected_state = hash_hmac('sha256', $_SERVER['REMOTE_ADDR'], $config->client_secret);
+$expected_state = hash_hmac('sha256', $_SERVER['REMOTE_ADDR'] ?? '', $config->client_secret);
 
 $state = $_GET['state'] ?? null;
 $code = $_GET['code'] ?? null;
 
-if (!$state || $state !== $expected_state) {
+if (!is_string($state) || !hash_equals($expected_state, $state)) {
     throw new UnexpectedValueException('States should match');
 }
 
-if (!$code) {
+if (!is_string($code) || $code === '') {
     throw new UnexpectedValueException('No code sent');
 }
 
 $github_token = Psalm\Shepherd\Auth::fetchTokenFromGithub($code, $state, $config);
 
-setcookie('github_token', $github_token);
+setcookie('github_token', $github_token, ['secure' => true, 'httponly' => true, 'samesite' => 'Lax']);
 
-header('Location: https://' . $_SERVER['HTTP_HOST'] . '/auth/github/configure');
+header('Location: /auth/github/configure');

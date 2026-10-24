@@ -2,7 +2,10 @@
 
 namespace Psalm\Shepherd\Model;
 
-class GithubReview
+/**
+ * @psalm-immutable
+ */
+final class GithubReview
 {
     /** @var string */
     public $message;

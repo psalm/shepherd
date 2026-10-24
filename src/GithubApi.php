@@ -17,7 +17,7 @@ use function implode;
 use function array_map;
 use function strtoupper;
 
-class GithubApi
+final class GithubApi
 {
     private const DEFAULT_GITHUB_BRANCH = 'master';
 
@@ -65,7 +65,7 @@ class GithubApi
         $github_token = Auth::getToken($repository);
 
         $client = new Client(null, null, $config->gh_enterprise_url);
-        $client->authenticate($github_token, null, \Github\Client::AUTH_ACCESS_TOKEN);
+        $client->authenticate($github_token, null, \Github\AuthMethod::ACCESS_TOKEN);
 
         return $client;
     }
@@ -102,7 +102,7 @@ class GithubApi
 
         $data = $client->api('graphql')->execute($query, ['afterCursor' => $after])['data'];
 
-        $db_config = json_decode(file_get_contents(dirname(__DIR__) . '/config.json'), true)['mysql_psalm_dev'];
+        $db_config = json_decode(Config::readFile(dirname(__DIR__) . '/config.json'), true)['mysql_psalm_dev'];
 
         try {
             $pdo = new \PDO($db_config['dsn'], $db_config['user'], $db_config['password']);
@@ -206,7 +206,7 @@ class GithubApi
                         $recent_cache_commit = '';
                         $current_result = self::formatSnippetResult(
                             json_decode(
-                                file_get_contents($link . '/results'),
+                                (string) file_get_contents($link . '/results'),
                                 true
                             ) ?: [],
                             $recent_cache_commit
@@ -245,25 +245,17 @@ class GithubApi
                             $posted_result
                         );
 
-                        $current_result_normalised = preg_replace(
-                            '/string\(([A-Za-z0-9_]+)\)/',
-                            '\'$1\'',
-                            $current_result_normalised
-                        );
-                        $current_result_normalised = preg_replace(
-                            '/int\(([A-Za-z0-9]+)\)/',
-                            '$1',
-                            $current_result_normalised
-                        );
+                        $literal_patterns = ['/string\(([A-Za-z0-9_]+)\)/', '/int\(([A-Za-z0-9]+)\)/'];
+                        $literal_replacements = ['\'$1\'', '$1'];
 
-                        $posted_result_normalised = preg_replace(
-                            '/string\(([A-Za-z0-9_]+)\)/',
-                            '\'$1\'',
-                            $posted_result_normalised
+                        $current_result_normalised = (string) preg_replace(
+                            $literal_patterns,
+                            $literal_replacements,
+                            $current_result_normalised
                         );
-                        $posted_result_normalised = preg_replace(
-                            '/int\(([A-Za-z0-9]+)\)/',
-                            '$1',
+                        $posted_result_normalised = (string) preg_replace(
+                            $literal_patterns,
+                            $literal_replacements,
                             $posted_result_normalised
                         );
 
@@ -309,6 +301,9 @@ class GithubApi
         return [$different_issues, $data['repository']['issues']['pageInfo']['endCursor']];
     }
 
+    /**
+     * @psalm-capabilities read-props|write-this-props|write-refs
+     */
     private static function formatSnippetResult(array $data, string &$commit): string
     {
         $version = $data['version'];

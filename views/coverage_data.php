@@ -2,7 +2,7 @@
 
 require '../vendor/autoload.php';
 
-$repository = $_SERVER['QUERY_STRING'];
+$repository = $_SERVER['QUERY_STRING'] ?? '';
 
 if (!preg_match('/^[-\d\w._]+\/[-\d\w._]+$/', $repository)) {
     throw new UnexpectedValueException('Repsitory format not recognised');
@@ -21,7 +21,7 @@ $data = [
     'label' => 'type-coverage',
 ];
 
-if (!$pct) {
+if ($pct === null || $pct === '0') {
     $data += [
         'message' => 'unknown',
         'color' => '#aaa'

@@ -6,7 +6,7 @@ use function is_string;
 use function error_log;
 use function is_array;
 
-class Sender
+final class Sender
 {
     public static function getGithubPullRequestDiff(
         string $github_token,
@@ -15,7 +15,7 @@ class Sender
         $config = Config::getInstance();
 
         $client = new \Github\Client(null, null, $config->gh_enterprise_url);
-        $client->authenticate($github_token, null, \Github\Client::AUTH_ACCESS_TOKEN);
+        $client->authenticate($github_token, null, \Github\AuthMethod::ACCESS_TOKEN);
 
         $repository = $pull_request->repository->owner_name . '/' . $pull_request->repository->repo_name;
 
@@ -50,17 +50,17 @@ class Sender
         $config = Config::getInstance();
 
         $client = new \Github\Client(null, null, $config->gh_enterprise_url);
-        $client->authenticate($github_token, null, \Github\Client::AUTH_ACCESS_TOKEN);
+        $client->authenticate($github_token, null, \Github\AuthMethod::ACCESS_TOKEN);
 
         $review_id = self::getGithubReviewIdForPullRequest($pull_request->url, $review_type);
         $comment_id = self::getGithubCommentIdForPullRequest($pull_request->url, $review_type);
 
-        if ($review_id) {
+        if ($review_id !== null) {
             // deletes review comments
             self::deleteCommentsForReview($client, $pull_request, $review_id);
         }
 
-        if ($comment_id) {
+        if ($comment_id !== null) {
             // deletes the review itself
             self::deleteComment($client, $pull_request, $comment_id);
         }
@@ -71,7 +71,7 @@ class Sender
             self::addGithubReviewComments($client, $pull_request, $review_type, $github_review->file_comments);
         }
 
-        if ($review_id || $comment_id || !$github_review->checks_passed) {
+        if ($review_id !== null || $comment_id !== null || !$github_review->checks_passed) {
             error_log('Adding Github Review on ' . $pull_request->url);
 
             self::addGithubReviewComment($client, $pull_request, $review_type, $github_review->message);

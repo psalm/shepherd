@@ -3,7 +3,10 @@ namespace Psalm\Shepherd\Model\Database;
 
 use Psalm\Shepherd\Model\GithubRepository;
 
-class GithubPullRequest
+/**
+ * @psalm-immutable
+ */
+final class GithubPullRequest
 {
     /** @var GithubRepository */
     public $repository;
@@ -43,6 +46,8 @@ class GithubPullRequest
      *        branch: string,
      *        url: string
      *  } $database_data
+     *
+     * @psalm-pure
      */
     public static function fromDatabaseData(array $database_data) : self
     {

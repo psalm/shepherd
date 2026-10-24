@@ -4,7 +4,7 @@ namespace Psalm\Shepherd;
 
 use function count;
 
-class DiffLineFinder
+final class DiffLineFinder
 {
     public static function getGitHubPositionFromDiff(
         int $input_line,

@@ -5,8 +5,9 @@ namespace Psalm\Shepherd;
 use PDO;
 use function error_log;
 use function date;
+use function is_string;
 
-class GithubData
+final class GithubData
 {
     public static function storePullRequestData(string $git_commit, array $github_data) : void
     {
@@ -37,7 +38,6 @@ class GithubData
             $payload['repository']['name']
         );
 
-        /** @var string $date */
         $date = date('Y-m-d H:i:s', $payload['head']['date'] ?? date('U'));
         self::setRepositoryForMasterCommit($git_commit, $repository, $date);
 
@@ -48,31 +48,22 @@ class GithubData
         string $git_commit_hash,
         array $payload
     ): ?Model\GithubRepository {
-        if (!empty($payload['build']['CI_REPO_OWNER'])
-            && !empty($payload['build']['CI_REPO_NAME'])
-        ) {
-            if (empty($payload['build']['CI_PR_REPO_OWNER'])
-                && empty($payload['build']['CI_PR_REPO_NAME'])
-            ) {
-                $repository = new Model\GithubRepository(
-                    $payload['build']['CI_REPO_OWNER'],
-                    $payload['build']['CI_REPO_NAME']
-                );
+        $repo_owner = self::getBuildValue($payload, 'CI_REPO_OWNER');
+        $repo_name = self::getBuildValue($payload, 'CI_REPO_NAME');
+        $pr_repo_owner = self::getBuildValue($payload, 'CI_PR_REPO_OWNER');
+        $pr_repo_name = self::getBuildValue($payload, 'CI_PR_REPO_NAME');
+
+        if ($repo_owner !== null && $repo_name !== null) {
+            if ($pr_repo_owner === null && $pr_repo_name === null) {
+                $repository = new Model\GithubRepository($repo_owner, $repo_name);
 
                 if (($payload['build']['CI_BRANCH'] ?? '') === GithubApi::fetchDefaultBranch($repository)) {
                     return $repository;
                 }
             }
 
-            if (!empty($payload['build']['CI_PR_REPO_OWNER'])
-                && !empty($payload['build']['CI_PR_REPO_NAME'])
-                && $payload['build']['CI_PR_REPO_OWNER'] === $payload['build']['CI_REPO_OWNER']
-                && $payload['build']['CI_PR_REPO_NAME'] === $payload['build']['CI_REPO_NAME']
-            ) {
-                return new Model\GithubRepository(
-                    $payload['build']['CI_REPO_OWNER'],
-                    $payload['build']['CI_REPO_NAME']
-                );
+            if ($pr_repo_owner === $repo_owner && $pr_repo_name === $repo_name) {
+                return new Model\GithubRepository($repo_owner, $repo_name);
             }
         }
 
@@ -81,6 +72,24 @@ class GithubData
         }
 
         return self::getRepositoryForMasterCommit($git_commit_hash);
+    }
+
+    /**
+     * Returns $payload['build'][$key] if it is a non-empty string, matching the old empty() checks.
+     *
+     * @psalm-pure
+     *
+     * @return non-empty-string|null
+     */
+    public static function getBuildValue(array $payload, string $key) : ?string
+    {
+        $value = $payload['build'][$key] ?? null;
+
+        if (!is_string($value) || $value === '' || $value === '0') {
+            return null;
+        }
+
+        return $value;
     }
 
     private static function getRepositoryForMasterCommit(string $git_commit) : ?Model\GithubRepository

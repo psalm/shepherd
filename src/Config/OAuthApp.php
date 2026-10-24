@@ -2,7 +2,7 @@
 
 namespace Psalm\Shepherd\Config;
 
-class OAuthApp extends \Psalm\Shepherd\Config
+final class OAuthApp extends \Psalm\Shepherd\Config
 {
     /** @var string */
     public $client_id;
@@ -15,6 +15,8 @@ class OAuthApp extends \Psalm\Shepherd\Config
 
     /**
      * @param array{dsn: string, user: string, password: string} $mysql
+     *
+     * @psalm-capabilities read-props
      */
     public function __construct(
         string $client_id,

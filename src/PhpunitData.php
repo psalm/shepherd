@@ -6,7 +6,7 @@ use PDO;
 use function error_log;
 use const PHP_EOL;
 
-class PhpunitData
+final class PhpunitData
 {
     public static function handleFailurePayload(string $git_commit, array $payload) : void
     {

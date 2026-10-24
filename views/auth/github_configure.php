@@ -11,12 +11,12 @@ if (!$config instanceof Psalm\Shepherd\Config\OAuthApp) {
 
 $github_token = $_COOKIE['github_token'] ?? null;
 
-if (!$github_token) {
+if (!is_string($github_token) || $github_token === '') {
     throw new UnexpectedValueException('Invalid token');
 }
 
 $client = new \Github\Client(null, null, $config->gh_enterprise_url);
-$client->authenticate($github_token, null, \Github\Client::AUTH_ACCESS_TOKEN);
+$client->authenticate($github_token, null, \Github\AuthMethod::ACCESS_TOKEN);
 
 $repos = $client
     ->api('me')

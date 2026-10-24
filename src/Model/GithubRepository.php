@@ -2,7 +2,10 @@
 
 namespace Psalm\Shepherd\Model;
 
-class GithubRepository
+/**
+ * @psalm-immutable
+ */
+final class GithubRepository
 {
     /** @var string */
     public $owner_name;

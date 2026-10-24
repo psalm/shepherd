@@ -2,7 +2,7 @@
 
 require '../../vendor/autoload.php';
 
-$repository = $_SERVER['QUERY_STRING'];
+$repository = $_SERVER['QUERY_STRING'] ?? '';
 
 if (!preg_match('/^[-\d\w._]+\/[-\d\w._]+$/', $repository)) {
     throw new UnexpectedValueException('Repsitory format not recognised');
@@ -17,7 +17,7 @@ $level = Psalm\Shepherd\Api::getLevel($repository);
 header('Content-type: image/svg+xml;charset=utf-8');
 header('Cache-control: max-age=0, no-cache');
 
-if (!$level) {
+if ($level === null || $level === 0) {
     echo <<<SVG
 <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="96" height="20"><linearGradient id="s" x2="0" y2="100%"><stop offset="0" stop-color="#bbb" stop-opacity=".1"/><stop offset="1" stop-opacity=".1"/></linearGradient><clipPath id="r"><rect width="96" height="20" rx="3" fill="#fff"/></clipPath><g clip-path="url(#r)"><rect width="43" height="20" fill="#555"/><rect x="43" width="53" height="20" fill="#999"/><rect width="96" height="20" fill="url(#s)"/></g><g fill="#fff" text-anchor="middle" font-family="Verdana,Geneva,DejaVu Sans,sans-serif" text-rendering="optimizeLegibility" font-size="110"><text aria-hidden="true" x="225" y="150" fill="#010101" fill-opacity=".3" transform="scale(.1)" textLength="330">Psalm</text><text x="225" y="140" transform="scale(.1)" fill="#fff" textLength="330">Psalm</text><text aria-hidden="true" x="685" y="150" fill="#010101" fill-opacity=".3" transform="scale(.1)" textLength="430">enabled</text><text x="685" y="140" transform="scale(.1)" fill="#fff" textLength="430">enabled</text></g></svg>
 SVG;

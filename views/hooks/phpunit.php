@@ -8,11 +8,15 @@ ini_set('html_errors', '1');
 
 error_reporting(E_ALL);
 
-$payload = json_decode(file_get_contents('php://input'), true);
+$payload = json_decode(Psalm\Shepherd\Config::readFile('php://input'), true);
+
+if (!is_array($payload)) {
+    throw new UnexpectedValueException('Payload is not valid JSON');
+}
 
 $git_commit_hash = $payload['git']['head']['id'] ?? null;
 
-if (!$git_commit_hash) {
+if (!is_string($git_commit_hash) || $git_commit_hash === '') {
     throw new UnexpectedValueException('No git commit hash given');
 }
 

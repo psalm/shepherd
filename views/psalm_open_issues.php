@@ -1,6 +1,7 @@
 <?php
 require '../vendor/autoload.php';
-$issue_data = Psalm\Shepherd\GithubApi::fetchPsalmIssuesData($_GET['after'] ?? null);
+$after = $_GET['after'] ?? null;
+$issue_data = Psalm\Shepherd\GithubApi::fetchPsalmIssuesData(is_string($after) ? $after : null);
 ?>
 <html>
 <head>
