@@ -97,6 +97,61 @@ class FormatTest extends TestCase
         ];
     }
 
+    /**
+     * @dataProvider providerCoverageDelta
+     */
+    public function testCoverageDelta(?float $input, string $expected) : void
+    {
+        $this->assertSame($expected, Format::coverageDelta($input));
+    }
+
+    /** @return array<string, array{float|null, string}> */
+    public function providerCoverageDelta() : array
+    {
+        return [
+            'first report' => [null, '<span class="chg flat" title="First report">&ndash;</span>'],
+            'rise' => [0.364, '<span class="chg up">+0.36</span>'],
+            'drop uses a minus sign' => [-0.1219, '<span class="chg down">&minus;0.12</span>'],
+            'rise below display precision' => [0.004, '<span class="chg flat">no change</span>'],
+            'drop below display precision' => [-0.004, '<span class="chg flat">no change</span>'],
+            'exactly flat' => [0.0, '<span class="chg flat">no change</span>'],
+        ];
+    }
+
+    public function testRepositoryRowEscapesAndShowsEveryColumn() : void
+    {
+        $repository = [
+            'name' => 'o<w>ner/re"po',
+            'commit' => 'abcdef0123456789abcdef0123456789abcdef01',
+            'reported_at' => 1000,
+            'coverage' => 99.934,
+            'level' => 1,
+            'expressions' => 238700,
+            'change' => 0.364,
+            'points' => [99.5, 99.934],
+        ];
+
+        $row = Format::repositoryRow($repository, 1000 + 7200, 'https://github.com', true);
+
+        $this->assertStringNotContainsString('o<w>ner', $row);
+        $this->assertStringContainsString('data-repo="o&lt;w&gt;ner/re&quot;po"', $row);
+        $this->assertStringContainsString('data-sha="abcdef0123456789abcdef0123456789abcdef01"', $row);
+        $this->assertStringContainsString('2 h ago', $row);
+        $this->assertStringContainsString('>abcdef0</a>', $row);
+        $this->assertStringContainsString('99.93%', $row);
+        $this->assertStringContainsString('+0.36', $row);
+        $this->assertStringContainsString('class="lvl"', $row);
+        $this->assertStringContainsString('class="spark"', $row);
+        $this->assertStringContainsString('238.7K', $row);
+        $without_trend = Format::repositoryRow($repository, 2000, 'https://github.com', false);
+        $this->assertStringNotContainsString('class="spark"', $without_trend);
+    }
+
+    public function testRepositoryRowsWrapsTheRowsInATbody() : void
+    {
+        $this->assertSame("<tbody>\n</tbody>", Format::repositoryRows([], 0, 'https://github.com', true));
+    }
+
     public function testCoverageBarWidth() : void
     {
         $this->assertSame('97.4%', Format::coverageBarWidth(97.43));

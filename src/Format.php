@@ -14,10 +14,13 @@ use function min;
 use function number_format;
 use function round;
 use function sprintf;
+use function substr;
 
 /**
  * Pure presentation helpers for the home page and the history page.
  * Every method returns a string that is already safe to echo.
+ *
+ * @psalm-import-type RecentRepository from Api
  */
 final class Format
 {
@@ -212,6 +215,94 @@ final class Format
             $rounded > 0 ? '+' : '-',
             number_format(abs($rounded), 3, '.', '')
         );
+    }
+
+    /**
+     * Coverage change since the previous report for the home page tables, two decimals: "+0.36" (class up),
+     * "−0.12" (class down, with a real minus sign), "no change" once it rounds to zero. Null (no earlier report)
+     * is a dash.
+     *
+     * @psalm-pure
+     */
+    public static function coverageDelta(?float $change) : string
+    {
+        if ($change === null) {
+            return '<span class="chg flat" title="First report">&ndash;</span>';
+        }
+
+        $rounded = round($change, 2);
+
+        if ($rounded === 0.0) {
+            return '<span class="chg flat">no change</span>';
+        }
+
+        return sprintf(
+            '<span class="chg %s">%s%s</span>',
+            $rounded > 0 ? 'up' : 'down',
+            $rounded > 0 ? '+' : '&minus;',
+            number_format(abs($rounded), 2, '.', '')
+        );
+    }
+
+    /**
+     * One row of a home page leaderboard: repository with its last report, coverage with the change since the
+     * previous report, level, trend (only with $with_trend) and expressions. Used for every tab and for the
+     * fragment that refreshes "Recently active", so both always look the same.
+     *
+     * @param RecentRepository $repository
+     * @psalm-pure
+     */
+    public static function repositoryRow(
+        array $repository,
+        int $now,
+        string $github_url,
+        bool $with_trend
+    ) : string {
+        $name = htmlspecialchars($repository['name']);
+        $commit = $repository['commit'];
+        $level = $repository['level'];
+
+        return '<tr data-repo="' . $name . '" data-sha="' . htmlspecialchars($commit) . '">'
+            . '<th scope="row" class="col-repo" title="' . $name . '">'
+            . '<a class="repo-name" href="/github/' . $name . '">' . $name . '</a>'
+            . '<span class="repo-sub">Last report ' . self::timeElement($repository['reported_at'], $now)
+            . ' &middot; <a href="'
+            . htmlspecialchars($github_url . '/' . $repository['name'] . '/commit/' . $commit) . '">'
+            . htmlspecialchars(substr($commit, 0, 7)) . '</a></span></th>'
+            . '<td class="col-num"><span class="cov-line"><span class="cov band-'
+            . self::coverageBand($repository['coverage'])
+            . '"><span class="cov-bar" aria-hidden="true"><i style="--p: '
+            . self::coverageBarWidth($repository['coverage']) . '"></i></span><span class="cov-num">'
+            . self::coveragePercent($repository['coverage']) . '</span></span>'
+            . self::coverageDelta($repository['change']) . '</span></td>'
+            . '<td class="col-num">' . ($level === null
+                ? '<span title="Psalm level not reported">&ndash;</span>'
+                : '<span class="lvl" title="Psalm level ' . $level . ', 1 is the strictest">' . $level . '</span>')
+            . '</td>'
+            . ($with_trend ? '<td class="col-trend">' . self::sparkline($repository['points']) . '</td>' : '')
+            . '<td class="col-num col-expr" title="' . number_format($repository['expressions']) . '">'
+            . self::compactNumber($repository['expressions']) . '</td></tr>';
+    }
+
+    /**
+     * The <tbody> of a home page leaderboard.
+     *
+     * @param list<RecentRepository> $repositories
+     * @psalm-pure
+     */
+    public static function repositoryRows(
+        array $repositories,
+        int $now,
+        string $github_url,
+        bool $with_trend
+    ) : string {
+        $rows = '';
+
+        foreach ($repositories as $repository) {
+            $rows .= "\n" . self::repositoryRow($repository, $now, $github_url, $with_trend);
+        }
+
+        return '<tbody>' . $rows . "\n</tbody>";
     }
 
     /** @psalm-pure */

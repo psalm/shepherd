@@ -25,5 +25,6 @@ $issue_data = Psalm\Shepherd\GithubApi::fetchPsalmIssuesData(is_string($after) ?
             </p>
         </div>
     </main>
+<?php (require __DIR__ . '/partials/footer.php')(); ?>
 </body>
 </html>
