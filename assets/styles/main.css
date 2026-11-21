@@ -82,21 +82,26 @@
     --line: light-dark(#d4d4d4, #33383c);
     --wash: light-dark(#f6f6f4, #1a1d20);
     --grid: light-dark(#e6e6e3, #262a2e);
-    --link: light-dark(#0b57d0, #8db4ff);
-    --focus: light-dark(#1565c0, #8db4ff);
-    --cov: light-dark(#0b7a5c, #4fd1a5);
-    --good: light-dark(#0b7a5c, #4fd1a5);
-    --warn: light-dark(#9a5700, #e0a84a);
-    --bad: light-dark(#b3261e, #ff8a80);
-    --expr: light-dark(#2b5fc7, #7ea6ff);
+    /*
+     * Accent hues share one OKLCH lightness per theme (≈0.52 light, ≈0.76 dark) and are spread around the wheel
+     * (red 22°, amber 70°, green 158°, blue 258°), so no hue looks heavier than another. Red keeps the highest
+     * chroma as the Psalm brand colour; the others are toned down so links and charts never compete with it.
+     */
+    --link: light-dark(#2460b7, #85b3f7);
+    --focus: light-dark(#2460b7, #85b3f7);
+    --cov: light-dark(#157c4f, #68c894);
+    --good: light-dark(#157c4f, #68c894);
+    --warn: light-dark(#9a6418, #e4ac59);
+    --bad: light-dark(#c8102e, #fd7273);
+    --expr: light-dark(#2460b7, #85b3f7);
     --solid-bg: light-dark(#222222, #e9e6e0);
     --solid-fg: light-dark(#ffffff, #121416);
     --tip-bg: light-dark(#1b1b1b, #f1efea);
     --tip-fg: light-dark(#f4f2ee, #121416);
-    --selection: light-dark(rgb(43 95 199 / 14%), rgb(126 166 255 / 20%));
+    --selection: light-dark(rgb(36 96 183 / 14%), rgb(133 179 247 / 20%));
     --dim: light-dark(rgb(255 255 255 / 55%), rgb(18 20 22 / 60%));
-    --psalm: light-dark(#a75251, #e29a98);
-    --psalm-fill: #a75251;
+    --psalm: light-dark(#c8102e, #fd7273);
+    --psalm-fill: #c8102e;
     --psalm-fg: #ffffff;
 
     --nav-bg: light-dark(#cccccc, #1b1d1f);
@@ -1051,7 +1056,7 @@ td.col-num {
 }
 
 .term :focus-visible {
-    outline-color: #8db4ff;
+    outline-color: #85b3f7;
 }
 
 .term-bar {
@@ -1094,7 +1099,7 @@ td.col-num {
 }
 
 .term-ok {
-    color: #4fd1a5;
+    color: #68c894;
 }
 
 .snippet {
