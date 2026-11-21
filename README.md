@@ -1,3 +1,5 @@
+[![Shepherd: Watch your PHP get stricter. Type coverage for PHP, by Psalm.](assets/img/og.png)](https://shepherd.dev)
+
 # Psalm Shepherd server
 
 ![Psalm coverage](https://shepherd.dev/github/psalm/shepherd/coverage.svg)
