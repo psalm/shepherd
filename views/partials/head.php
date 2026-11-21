@@ -45,7 +45,7 @@ return static function (
 <meta property="og:description" content="<?= htmlspecialchars($description) ?>">
     <?php endif; ?>
 <meta property="og:url" content="<?= htmlspecialchars($page_url) ?>">
-<meta property="og:image" content="https://shepherd.dev/assets/img/og.png">
+<meta property="og:image" content="https://shepherd.dev<?= $asset('/assets/img/og.png') ?>">
 <meta property="og:image:alt" content="Shepherd: Watch your PHP get stricter. Type coverage for PHP, by Psalm.">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="viewport" content="width=device-width, initial-scale=1">
