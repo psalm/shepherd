@@ -5,7 +5,9 @@ namespace Psalm\Shepherd;
 use PDO;
 use function error_log;
 use function date;
+use function is_numeric;
 use function is_string;
+use function time;
 
 final class GithubData
 {
@@ -38,10 +40,20 @@ final class GithubData
             $payload['repository']['name']
         );
 
-        $date = date('Y-m-d H:i:s', $payload['head']['date'] ?? date('U'));
+        $date = self::formatCommitDate($payload['head']['date'] ?? null);
         self::setRepositoryForMasterCommit($git_commit, $repository, $date);
 
         error_log('GitHub data saved for ' . $git_commit);
+    }
+
+    /**
+     * Formats a payload's unix timestamp for the created_on columns; a missing or non-numeric one means now.
+     *
+     * @param mixed $timestamp
+     */
+    public static function formatCommitDate($timestamp) : string
+    {
+        return date('Y-m-d H:i:s', is_numeric($timestamp) ? (int) $timestamp : time());
     }
 
     public static function getRepositoryForCommitAndPayload(

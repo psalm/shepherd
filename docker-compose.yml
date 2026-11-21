@@ -14,7 +14,7 @@ services:
 
   db:
     container_name: shepherd-sql
-    image: mysql/mysql-server:5.6
+    image: mariadb:10.5
     volumes:
       - type: "bind"
         source: "${PWD}/init.sql"
@@ -26,5 +26,3 @@ services:
       MYSQL_DATABASE: test_db
       MYSQL_USER: devuser
       MYSQL_PASSWORD: devpass
-    networks:
-      - backend

@@ -10,3 +10,4 @@ database/pr_reviews/*.json
 database/psalm_data/*.json
 database/psalm_master_data/*.json
 config.json
+.phpunit.result.cache

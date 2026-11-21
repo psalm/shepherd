@@ -9,11 +9,9 @@ use const CURLOPT_RETURNTRANSFER;
 use const CURLINFO_HEADER_OUT;
 use const CURLOPT_POST;
 use const CURLOPT_POSTFIELDS;
-use const CURLOPT_SSL_VERIFYPEER;
 use const CURLOPT_HTTPHEADER;
 use function strlen;
 use function curl_exec;
-use function curl_close;
 use function json_decode;
 use function is_array;
 use function is_string;
@@ -81,7 +79,6 @@ final class Auth
         curl_setopt($ch, CURLINFO_HEADER_OUT, true);
         curl_setopt($ch, CURLOPT_POST, true);
         curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
-        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
 
         // Set HTTP Header for POST request
         curl_setopt(
@@ -96,9 +93,6 @@ final class Auth
 
         // Submit the POST request
         $response = (string) curl_exec($ch);
-
-        // Close cURL session handle
-        curl_close($ch);
 
         if (!$response) {
             throw new \UnexpectedValueException('Response should exist');

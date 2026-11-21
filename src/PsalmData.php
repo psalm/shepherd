@@ -2,7 +2,6 @@
 
 namespace Psalm\Shepherd;
 
-use function date;
 use function error_log;
 use function json_encode;
 use function substr;
@@ -52,7 +51,7 @@ final class PsalmData
             $repository = new Model\GithubRepository($repo_owner, $repo_name);
 
             if (($payload['build']['CI_BRANCH'] ?? '') === GithubApi::fetchDefaultBranch($repository)) {
-                $date = date('Y-m-d H:i:s', $payload['git']['head']['date'] ?? date('U'));
+                $date = GithubData::formatCommitDate($payload['git']['head']['date'] ?? null);
                 GithubData::setRepositoryForMasterCommit($git_commit, $repository, $date);
             }
         }

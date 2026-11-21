@@ -1,13 +1,150 @@
 name: CI
 
-on: [push, pull_request]
+on:
+  push:
+    branches: [master]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Cancel superseded runs on PRs only. Runs on master always complete so that
+# Shepherd receives results for every merged commit.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  # Production runs PHP 8.3 (composer.json requires ^8.3), so CI uses the same version.
+  PHP_VERSION: '8.3'
+  COMPOSER_NO_INTERACTION: 1
+  COMPOSER_NO_AUDIT: 1
+
 jobs:
+  tests:
+    name: Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      # Same server version as production (MariaDB 10.5).
+      mariadb:
+        image: mariadb:10.5
+        env:
+          MARIADB_ROOT_PASSWORD: root
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="healthcheck.sh --connect --innodb_initialized"
+          --health-interval=3s
+          --health-timeout=5s
+          --health-retries=20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # 2.40.0
+        with:
+          php-version: ${{ env.PHP_VERSION }}
+          extensions: curl, dom, mbstring, pdo_mysql, simplexml, tokenizer, xmlwriter
+          ini-values: zend.assertions=1
+          coverage: none
+          tools: composer
+
+      - name: Get Composer cache directory
+        id: composer-cache
+        run: echo "dir=$(composer config cache-files-dir)" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Composer downloads
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: composer-${{ env.PHP_VERSION }}-${{ hashFiles('composer.json') }}
+          restore-keys: composer-${{ env.PHP_VERSION }}-
+
+      - name: Install dependencies
+        run: composer install --no-progress --prefer-dist
+
+      # tests/DatabaseTest.php loads init.sql into the MariaDB service and runs the app queries against it.
+      - name: PHPUnit
+        run: composer test
+        env:
+          SHEPHERD_TEST_DB_HOST: 127.0.0.1
+          SHEPHERD_TEST_DB_ROOT_PASSWORD: root
+
+  static:
+    name: Static checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # 2.40.0
+        with:
+          php-version: ${{ env.PHP_VERSION }}
+          extensions: curl, dom, mbstring, simplexml, tokenizer, xmlwriter
+          coverage: none
+          tools: composer
+
+      - name: Validate composer.json
+        run: composer validate --strict
+
+      - name: Check JavaScript syntax
+        run: node --check assets/js/*.js
+
+      - name: Get Composer cache directory
+        id: composer-cache
+        run: echo "dir=$(composer config cache-files-dir)" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Composer downloads
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: composer-${{ env.PHP_VERSION }}-${{ hashFiles('composer.json') }}
+          restore-keys: composer-${{ env.PHP_VERSION }}-
+
+      - name: Install dependencies
+        run: composer install --no-progress --prefer-dist
+
+      - name: PHP_CodeSniffer
+        run: composer cs
+
   psalm:
     name: Psalm
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
-    - uses: actions/checkout@master
-    - name: Psalm
-      uses: docker://vimeo/psalm-github-actions
-      with:
-        args: --shepherd
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # 2.40.0
+        with:
+          php-version: ${{ env.PHP_VERSION }}
+          extensions: curl, dom, mbstring, simplexml, tokenizer, xmlwriter
+          coverage: none
+          tools: composer
+
+      - name: Get Composer cache directory
+        id: composer-cache
+        run: echo "dir=$(composer config cache-files-dir)" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Composer downloads
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: composer-${{ env.PHP_VERSION }}-${{ hashFiles('composer.json') }}
+          restore-keys: composer-${{ env.PHP_VERSION }}-
+
+      - name: Install dependencies
+        run: composer install --no-progress --prefer-dist --no-dev
+
+      # --shepherd sends the results to https://shepherd.dev (dogfooding).
+      - name: Psalm
+        run: composer psalm -- --shepherd

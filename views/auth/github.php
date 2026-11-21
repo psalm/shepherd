@@ -8,9 +8,10 @@ if (!$config instanceof Psalm\Shepherd\Config\OAuthApp) {
     throw new UnexpectedValueException('Cannot use oauth flow if config not proper');
 }
 
+// No redirect_uri: GitHub then uses the app's registered callback URL. Building it from the Host header would let
+// a client choose it.
 $params = [
     'client_id' => $config->client_id,
-    'redirect_uri' => 'https://' . ($_SERVER['HTTP_HOST'] ?? '') . '/auth/github/redirect',
     'allow_signup' => false,
     'scope' => 'repo write:repo_hook read:org',
     'state' => hash_hmac('sha256', $_SERVER['REMOTE_ADDR'] ?? '', $config->client_secret)
