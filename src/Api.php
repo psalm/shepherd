@@ -28,7 +28,8 @@ final class Api
                 INNER JOIN github_master_commits ON `github_master_commits`.`git_commit` = `psalm_reports`.`git_commit`
                 WHERE owner_name = :owner_name
                 AND repo_name = :repo_name
-                ORDER BY `github_master_commits`.`created_on` DESC, `github_master_commits`.`id` DESC'
+                ORDER BY `github_master_commits`.`created_on` DESC, `github_master_commits`.`id` DESC
+                LIMIT 1'
         );
 
         $stmt->bindValue(':owner_name', $owner_name);
@@ -69,7 +70,8 @@ final class Api
                 INNER JOIN github_master_commits ON `github_master_commits`.`git_commit` = `psalm_reports`.`git_commit`
                 WHERE owner_name = :owner_name
                 AND repo_name = :repo_name
-                ORDER BY `github_master_commits`.`created_on` DESC, `github_master_commits`.`id` DESC'
+                ORDER BY `github_master_commits`.`created_on` DESC, `github_master_commits`.`id` DESC
+                LIMIT 1'
         );
 
         $stmt->bindValue(':owner_name', $owner_name);
