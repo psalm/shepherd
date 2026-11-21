@@ -462,7 +462,8 @@ code {
     border-right: 0;
 }
 
-.presets button:hover:not(:disabled) {
+/* The selected preset keeps its solid colours under the pointer: the hover wash would leave --solid-fg on near-white. */
+.presets button:hover:not(:disabled, [aria-pressed='true']) {
     background: var(--wash);
 }
 
