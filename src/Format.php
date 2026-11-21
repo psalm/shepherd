@@ -14,8 +14,6 @@ use function min;
 use function number_format;
 use function round;
 use function sprintf;
-use function str_ends_with;
-use function substr;
 
 /**
  * Pure presentation helpers for the home page and the history page.
@@ -28,7 +26,8 @@ final class Format
     private const DAY = 86400;
 
     /**
-     * 999 -> "999", 1234 -> "1.2K", 999950 -> "1M" (the rounding is carried into the next unit).
+     * 999 -> "999", 1234 -> "1.2K", 235000 -> "235.0K", 999950 -> "1.0M" (the rounding is carried into the next
+     * unit). Always one decimal, so values in a column line up and differ visibly.
      *
      * @psalm-pure
      */
@@ -47,9 +46,7 @@ final class Format
             ++$unit;
         }
 
-        $text = sprintf('%.1f', $value);
-
-        return (str_ends_with($text, '.0') ? substr($text, 0, -2) : $text) . $units[$unit];
+        return sprintf('%.1f', $value) . $units[$unit];
     }
 
     /**

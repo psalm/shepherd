@@ -21,11 +21,12 @@ class FormatTest extends TestCase
         return [
             'zero' => [0, '0'],
             'below a thousand' => [999, '999'],
-            'a thousand' => [1000, '1K'],
+            'a thousand' => [1000, '1.0K'],
             'one decimal' => [1234, '1.2K'],
+            'keeps a zero decimal' => [235000, '235.0K'],
             'rounds inside the unit' => [1949, '1.9K'],
             'just below a million' => [999949, '999.9K'],
-            'carries into millions' => [999950, '1M'],
+            'carries into millions' => [999950, '1.0M'],
             'millions' => [238700000, '238.7M'],
             'billions' => [2500000000, '2.5B'],
         ];
