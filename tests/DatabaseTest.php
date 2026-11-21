@@ -10,7 +10,9 @@ use Psalm\Shepherd\DatabaseProvider;
 use Psalm\Shepherd\GithubData;
 use Psalm\Shepherd\Model\GithubRepository;
 use Psalm\Shepherd\PsalmData;
+use ReflectionMethod;
 use ReflectionProperty;
+use function array_column;
 use function file_get_contents;
 use function getenv;
 
@@ -73,7 +75,7 @@ class DatabaseTest extends TestCase
         $this->assertNull(Api::getTypeCoverage('psalm/shepherd'));
         $this->assertNull(Api::getLevel('psalm/shepherd'));
         $this->assertSame(0, Api::getHistoryCount('psalm/shepherd'));
-        $this->assertSame([], Api::getRecentGithubRepositories());
+        $this->assertSame([], self::recentActivity()['repositories']);
     }
 
     public function testStoredReportIsReadBack(): void
@@ -90,7 +92,21 @@ class DatabaseTest extends TestCase
         $this->assertSame('90.0', Api::getTypeCoverage('psalm/shepherd'));
         $this->assertSame(3, Api::getLevel('psalm/shepherd'));
         $this->assertSame(1, Api::getHistoryCount('psalm/shepherd'));
-        $this->assertSame(['psalm/shepherd'], Api::getRecentGithubRepositories());
+        $recent = self::recentActivity();
+        $this->assertSame(['psalm/shepherd'], array_column($recent['repositories'], 'name'));
+        $this->assertSame(3, $recent['repositories'][0]['level']);
+        $this->assertTrue($recent['sparklines'], 'init.sql creates the repo_recent index');
         $this->assertCount(1, Api::getHistoryPayload('psalm/shepherd')['t']);
+    }
+
+    /**
+     * The home page query itself, without the 60 s file cache in the system temp dir.
+     *
+     * @return array{repositories: list<array{name: string, level: int|null}>, sparklines: bool}
+     */
+    private static function recentActivity(): array
+    {
+        /** @var array{repositories: list<array{name: string, level: int|null}>, sparklines: bool} */
+        return (new ReflectionMethod(Api::class, 'loadRecentActivity'))->invoke(null);
     }
 }
