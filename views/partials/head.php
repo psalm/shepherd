@@ -3,19 +3,23 @@
 /**
  * Opens the document up to <body>.
  *
- * Usage: (require __DIR__ . '/partials/head.php')('Page title', ['/assets/x.css'], ['/assets/x.js'], ['ibm-plex-sans-400']);
+ * Usage: (require __DIR__ . '/partials/head.php')('Page title', ['/assets/x.css'], ['/assets/x.js'], ['ibm-plex-sans-400'], 'Description');
  * Extra scripts are loaded with defer; only theme.js (which sets data-theme before first paint) blocks.
  * $preload_fonts names files in assets/fonts (without .woff2) that the first screen needs; preload only those,
  * every preloaded font competes with the stylesheet for bandwidth.
+ * The title feeds <title> and og:title. A non-empty $description adds the description and og:description tags.
+ * The Open Graph tags carry the canonical URL (request path without the query string) and the shared card image;
+ * X falls back to the og:* tags, so only twitter:card is set.
  *
  * @param list<string> $preload_fonts
- * @return Closure(string, list<string>=, list<string>=, list<string>=): void
+ * @return Closure(string, list<string>=, list<string>=, list<string>=, string=): void
  */
 return static function (
     string $title,
     array $styles = [],
     array $scripts = [],
-    array $preload_fonts = ['ibm-plex-sans-400']
+    array $preload_fonts = ['ibm-plex-sans-400'],
+    string $description = ''
 ) : void {
     // Appends ?v=<mtime> so a changed asset is never served from a stale browser or CDN cache.
     $asset = static function (string $path) : string {
@@ -23,12 +27,27 @@ return static function (
 
         return htmlspecialchars($path . ($mtime !== false ? '?v=' . $mtime : ''));
     };
+    $request_path = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
+    $page_url = 'https://shepherd.dev' . (is_string($request_path) && $request_path !== '' ? $request_path : '/');
     ?>
 <!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <title><?= htmlspecialchars($title) ?></title>
+    <?php if ($description !== '') : ?>
+<meta name="description" content="<?= htmlspecialchars($description) ?>">
+    <?php endif; ?>
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Shepherd">
+<meta property="og:title" content="<?= htmlspecialchars($title) ?>">
+    <?php if ($description !== '') : ?>
+<meta property="og:description" content="<?= htmlspecialchars($description) ?>">
+    <?php endif; ?>
+<meta property="og:url" content="<?= htmlspecialchars($page_url) ?>">
+<meta property="og:image" content="https://shepherd.dev/assets/img/og.png">
+<meta property="og:image:alt" content="Shepherd: Watch your PHP get stricter. Type coverage for PHP, by Psalm.">
+<meta name="twitter:card" content="summary_large_image">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="light dark">
 <meta name="theme-color" content="#cccccc" media="(prefers-color-scheme: light)">
