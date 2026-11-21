@@ -2,6 +2,7 @@
 
 use Psalm\Shepherd\Api;
 use Psalm\Shepherd\Config;
+use Psalm\Shepherd\Format;
 
 require __DIR__ . '/../vendor/autoload.php';
 
@@ -15,28 +16,9 @@ $repository_url = $github_url . '/' . $repository;
 // An unrecognised repository name gets the same 404 notice as a repository without reports.
 $total_count = $repository === null ? 0 : Api::getHistoryCount($repository);
 
-/** @psalm-pure */
-$formatCompact = static function (int $x) : string {
-    if ($x < 1000) {
-        return (string) $x;
-    }
-
-    $units = ['K', 'M', 'B', 'T'];
-    $value = (float) $x / 1000.0;
-    $unit = 0;
-
-    while ($unit < 3 && round($value, 1) >= 1000) {
-        $value /= 1000.0;
-        ++$unit;
-    }
-
-    $text = sprintf('%.1f', $value);
-
-    return (str_ends_with($text, '.0') ? substr($text, 0, -2) : $text) . $units[$unit];
-};
-
 $renderHead = require __DIR__ . '/partials/head.php';
 $renderNav = require __DIR__ . '/partials/nav.php';
+$renderFooter = require __DIR__ . '/partials/footer.php';
 $page_title = 'Shepherd - ' . ($repository ?? 'unknown repository');
 
 if ($repository === null || $total_count === 0) {
@@ -54,6 +36,7 @@ if ($repository === null || $total_count === 0) {
                 Run Psalm in CI with the <code>--shepherd</code> option on your default branch to send them.</p>
         </div>
     </main>
+    <?php $renderFooter(); ?>
 </body>
 </html>
     <?php
@@ -246,7 +229,7 @@ $renderNav();
                             <td class="col-date"><time datetime="<?= gmdate('Y-m-d\TH:i:s\Z', $timestamp) ?>"><?= gmdate('Y-m-d H:i:s', $timestamp) ?></time></td>
                             <td class="col-sha"><a href="<?= htmlspecialchars($repository_url . '/commit/' . $row['commit']) ?>"><?= htmlspecialchars(substr($row['commit'], 0, 7)) ?></a></td>
                             <td class="col-num"><?= sprintf('%.3f', $row['coverage']) ?>%</td>
-                            <td class="col-num" title="<?= number_format($row['expressions']) ?>"><?= $formatCompact($row['expressions']) ?></td>
+                            <td class="col-num" title="<?= number_format($row['expressions']) ?>"><?= Format::compactNumber($row['expressions']) ?></td>
                         </tr>
                     <?php endforeach; ?>
                     </tbody>
@@ -266,5 +249,6 @@ $renderNav();
             }());
         </script>
     </main>
+<?php $renderFooter(); ?>
 </body>
 </html>
