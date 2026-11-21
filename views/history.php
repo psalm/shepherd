@@ -52,6 +52,12 @@ $rows = Api::getHistoryPage($repository, HISTORY_PAGE_SIZE, ($page - 1) * HISTOR
 
 $has_chart = $total_count > 1;
 
+if ($has_chart) {
+    // The chart's data request starts as soon as the headers arrive instead of after history.js has run.
+    // Same URL as data-src below; the version is the report count, so a new report busts both caches.
+    header('Link: </github/' . $repository . '/history.json?v=' . $total_count . '>; rel=preload; as=fetch; crossorigin; fetchpriority=low');
+}
+
 // Always carries ?page=N: history.js uses it to scroll back to the table after it rewrites the hash to the chart range.
 $pageUrl = static function (int $n) use ($repository) : string {
     return '/github/' . $repository . '?page=' . $n . '#commits';

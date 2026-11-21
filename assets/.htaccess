@@ -1,0 +1,13 @@
+# Static assets. Needs mod_headers (enabled in the Docker image).
+<IfModule mod_headers.c>
+    # Unversioned files (the logo): revalidate daily.
+    Header set Cache-Control "public, max-age=86400"
+
+    # CSS, JS and images are linked with ?v=<mtime> (views/partials/head.php), so a URL never changes content.
+    Header set Cache-Control "public, max-age=31536000, immutable" "expr=%{QUERY_STRING} =~ /^v=[0-9]+$/"
+
+    # Fonts are preloaded without ?v=; rename a file when it changes (see fonts/README.txt).
+    <FilesMatch "\.woff2$">
+        Header set Cache-Control "public, max-age=31536000, immutable"
+    </FilesMatch>
+</IfModule>
