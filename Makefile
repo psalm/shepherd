@@ -10,12 +10,15 @@ distclean: ## Distclean
 	make dev-distclean
 
 test: ## Run PHPUnit tests
-	./vendor/bin/phpunit
+	composer test
 
 psalm: ## Run Psalm validation
-	./vendor/bin/psalm
+	composer psalm
 
-test: psalm phpunit
+cs: ## Check the coding standard
+	composer cs
+
+check: test psalm cs ## Run all checks that CI runs
 
 ##
 ## Local development

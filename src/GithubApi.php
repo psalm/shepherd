@@ -16,6 +16,8 @@ use function str_ireplace;
 use function implode;
 use function array_map;
 use function strtoupper;
+use function dirname;
+use function preg_replace;
 
 final class GithubApi
 {
