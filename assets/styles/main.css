@@ -374,14 +374,28 @@ code {
     overflow-x: auto;
 }
 
-.repo-title a {
-    color: inherit;
-    text-decoration: none;
-    border-bottom: 1px dotted var(--muted);
+.repo-title {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 4px 10px;
+    overflow-wrap: anywhere;
 }
 
-.repo-title a:hover {
-    border-bottom-style: solid;
+.repo-github {
+    display: inline-flex;
+    padding: 4px;
+    color: var(--muted);
+    border-radius: 4px;
+}
+
+.repo-github:hover {
+    color: var(--ink);
+    background: var(--wash);
+}
+
+.repo-github svg {
+    display: block;
 }
 
 .badges {
@@ -1102,42 +1116,6 @@ td.col-num {
     color: #68c894;
 }
 
-.snippet {
-    margin: 0 0 14px;
-    border: 1px solid var(--line);
-    border-radius: 4px;
-    background: var(--wash);
-}
-
-.snippet-head {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
-    min-height: 34px;
-    padding: 4px 6px 4px 12px;
-    border-bottom: 1px solid var(--line);
-    font-size: 13px;
-    font-weight: 500;
-    color: var(--muted);
-}
-
-.snippet pre {
-    margin: 0;
-    padding: 10px 12px;
-    overflow-x: auto;
-    font: 14px/1.5 var(--mono);
-    color: var(--ink);
-}
-
-.snippet pre:focus-visible {
-    outline-offset: -2px;
-}
-
-.snippet code {
-    white-space: pre;
-}
-
 .copy-btn {
     min-width: 5.5em;
     padding: 3px 10px;
@@ -1336,32 +1314,6 @@ td.col-num {
     margin-top: auto;
     padding-top: 6px;
     font-size: 14px;
-}
-
-/* Project page: the collapsed "Add to README" snippet next to the badges */
-.readme-details {
-    max-width: 640px;
-    margin: 0 0 24px;
-    border: 1px solid var(--line);
-    border-radius: 4px;
-    background: var(--wash);
-}
-
-.readme-details > summary {
-    padding: 6px 12px;
-    font: 500 14px/1.5 var(--sans);
-    cursor: pointer;
-}
-
-.readme-details[open] > summary {
-    border-bottom: 1px solid var(--line);
-}
-
-.readme-details .snippet {
-    margin: 0;
-    border: 0;
-    border-radius: 0;
-    background: none;
 }
 
 .repo-table {
