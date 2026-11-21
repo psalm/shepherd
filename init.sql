@@ -54,6 +54,7 @@ CREATE TABLE `shepherd_web`.`psalm_reports` (
   `issues` mediumblob NOT NULL,
   `mixed_count` int(10) unsigned NOT NULL,
   `nonmixed_count` int(10) unsigned NOT NULL,
+  `level` tinyint(3) unsigned DEFAULT NULL,
   `created_on` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   UNIQUE KEY `git_commit` (`git_commit`)
