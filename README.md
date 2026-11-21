@@ -13,4 +13,14 @@ Psalm, PHPUnit and many other projects now display a type coverage badge in thei
 You can generate your own by adding `--shepherd` to your CI Psalm command. Your badge will then be available at
 
 `https://shepherd.dev/github/{username}/{repo}/coverage.svg`
+
+The Psalm level badge is at `https://shepherd.dev/github/{username}/{repo}/level.svg`.
+
+Both badges use the shields.io `flat` style. Add `?style=flat-square` for square corners.
+For any other [shields.io style](https://shields.io/badges/endpoint-badge), point a shields.io endpoint badge at the JSON data of the badge:
+
+`https://img.shields.io/endpoint?style=for-the-badge&url=https://shepherd.dev/github/{username}/{repo}/coverage`
+
+Replace `coverage` with `level` at the end of the URL for the Psalm level.
+
 This service is the beginning of an ongoing effort for Psalm to support open-source PHP projects hosted on GitHub.
