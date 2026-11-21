@@ -283,6 +283,25 @@ code {
     height: 20px;
 }
 
+.page-note {
+    max-width: 72ch;
+    margin: -12px 0 24px;
+    font-size: 14px;
+    color: var(--muted);
+}
+
+.change {
+    color: var(--muted);
+}
+
+.change-up {
+    color: var(--good);
+}
+
+.change-down {
+    color: var(--bad);
+}
+
 .notice {
     margin: 24px 0;
     padding: 28px 20px;
