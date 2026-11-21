@@ -10,7 +10,7 @@
         }
     ],
     "require": {
-        "php": "^8.4",
+        "php": "^8.3",
         "sebastian/diff": "^4.0",
         "vimeo/psalm": "dev-master",
         "knplabs/github-api": "^3.4",
@@ -40,7 +40,7 @@
     },
     "scripts": {
         "test": "phpunit",
-        "psalm": "psalm --no-progress --show-info=false",
+        "psalm": "psalm --show-info=false",
         "cs": "phpcs --runtime-set ignore_warnings_on_exit 1"
     }
 }

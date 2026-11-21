@@ -1,4 +1,4 @@
-FROM php:8.5-apache
+FROM php:8.3-apache
 
 RUN apt-get update && apt-get install --no-install-recommends -y curl git \
     openssl zip unzip wget libzip-dev && rm -rf /var/lib/apt/lists/*
