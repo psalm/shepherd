@@ -6,7 +6,7 @@
  * Usage: (require __DIR__ . '/partials/head.php')('Page title', ['/assets/x.css'], ['/assets/x.js']);
  * Extra scripts are loaded with defer; only theme.js (which sets data-theme before first paint) blocks.
  *
- * @return Closure(string, list<string>, list<string>): void
+ * @return Closure(string, list<string>=, list<string>=): void
  */
 return static function (string $title, array $styles = [], array $scripts = []) : void {
     // Appends ?v=<mtime> so a changed asset is never served from a stale browser or CDN cache.

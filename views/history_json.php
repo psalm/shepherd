@@ -1,49 +1,54 @@
 <?php
 
 use Psalm\Shepherd\Api;
+use Psalm\Shepherd\DatabaseUnavailableException;
 
 require __DIR__ . '/../vendor/autoload.php';
 
 header('Content-Type: application/json');
 
+/** @param int<400, 599> $status */
+$respondError = static function (int $status, string $message) : void {
+    http_response_code($status);
+    header('Cache-Control: no-cache');
+    echo json_encode(['error' => $message], JSON_THROW_ON_ERROR);
+};
+
 $repository = Api::extractRepository($_SERVER['QUERY_STRING'] ?? '');
 
 if ($repository === null) {
-    http_response_code(400);
-    header('Cache-Control: no-cache');
-    echo json_encode(['error' => 'Repository format not recognised'], JSON_THROW_ON_ERROR);
+    $respondError(400, 'Repository format not recognised');
 
     return;
 }
 
-$history = Api::getHistory($repository);
+try {
+    $payload = Api::getHistoryPayload($repository);
+} catch (DatabaseUnavailableException $e) {
+    $respondError(503, 'Database unavailable');
 
-if (!$history) {
-    http_response_code(404);
-    header('Cache-Control: no-cache');
-    echo json_encode(['error' => 'No type coverage reports recorded'], JSON_THROW_ON_ERROR);
+    return;
+} catch (PDOException $e) {
+    error_log('history.json query failed - ' . $e->getMessage());
+    $respondError(500, 'Internal error');
+
+    return;
+}
+
+if (!$payload['t']) {
+    $respondError(404, 'No type coverage reports recorded');
 
     return;
 }
 
 header('Cache-Control: public, max-age=300');
 
-// Compact columnar payload, ascending by time: t = unix seconds, c = coverage % (unrounded, rounded only for display),
-// e = expressions, s = commit sha.
-$data = ['repo' => $repository, 't' => [], 'c' => [], 'e' => [], 's' => []];
-
-foreach (array_reverse($history) as $row) {
-    $data['t'][] = $row['created_at'];
-    $data['c'][] = $row['coverage'];
-    $data['e'][] = $row['total'];
-    $data['s'][] = $row['commit'];
-}
-
-// Served as application/json, never parsed as HTML, so DB values are not an XSS vector here.
+// Psalm treats every PDO fetch (here the commit shas) as tainted input. This is a JSON response with a JSON content
+// type, never parsed as HTML, so the html/quotes sinks do not apply.
 /**
  * @psalm-taint-escape html
  * @psalm-taint-escape has_quotes
  */
-$json = json_encode($data, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES);
+$json = json_encode($payload, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES);
 
 echo $json;

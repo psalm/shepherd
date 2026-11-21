@@ -9,14 +9,11 @@ const HISTORY_PAGE_SIZE = 100;
 
 $repository = Api::extractRepository($_SERVER['QUERY_STRING'] ?? '');
 
-if ($repository === null) {
-    throw new UnexpectedValueException('Repository format not recognised');
-}
-
 $github_url = Config::getInstance()->getGithubUrl();
 $repository_url = $github_url . '/' . $repository;
 
-$total_count = Api::getHistoryCount($repository);
+// An unrecognised repository name gets the same 404 notice as a repository without reports.
+$total_count = $repository === null ? 0 : Api::getHistoryCount($repository);
 
 /** @psalm-pure */
 $formatCompact = static function (int $x) : string {
@@ -33,23 +30,27 @@ $formatCompact = static function (int $x) : string {
         ++$unit;
     }
 
-    return preg_replace('/\.0$/', '', sprintf('%.1f', $value)) . $units[$unit];
+    $text = sprintf('%.1f', $value);
+
+    return (str_ends_with($text, '.0') ? substr($text, 0, -2) : $text) . $units[$unit];
 };
 
 $renderHead = require __DIR__ . '/partials/head.php';
 $renderNav = require __DIR__ . '/partials/nav.php';
-$page_title = 'Shepherd - ' . $repository;
+$page_title = 'Shepherd - ' . ($repository ?? 'unknown repository');
 
-if ($total_count === 0) {
+if ($repository === null || $total_count === 0) {
     http_response_code(404);
     $renderHead($page_title);
     $renderNav();
     ?>
     <main id="main" class="container page" tabindex="-1">
+        <?php if ($repository !== null) : ?>
         <h1 class="repo-title"><a href="<?= htmlspecialchars($repository_url) ?>"><?= htmlspecialchars($repository) ?></a></h1>
+        <?php endif; ?>
         <div class="notice">
             <h2>No type coverage reports yet</h2>
-            <p>Shepherd has not recorded any Psalm reports for <?= htmlspecialchars($repository) ?>.
+            <p>Shepherd has not recorded any Psalm reports for <?= $repository === null ? 'this repository' : htmlspecialchars($repository) ?>.
                 Run Psalm in CI with the <code>--shepherd</code> option on your default branch to send them.</p>
         </div>
     </main>
@@ -136,7 +137,7 @@ $renderPager = static function (string $position) use ($page, $total_pages, $pag
                         <?php if ($item['kind'] === 'gap') : ?>
                         <li><span class="pager-gap" aria-hidden="true"><?= $item['text'] ?></span></li>
                         <?php elseif ($item['kind'] === 'off') : ?>
-                        <li><span class="pager-off" aria-disabled="true"><?= $item['text'] ?></span></li>
+                        <li><span class="pager-off" aria-hidden="true"><?= $item['text'] ?></span></li>
                         <?php else : ?>
                         <li><a href="<?= htmlspecialchars($pageUrl($item['page'])) ?>" data-page="<?= $item['page'] ?>"<?= $item['rel'] !== '' ? ' rel="' . $item['rel'] . '"' : '' ?><?= $item['current'] ? ' aria-current="page"' : '' ?> aria-label="<?= $item['label'] ?>"><?= $item['text'] ?></a></li>
                         <?php endif; ?>
@@ -166,9 +167,10 @@ $renderNav();
 <?php if ($has_chart) : ?>
         <section
             id="chart-card"
-            class="chart-card js-only"
+            class="chart-card"
+            hidden
             aria-labelledby="chart-heading"
-            data-src="/github/<?= htmlspecialchars($repository) ?>/history.json"
+            data-src="/github/<?= htmlspecialchars($repository) ?>/history.json?v=<?= $total_count ?>"
             data-commit-url="<?= htmlspecialchars($repository_url) ?>/commit/"
         >
             <div class="chart-head">
@@ -232,7 +234,7 @@ $renderNav();
                             <td class="col-date"><time datetime="<?= gmdate('Y-m-d\TH:i:s\Z', $timestamp) ?>"><?= gmdate('Y-m-d H:i:s', $timestamp) ?></time></td>
                             <td class="col-sha"><a href="<?= htmlspecialchars($repository_url . '/commit/' . $row['commit']) ?>"><?= htmlspecialchars(substr($row['commit'], 0, 7)) ?></a></td>
                             <td class="col-num"><?= sprintf('%.3f', $row['coverage']) ?>%</td>
-                            <td class="col-num" title="<?= number_format($row['total']) ?>"><?= $formatCompact($row['total']) ?></td>
+                            <td class="col-num" title="<?= number_format($row['expressions']) ?>"><?= $formatCompact($row['expressions']) ?></td>
                         </tr>
                     <?php endforeach; ?>
                     </tbody>

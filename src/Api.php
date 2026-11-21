@@ -3,13 +3,16 @@
 namespace Psalm\Shepherd;
 
 use PDO;
+use function array_reverse;
 use function explode;
 use function number_format;
 use function preg_match;
 use function strpos;
+use function strtotime;
 
 /**
- * @psalm-type HistoryRow = array{commit: string, coverage: float, total: int, created_at: int}
+ * @psalm-type HistoryRow = array{commit: string, coverage: float, expressions: int, created_at: int}
+ * @psalm-type HistoryPayload = array{t: list<int>, c: list<float>, e: list<int>, s: list<string>}
  */
 final class Api
 {
@@ -25,7 +28,7 @@ final class Api
                 INNER JOIN github_master_commits ON `github_master_commits`.`git_commit` = `psalm_reports`.`git_commit`
                 WHERE owner_name = :owner_name
                 AND repo_name = :repo_name
-                ORDER BY `github_master_commits`.`created_on` DESC'
+                ORDER BY `github_master_commits`.`created_on` DESC, `github_master_commits`.`id` DESC'
         );
 
         $stmt->bindValue(':owner_name', $owner_name);
@@ -66,7 +69,7 @@ final class Api
                 INNER JOIN github_master_commits ON `github_master_commits`.`git_commit` = `psalm_reports`.`git_commit`
                 WHERE owner_name = :owner_name
                 AND repo_name = :repo_name
-                ORDER BY `github_master_commits`.`created_on` DESC'
+                ORDER BY `github_master_commits`.`created_on` DESC, `github_master_commits`.`id` DESC'
         );
 
         $stmt->bindValue(':owner_name', $owner_name);
@@ -85,8 +88,9 @@ final class Api
     }
 
     /**
-     * Extracts the "owner/repo" name from the raw query string the history routes receive,
+     * Extracts and validates the "owner/repo" name from the raw query string the history routes receive,
      * e.g. "vimeo/psalm" or "vimeo/psalm&page=2" (the rewrite rules append extra params with QSA).
+     * Returns null when it is not a well-formed repository name.
      * PHP would mangle dots in $_GET keys, so the repository is never read from $_GET.
      */
     public static function extractRepository(string $query_string) : ?string
@@ -101,19 +105,32 @@ final class Api
     }
 
     /**
-     * All reports of a repository, newest first. Rows sharing a second are all kept.
-     * created_at is a UTC unix timestamp.
+     * All reports of a repository as columns, ascending by time. Ties within one second are ordered by id ASC
+     * (the reverse of the id DESC tie-break the table and badges use), which history.js (strictlyIncreasing)
+     * relies on to keep same-second points in a stable order.
+     * t = unix seconds, c = coverage % (unrounded; rounded only for display), e = expressions, s = commit sha.
      *
-     * @return list<HistoryRow>
+     * @return HistoryPayload
      */
-    public static function getHistory(string $repository) : array
+    public static function getHistoryPayload(string $repository) : array
     {
-        return self::fetchHistory($repository, null, 0);
+        $payload = ['t' => [], 'c' => [], 'e' => [], 's' => []];
+
+        foreach (array_reverse(self::fetchHistory($repository, null, 0)) as $row) {
+            $payload['t'][] = $row['created_at'];
+            $payload['c'][] = $row['coverage'];
+            $payload['e'][] = $row['expressions'];
+            $payload['s'][] = $row['commit'];
+        }
+
+        return $payload;
     }
 
     /**
-     * One page of reports of a repository, newest first.
+     * One page of reports of a repository, newest first (ties by id DESC, like the badges).
      *
+     * @param positive-int $limit
+     * @param non-negative-int $offset
      * @return list<HistoryRow>
      */
     public static function getHistoryPage(string $repository, int $limit, int $offset) : array
@@ -141,7 +158,11 @@ final class Api
         return (int) $stmt->fetchColumn();
     }
 
-    /** @return list<HistoryRow> */
+    /**
+     * @param positive-int|null $limit
+     * @param non-negative-int $offset
+     * @return list<HistoryRow>
+     */
     private static function fetchHistory(string $repository, ?int $limit, int $offset) : array
     {
         list($owner_name, $repo_name) = explode('/', $repository);
@@ -152,7 +173,7 @@ final class Api
             'SELECT `github_master_commits`.`git_commit`,
                     mixed_count,
                     nonmixed_count,
-                    UNIX_TIMESTAMP(`github_master_commits`.created_on) AS created_at
+                    `github_master_commits`.created_on
                 FROM psalm_reports
                 INNER JOIN github_master_commits ON `github_master_commits`.`git_commit` = `psalm_reports`.`git_commit`
                 WHERE owner_name = :owner_name
@@ -173,7 +194,7 @@ final class Api
 
         $history = [];
 
-        /** @var array{git_commit: string, mixed_count: int|string, nonmixed_count: int|string, created_at: int|string} $row */
+        /** @var array{git_commit: string, mixed_count: int|string, nonmixed_count: int|string, created_on: string} $row */
         foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
             $nonmixed = (int) $row['nonmixed_count'];
             $total = (int) $row['mixed_count'] + $nonmixed;
@@ -181,8 +202,9 @@ final class Api
             $history[] = [
                 'commit' => $row['git_commit'],
                 'coverage' => $total ? 100.0 * (float) $nonmixed / (float) $total : 0.0,
-                'total' => $total,
-                'created_at' => (int) $row['created_at'],
+                'expressions' => $total,
+                // Same PHP default timezone as the writers (date() in PsalmData/GithubData), so the instant round-trips.
+                'created_at' => (int) strtotime($row['created_on']),
             ];
         }
 

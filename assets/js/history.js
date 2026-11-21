@@ -16,6 +16,9 @@
         return;
     }
 
+    // The card ships hidden, so a blocked, missing or broken script never leaves a dead "Loading chart" card.
+    card.hidden = false;
+
     const pagerLinks = Array.from(commits.querySelectorAll('.pager a[data-page]'));
     const MONO = '"IBM Plex Mono", ui-monospace, monospace';
     const NAV_HEIGHT = 72;
@@ -23,6 +26,7 @@
     const DAY = 86400;
     const DEFAULT_MONTHS = 12;
     const DEBOUNCE_MS = 150;
+    const FETCH_TIMEOUT_MS = 15000;
     const CLICK_RADIUS = 10;
     const HANDLE_GRAB = 14; // px inside the window edge that grab a handle
     const HANDLE_REACH = 8; // px outside the window edge that still grab it
@@ -57,7 +61,7 @@
     const isoZ = function (ts) {
         return new Date(ts * 1000).toISOString().slice(0, 19) + 'Z';
     };
-    // The only rounding rule for coverage: 3 decimals at display time (PHP uses sprintf('%.3f')).
+    // Coverage is rounded for display only: 3 decimals, like the table's PHP sprintf('%.3f'). The data stays unrounded.
     const fmtCov = function (v) {
         return v.toFixed(3) + '%';
     };
@@ -192,6 +196,16 @@
         return window.matchMedia('(max-width: 640px)').matches;
     };
 
+    // MediaQueryList.addEventListener is missing before Safari 14.
+    function onMediaChange(query, handler) {
+        const list = window.matchMedia(query);
+        if (list.addEventListener) {
+            list.addEventListener('change', handler);
+        } else {
+            list.addListener(handler);
+        }
+    }
+
     function presetRange(months) {
         return months === 0 ? [first, last] : [Math.max(first, addMonths(last, -months)), last];
     }
@@ -292,38 +306,34 @@
         }
     }
 
-    // Accepts "YYYY-MM-DDTHH:MM:SSZ" (written by this script) and date-only values (older links).
-    function parseBound(value, endOfDay) {
-        const match = /^(\d{4}-\d{2}-\d{2})(?:T(\d{2}:\d{2}:\d{2})Z)?$/.exec(value || '');
-        if (!match) {
+    // Only the exact "YYYY-MM-DDTHH:MM:SSZ" form written by currentHash().
+    function parseBound(value) {
+        if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/.test(value || '')) {
             return null;
         }
-        const ms = Date.parse(match[1] + 'T' + (match[2] || (endOfDay ? '23:59:59' : '00:00:00')) + 'Z');
-        return Number.isNaN(ms) ? null : { sec: ms / 1000, precise: Boolean(match[2]) };
+        const ms = Date.parse(value);
+        return Number.isNaN(ms) ? null : ms / 1000;
     }
 
     function parseHash() {
         const params = new URLSearchParams(window.location.hash.replace(/^#/, ''));
-        const from = parseBound(params.get('from'), false);
-        const to = parseBound(params.get('to'), true);
-        if (!from || !to || to.sec < from.sec) {
+        const min = parseBound(params.get('from'));
+        const max = parseBound(params.get('to'));
+        if (min === null || max === null || max < min) {
             return null;
         }
-        return { min: from.sec, max: to.sec, precise: from.precise && to.precise };
+        return { min: min, max: max };
     }
 
-    // A restored range that equals a preset (to the day, or to the second for precise links) is that preset.
-    function matchPreset(min, max, precise) {
+    // A restored range that equals a preset to the second is that preset.
+    function matchPreset(min, max) {
         let found = null;
         [1, 3, 6, 12, 0].forEach(function (months) {
             if (!presetEnabled(months)) {
                 return;
             }
             const range = presetRange(months);
-            const same = precise
-                ? Math.abs(Math.floor(range[0]) - min) < 1.5 && Math.abs(Math.ceil(range[1]) - max) < 1.5
-                : isoDate(range[0]) === isoDate(min) && isoDate(range[1]) === isoDate(max);
-            if (same) {
+            if (Math.abs(Math.floor(range[0]) - min) < 1.5 && Math.abs(Math.ceil(range[1]) - max) < 1.5) {
                 found = months;
             }
         });
@@ -894,7 +904,8 @@
     // Scroll once the chart area has its final height; a reload keeps the browser's restored position.
     function revealTable() {
         const navigation = window.performance.getEntriesByType ? window.performance.getEntriesByType('navigation')[0] : null;
-        if (new URLSearchParams(window.location.search).has('page') && !(navigation && navigation.type === 'reload')) {
+        // Only a fresh navigation (pager click, link): reload and back/forward keep the browser's restored position.
+        if (new URLSearchParams(window.location.search).has('page') && navigation && navigation.type === 'navigate') {
             commits.scrollIntoView();
         }
     }
@@ -952,7 +963,7 @@
         if (fromUrl) {
             state.min = Math.max(first, Math.min(fromUrl.min, last));
             state.max = Math.max(first, Math.min(fromUrl.max, last));
-            months = matchPreset(state.min, state.max, fromUrl.precise);
+            months = matchPreset(state.min, state.max);
         } else {
             const range = presetRange(months);
             state.min = range[0];
@@ -979,8 +990,8 @@
             window.addEventListener('resize', onResize);
         }
 
-        window.matchMedia('(max-width: 640px)').addEventListener('change', rebuild);
-        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', rebuild);
+        onMediaChange('(max-width: 640px)', rebuild);
+        onMediaChange('(prefers-color-scheme: dark)', rebuild);
         document.addEventListener('shepherd:themechange', rebuild);
 
         window.addEventListener('hashchange', function () {
@@ -988,7 +999,7 @@
             if (parsed) {
                 const min = Math.max(first, Math.min(parsed.min, last));
                 const max = Math.max(first, Math.min(parsed.max, last));
-                setRange(min, max, { months: matchPreset(min, max, parsed.precise), immediate: true });
+                setRange(min, max, { months: matchPreset(min, max), immediate: true });
             }
         });
 
@@ -1013,9 +1024,54 @@
         }
     }
 
-    function fail(error) {
-        window.console.error('Shepherd history chart:', error);
+    function loadFailed(error) {
+        window.console.error('Shepherd history chart (load):', error);
         showNote('Chart data could not be loaded. The table below has the full history.');
+    }
+
+    function drawFailed(error) {
+        window.console.error('Shepherd history chart (render):', error);
+        showNote('The chart could not be drawn. The table below has the full history.');
+    }
+
+    // Columnar payload: t, c, e, s are arrays of the same length.
+    function validate(data) {
+        const columns = data ? [data.t, data.c, data.e, data.s] : [];
+        if (columns.length !== 4 || !columns.every(Array.isArray) || columns.some(function (column) {
+            return column.length !== data.t.length;
+        })) {
+            throw new Error('Unexpected history payload');
+        }
+        return data;
+    }
+
+    function load() {
+        const controller = typeof AbortController === 'function' ? new AbortController() : null;
+        const timer = controller ? window.setTimeout(function () {
+            controller.abort();
+        }, FETCH_TIMEOUT_MS) : 0;
+        const done = function () {
+            window.clearTimeout(timer);
+        };
+
+        // The timer also covers reading the body: abort() rejects a pending response.json().
+        return window.fetch(card.dataset.src, {
+            headers: { Accept: 'application/json' },
+            signal: controller ? controller.signal : undefined,
+        })
+            .then(function (response) {
+                if (!response.ok) {
+                    throw new Error('HTTP ' + response.status);
+                }
+                return response.json();
+            })
+            .then(function (data) {
+                done();
+                return validate(data);
+            }, function (error) {
+                done();
+                throw error;
+            });
     }
 
     if (typeof uPlot === 'undefined') {
@@ -1024,14 +1080,15 @@
         return;
     }
 
-    window.fetch(card.dataset.src, { headers: { Accept: 'application/json' } })
-        .then(function (response) {
-            if (!response.ok) {
-                throw new Error('HTTP ' + response.status);
+    // Load failures and render failures get different notes; the second argument of then() keeps a bug in init()
+    // from being reported as a failed load.
+    load()
+        .then(function (data) {
+            try {
+                init(data);
+            } catch (error) {
+                drawFailed(error);
             }
-            return response.json();
-        })
-        .then(init)
-        .catch(fail)
+        }, loadFailed)
         .then(revealTable);
 }());

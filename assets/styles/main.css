@@ -119,15 +119,6 @@ code {
     top: 8px;
 }
 
-/* Elements that only make sense when JavaScript runs (theme.js adds .js to <html>). */
-.js-only {
-    display: none;
-}
-
-.js .js-only {
-    display: block;
-}
-
 /* ---------- layout ---------- */
 
 .container {
@@ -587,8 +578,9 @@ code {
     cursor: grabbing;
 }
 
-/* Handles sit inside the window so they never leave the plot; ::before widens the hit area outwards only,
-   so even a narrow window keeps a draggable middle. */
+/* Handles sit inside the window so they never leave the plot. Only the cursor and the visible size come from CSS;
+   what actually grabs a handle is the pointer geometry in history.js (HANDLE_GRAB, HANDLE_REACH), because touch
+   hit-testing is fuzzy. Keep the ::before extents below in step with HANDLE_REACH. */
 .nav-handle {
     position: absolute;
     top: -1px;

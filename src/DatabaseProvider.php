@@ -23,7 +23,7 @@ final class DatabaseProvider
             $pdo = new PDO($db_config['dsn'], $db_config['user'], $db_config['password']);
         } catch (PDOException $e) {
             error_log('Connection to database failed - ' . $e->getMessage());
-            die('Connection to database failed');
+            throw new DatabaseUnavailableException('Connection to database failed', 0, $e);
         }
 
         $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
