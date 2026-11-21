@@ -16,6 +16,31 @@ final class PsalmData
 {
     public static function handlePayload(string $git_commit, array $payload) : void
     {
+        self::savePsalmData(
+            $git_commit,
+            $payload['issues'],
+            $payload['coverage'][0],
+            $payload['coverage'][1],
+            $payload['level'] ?? null
+        );
+
+        error_log('Psalm payload saved for ' . $git_commit);
+
+        try {
+            self::linkToGithub($git_commit, $payload);
+        } catch (\Github\Exception\RuntimeException $e) {
+            if ($e->getCode() !== 404) {
+                throw $e;
+            }
+
+            // GitHub hides private repositories the token cannot read behind a 404. The report is kept,
+            // but it is not listed under the repository and no review is posted.
+            error_log('GitHub returned 404 for ' . $git_commit . ': ' . $e->getMessage());
+        }
+    }
+
+    private static function linkToGithub(string $git_commit, array $payload) : void
+    {
         $repo_owner = GithubData::getBuildValue($payload, 'CI_REPO_OWNER');
         $repo_name = GithubData::getBuildValue($payload, 'CI_REPO_NAME');
 
@@ -32,21 +57,11 @@ final class PsalmData
             }
         }
 
-        self::savePsalmData(
-            $git_commit,
-            $payload['issues'],
-            $payload['coverage'][0],
-            $payload['coverage'][1],
-            $payload['level'] ?? null
-        );
-
-        error_log('Psalm payload saved for ' . $git_commit);
-
         $repository = GithubData::getRepositoryForCommitAndPayload($git_commit, $payload);
 
         if (!$repository) {
             error_log('No repository found for ' . $git_commit);
-            exit();
+            return;
         }
 
         $github_pull_request = GithubData::getPullRequestForCommitAndPayload($git_commit, $repository, $payload);
