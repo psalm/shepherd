@@ -122,18 +122,30 @@ abstract class Config
                             substr($var_name_suffix, strlen($config_group) + 1)
                         );
                         // set the item as a child of the config group
-                        $config_groups[$group_name][$key_name] = (string) $val;
+                        $config_groups[$group_name][$key_name] = self::operatorValue((string) $val);
                     }
                 }
                 // if the item was not a config group item, set it as a root level item in $config
                 if ($is_a_config_group === false) {
-                    $config[ strtolower($var_name_suffix) ] = $val;
+                    $config[ strtolower($var_name_suffix) ] = self::operatorValue((string) $val);
                 }
             }
         }
 
         // initialize the config with all the SHEPHERD_ vars we got from $_ENV
         return self::initializeConfig($config_groups + $config);
+    }
+
+    /**
+     * SHEPHERD_* environment variables are set by whoever deploys Shepherd, not by requests: under CGI, request
+     * headers arrive as HTTP_* variables, which the SHEPHERD prefix check above excludes.
+     *
+     * @psalm-taint-escape input
+     * @psalm-pure
+     */
+    private static function operatorValue(string $value) : string
+    {
+        return $value;
     }
 
     /** @return Config\Custom|Config\OAuthApp */

@@ -12,7 +12,6 @@ use const CURLOPT_POSTFIELDS;
 use const CURLOPT_HTTPHEADER;
 use function strlen;
 use function curl_exec;
-use function curl_close;
 use function json_decode;
 use function is_array;
 use function is_string;
@@ -94,9 +93,6 @@ final class Auth
 
         // Submit the POST request
         $response = (string) curl_exec($ch);
-
-        // Close cURL session handle
-        curl_close($ch);
 
         if (!$response) {
             throw new \UnexpectedValueException('Response should exist');
