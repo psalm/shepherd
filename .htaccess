@@ -31,6 +31,7 @@ RewriteRule ^telemetry$ hooks/psalm [L,QSA]
 
 RewriteRule ^$ views/index.php [L,QSA]
 
+# mod_deflate skips responses that are already encoded, so this never double-compresses.
 <IfModule mod_deflate.c>
-    AddOutputFilterByType DEFLATE application/json
+    AddOutputFilterByType DEFLATE text/html text/css text/javascript application/javascript application/json image/svg+xml
 </IfModule>
