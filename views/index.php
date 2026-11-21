@@ -88,11 +88,11 @@ $renderNav();
                                 <span class="repo-sub">Last report <?= Format::timeElement($repository['reported_at'], $now) ?> &middot; <a href="<?= htmlspecialchars($github_url . '/' . $repository['name'] . '/commit/' . $repository['commit']) ?>"><?= htmlspecialchars(substr($repository['commit'], 0, 7)) ?></a></span>
                             </th>
                             <td class="col-num"><span class="cov band-<?= Format::coverageBand($repository['coverage']) ?>"><span class="cov-bar" aria-hidden="true"><i style="--p: <?= Format::coverageBarWidth($repository['coverage']) ?>"></i></span><span class="cov-num"><?= Format::coveragePercent($repository['coverage']) ?></span></span></td>
-    <?php if ($repository['level'] === null) : ?>
+        <?php if ($repository['level'] === null) : ?>
                             <td class="col-num"><span title="Psalm level not reported">&ndash;</span></td>
-    <?php else : ?>
+        <?php else : ?>
                             <td class="col-num"><span class="lvl" title="Psalm level <?= $repository['level'] ?>, 1 is the strictest"><?= $repository['level'] ?></span></td>
-    <?php endif; ?>
+        <?php endif; ?>
         <?php if ($with_trend) : ?>
                             <td class="col-trend"><?= Format::sparkline($repository['points']) ?></td>
         <?php endif; ?>
