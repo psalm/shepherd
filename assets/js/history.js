@@ -896,16 +896,6 @@
         });
     }
 
-    // Pager links point at the range hash instead of #commits, so the browser cannot scroll to the table itself.
-    // Scroll once the chart area has its final height; a reload keeps the browser's restored position.
-    function revealTable() {
-        const navigation = window.performance.getEntriesByType ? window.performance.getEntriesByType('navigation')[0] : null;
-        // Only a fresh navigation (pager click, link): reload and back/forward keep the browser's restored position.
-        if (new URLSearchParams(window.location.search).has('page') && navigation && navigation.type === 'navigate') {
-            commits.scrollIntoView();
-        }
-    }
-
     // ---------- legend ----------
 
     function bindLegend() {
@@ -1067,7 +1057,6 @@
 
     if (typeof uPlot === 'undefined') {
         showNote('The chart library could not be loaded. The table below has the full history.');
-        revealTable();
         return;
     }
 
@@ -1080,6 +1069,5 @@
             } catch (error) {
                 drawFailed(error);
             }
-        }, loadFailed)
-        .then(revealTable);
+        }, loadFailed);
 }());

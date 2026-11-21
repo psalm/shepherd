@@ -31,6 +31,7 @@ return static function (string $title, array $styles = [], array $scripts = []) 
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&amp;family=IBM+Plex+Sans:wght@400;500;600&amp;display=swap">
 <link rel="stylesheet" href="<?= $asset('/assets/styles/main.css') ?>">
 <noscript><style>.needs-js { display: none !important; }</style></noscript>
+<link rel="expect" href="#main" blocking="render">
     <?php foreach ($styles as $style) : ?>
 <link rel="stylesheet" href="<?= $asset($style) ?>">
     <?php endforeach; ?>

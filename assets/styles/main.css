@@ -4,6 +4,17 @@
  * prefers-color-scheme unless <html data-theme="light|dark"> overrides it (see assets/js/theme.js).
  */
 
+/* Cross-fade between pages (pager links). Unsupported browsers navigate as before. */
+@view-transition {
+    navigation: auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    @view-transition {
+        navigation: none;
+    }
+}
+
 :root {
     color-scheme: light dark;
 

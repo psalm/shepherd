@@ -255,6 +255,16 @@ $renderNav();
 
 <?php $renderPager('bottom'); ?>
         </section>
+        <script>
+            // Pager links carry the chart range in the hash instead of #commits, so scroll here, before the first
+            // paint: the page (and its view transition) lands on the table. Reload and back/forward keep their position.
+            (function () {
+                var navigation = window.performance.getEntriesByType ? window.performance.getEntriesByType('navigation')[0] : null;
+                if (new URLSearchParams(window.location.search).has('page') && navigation && navigation.type === 'navigate') {
+                    document.getElementById('commits').scrollIntoView();
+                }
+            }());
+        </script>
     </main>
 </body>
 </html>
