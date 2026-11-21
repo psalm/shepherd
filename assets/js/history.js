@@ -70,7 +70,7 @@
         });
     };
 
-    // Same rules as the server-rendered table: 236189 -> "236.2K", 1000000 -> "1M".
+    // Same rules as the server-rendered table: 236189 -> "236.2K", 235000 -> "235.0K", 1000000 -> "1.0M".
     function fmtCompact(n) {
         if (n < 1000) {
             return String(n);
@@ -82,7 +82,7 @@
             value /= 1000;
             unit++;
         }
-        return value.toFixed(1).replace(/\.0$/, '') + units[unit];
+        return value.toFixed(1) + units[unit];
     }
 
     function decimalsFor(step) {
