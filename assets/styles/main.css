@@ -385,6 +385,7 @@ code {
 .repo-github {
     display: inline-flex;
     padding: 4px;
+    margin-left: -4px; /* the mark lines up with the content edge; the padding only enlarges the hit area */
     color: var(--muted);
     border-radius: 4px;
 }
