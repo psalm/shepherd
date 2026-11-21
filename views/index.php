@@ -50,7 +50,7 @@ $renderHead = require __DIR__ . '/partials/head.php';
 $renderNav = require __DIR__ . '/partials/nav.php';
 $renderFooter = require __DIR__ . '/partials/footer.php';
 
-$renderHead('Shepherd', [], ['/assets/js/home.js']);
+$renderHead('Shepherd', [], ['/assets/js/home.js'], ['ibm-plex-sans-400', 'ibm-plex-mono-500']);
 $renderNav();
 ?>
     <main id="main" class="container page" tabindex="-1">
