@@ -16,8 +16,8 @@
         return;
     }
 
-    // The card ships hidden, so a blocked, missing or broken script never leaves a dead "Loading chart" card.
-    card.hidden = false;
+    // Tells the inline guard in history.php that this script loaded and parsed.
+    card.dataset.started = '1';
 
     const pagerLinks = Array.from(commits.querySelectorAll('.pager a[data-page]'));
     const MONO = '"IBM Plex Mono", ui-monospace, monospace';
@@ -33,8 +33,6 @@
 
     const el = {
         status: document.getElementById('chart-status'),
-        body: document.getElementById('chart-body'),
-        hint: document.getElementById('chart-hint'),
         main: document.getElementById('chart-main'),
         nav: document.getElementById('chart-nav'),
         tip: document.getElementById('chart-tip'),
@@ -43,8 +41,6 @@
         presets: Array.from(card.querySelectorAll('.presets button')),
         reset: card.querySelector('[data-reset]'),
         pills: Array.from(card.querySelectorAll('.pill')),
-        head: card.querySelector('.chart-head'),
-        legend: card.querySelector('.legend'),
     };
 
     const commitUrl = card.dataset.commitUrl || '';
@@ -931,13 +927,10 @@
 
     // ---------- init ----------
 
+    // Failure is the only state that changes the card's height: a dead chart frame is worse than one shift.
     function showNote(text) {
-        el.head.hidden = true;
-        el.legend.hidden = true;
-        el.body.hidden = true;
-        el.hint.hidden = true;
+        card.classList.add('is-failed');
         el.status.hidden = false;
-        el.status.classList.add('is-short');
         el.status.textContent = text;
     }
 
@@ -955,8 +948,6 @@
         minSpan = Math.min(HOUR, (last - first) / 2);
 
         el.status.hidden = true;
-        el.body.hidden = false;
-        el.hint.hidden = false;
 
         const fromUrl = parseHash();
         let months = defaultMonths();

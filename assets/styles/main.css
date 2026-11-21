@@ -349,6 +349,8 @@ code {
 }
 
 .range-label b {
+    display: inline-block;
+    min-width: 12.5em; /* reserved for "YYYY-MM-DD – YYYY-MM-DD", filled in by history.js */
     font-weight: 500;
     color: var(--ink);
 }
@@ -458,6 +460,8 @@ code {
 }
 
 .pill .v {
+    display: inline-block;
+    min-width: 7ch; /* reserved for "99.925%" so filling it in does not move the next pill */
     font: 400 12px/1.3 var(--mono);
     font-variant-numeric: tabular-nums;
     color: var(--series);
@@ -487,18 +491,29 @@ code {
     color: var(--muted);
 }
 
+/* Laid over the empty, fixed-height chart area while loading, so the card never changes size on success. */
 .chart-status {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     margin: 0;
-    padding: 24px 16px;
-    min-height: 300px;
     color: var(--muted);
 }
 
-.chart-status.is-short {
-    min-height: 0;
+.chart-card.is-failed :is(.chart-head, .legend, .chart-wrap, .chart-nav, .chart-hint) {
+    display: none;
+}
+
+.chart-card.is-failed .chart-status {
+    position: static;
+    display: block;
+    padding: 18px 0;
 }
 
 .chart-body {
+    position: relative;
     padding: 6px 16px 0;
 }
 
@@ -874,10 +889,6 @@ td.col-num {
 
     .chart-main {
         height: 260px;
-    }
-
-    .chart-status {
-        min-height: 200px;
     }
 
     .commits h2 {
