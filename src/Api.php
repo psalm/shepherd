@@ -322,11 +322,12 @@ final class Api
         foreach ($candidates as $candidate) {
             $name = $candidate['owner_name'] . '/' . $candidate['repo_name'];
 
-            if (!isset($by_repository[strtolower($name)])) {
+            $reports = $by_repository[strtolower($name)] ?? null;
+
+            if ($reports === null) {
                 continue;
             }
 
-            $reports = $by_repository[strtolower($name)];
             krsort($reports);
 
             $points = [];
