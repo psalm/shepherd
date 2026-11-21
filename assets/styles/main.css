@@ -113,6 +113,28 @@
 
     --mono: 'IBM Plex Mono', ui-monospace, monospace;
     --sans: 'IBM Plex Sans', 'IBM Plex Sans Fallback', system-ui, sans-serif;
+
+    /*
+     * Spacing scale (4px base) and the page rhythm built on it. Major sections are separated by --section-gap;
+     * a heading sits --heading-gap above its content, always less than the gap above the heading, so it groups
+     * with what it introduces. The small-screen values are set in the last media query.
+     */
+    --space-1: 4px;
+    --space-2: 8px;
+    --space-3: 12px;
+    --space-4: 16px;
+    --space-5: 20px;
+    --space-6: 24px;
+    --space-7: 32px;
+    --space-8: 40px;
+    --space-9: 48px;
+    --space-10: 64px;
+    --space-11: 80px;
+    --space-12: 96px;
+    --section-gap: var(--space-11);
+    --heading-gap: var(--space-4);
+    --page-top: var(--space-9);
+    --page-bottom: var(--space-11);
 }
 
 :root[data-theme='light'] {
@@ -214,8 +236,8 @@ code {
 
 .page {
     flex: 1;
-    padding-top: 32px;
-    padding-bottom: 64px;
+    padding-top: var(--page-top);
+    padding-bottom: var(--page-bottom);
 }
 
 /* ---------- retro checkered header ---------- */
@@ -365,7 +387,7 @@ code {
 /* ---------- index and generic content ---------- */
 
 .page h1 {
-    margin: 0 0 8px;
+    margin: 0 0 var(--space-3);
     font-size: 28px;
     font-weight: 500;
 }
@@ -402,8 +424,8 @@ code {
 .badges {
     display: flex;
     flex-wrap: wrap;
-    gap: 6px;
-    margin: 0 0 14px;
+    gap: var(--space-2);
+    margin: 0 0 var(--space-4);
 }
 
 .badges img {
@@ -413,7 +435,7 @@ code {
 
 .page-note {
     max-width: 72ch;
-    margin: -12px 0 24px;
+    margin: 0 0 var(--space-7);
     font-size: 14px;
     color: var(--muted);
 }
@@ -431,8 +453,8 @@ code {
 }
 
 .notice {
-    margin: 24px 0;
-    padding: 28px 20px;
+    margin: var(--space-6) 0;
+    padding: var(--space-7) var(--space-6);
     border: 2px dashed var(--line);
     border-radius: 6px;
     background: var(--wash);
@@ -440,7 +462,7 @@ code {
 }
 
 .notice h2 {
-    margin: 0 0 6px;
+    margin: 0 0 var(--space-2);
     font-size: 20px;
     color: var(--ink);
 }
@@ -452,7 +474,7 @@ code {
 /* ---------- chart card ---------- */
 
 .chart-card {
-    margin-bottom: 36px;
+    margin-bottom: var(--section-gap);
     border: 1px solid var(--line);
     border-radius: 4px;
     background: var(--bg);
@@ -464,7 +486,7 @@ code {
     align-items: center;
     justify-content: space-between;
     gap: 10px 16px;
-    padding: 12px 16px;
+    padding: var(--space-4);
     border-bottom: 1px solid var(--line);
     border-radius: 4px 4px 0 0;
     background: var(--wash);
@@ -556,7 +578,7 @@ code {
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
-    padding: 12px 16px 0;
+    padding: var(--space-4) var(--space-4) 0;
 }
 
 .pill {
@@ -643,7 +665,7 @@ code {
 
 .chart-body {
     position: relative;
-    padding: 6px 16px 0;
+    padding: var(--space-2) var(--space-4) 0;
 }
 
 .chart-wrap {
@@ -658,7 +680,7 @@ code {
 .chart-nav {
     position: relative;
     height: 72px;
-    margin-top: 4px;
+    margin-top: var(--space-2);
     touch-action: none;
 }
 
@@ -681,7 +703,7 @@ code {
 
 .chart-hint {
     margin: 0;
-    padding: 6px 16px 12px;
+    padding: var(--space-3) var(--space-4) var(--space-4);
     font-size: 12.5px;
     color: var(--muted);
 }
@@ -828,7 +850,7 @@ code {
 }
 
 .commits h2 {
-    margin: 0 0 12px;
+    margin: 0 0 var(--heading-gap);
     font-size: 22px;
 }
 
@@ -896,11 +918,11 @@ td.col-num {
     align-items: center;
     justify-content: space-between;
     gap: 10px 16px;
-    margin-top: 14px;
+    margin-top: var(--space-4);
 }
 
 .pager-wrap-top {
-    margin: 0 0 14px;
+    margin: 0 0 var(--space-4);
 }
 
 .pager-info {
@@ -966,11 +988,11 @@ td.col-num {
 
 .hero {
     max-width: 680px;
-    margin-bottom: 32px;
+    margin-bottom: var(--space-7);
 }
 
 .page .hero h1 {
-    margin: 0 0 10px;
+    margin: 0 0 var(--space-3);
     font-size: 34px;
     line-height: 1.15;
     letter-spacing: -.01em;
@@ -982,13 +1004,13 @@ td.col-num {
 }
 
 .section-title {
-    margin: 0 0 12px;
+    margin: 0 0 var(--heading-gap);
     font-size: 22px;
     font-weight: 500;
 }
 
 .section-note {
-    margin: -6px 0 14px;
+    margin: -8px 0 var(--space-4);
     font-size: 14px;
     color: var(--muted);
 }
@@ -997,9 +1019,9 @@ td.col-num {
 .hero-grid {
     display: grid;
     grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
-    gap: 36px;
+    gap: var(--space-9);
     align-items: center;
-    margin-bottom: 48px;
+    margin-bottom: var(--section-gap);
 }
 
 .hero-grid .hero {
@@ -1008,7 +1030,7 @@ td.col-num {
 }
 
 .kicker {
-    margin: 0 0 6px;
+    margin: 0 0 var(--space-2);
     font: 500 12px/1.3 var(--mono);
     text-transform: uppercase;
     letter-spacing: .08em;
@@ -1023,8 +1045,8 @@ td.col-num {
 .cta-row {
     display: flex;
     flex-wrap: wrap;
-    gap: 10px;
-    margin: 22px 0 0;
+    gap: var(--space-3);
+    margin: var(--space-6) 0 0;
 }
 
 .btn {
@@ -1062,7 +1084,7 @@ td.col-num {
 
 /* Dark in both themes. */
 .term {
-    padding: 14px 16px;
+    padding: var(--space-4);
     font: 14px/1.7 var(--mono);
     color: #e9e6e0;
     border: 1px solid var(--line);
@@ -1135,13 +1157,17 @@ td.col-num {
 
 /* Leaderboards: the server renders every panel. With JS they share one grid cell, so the tallest panel sets the height of all and switching tabs never moves anything. */
 .board {
-    margin: 0 0 44px;
+    margin: 0 0 var(--section-gap);
+}
+
+.board:last-child {
+    margin-bottom: 0;
 }
 
 .tablist {
     display: none;
     flex-wrap: wrap;
-    margin-bottom: 14px;
+    margin-bottom: var(--space-4);
     border-bottom: 1px solid var(--line);
 }
 
@@ -1170,7 +1196,7 @@ td.col-num {
 }
 
 .board-heading {
-    margin: 22px 0 6px;
+    margin: var(--space-6) 0 var(--space-2);
     font-size: 18px;
     font-weight: 500;
 }
@@ -1198,8 +1224,8 @@ td.col-num {
     visibility: hidden;
 }
 
-.board-panel.repo-table {
-    margin-bottom: 0;
+.board-panel .section-note {
+    margin-top: 0;
 }
 
 .board-table {
@@ -1280,14 +1306,14 @@ td.col-num {
 .features {
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 14px;
+    gap: var(--space-4);
 }
 
 .feature {
     display: flex;
     flex-direction: column;
-    gap: 6px;
-    padding: 16px;
+    gap: var(--space-2);
+    padding: var(--space-5);
     border: 1px solid var(--line);
     border-radius: 6px;
     background: var(--wash);
@@ -1313,12 +1339,8 @@ td.col-num {
 
 .feature a {
     margin-top: auto;
-    padding-top: 6px;
+    padding-top: var(--space-2);
     font-size: 14px;
-}
-
-.repo-table {
-    margin-bottom: 44px;
 }
 
 .repo-table table {
@@ -1450,7 +1472,7 @@ td.col-num {
 }
 
 .site-footer {
-    padding-block: 18px 28px;
+    padding-block: var(--space-6) var(--space-7);
     font-size: 14px;
     color: var(--muted);
     border-top: 1px solid var(--line);
@@ -1459,7 +1481,7 @@ td.col-num {
 .site-footer ul {
     display: flex;
     flex-wrap: wrap;
-    gap: 6px 20px;
+    gap: var(--space-2) var(--space-6);
     margin-block: 0;
     padding-block: 0;
     list-style: none;
@@ -1478,7 +1500,7 @@ td.col-num {
 @media (max-width: 860px) {
     .hero-grid {
         grid-template-columns: minmax(0, 1fr);
-        gap: 24px;
+        gap: var(--space-7);
     }
 }
 
@@ -1525,11 +1547,18 @@ td.col-num {
 
 @media (max-width: 640px) {
     .container {
-        padding-inline: 14px;
+        padding-inline: var(--space-4);
     }
 
-    .page {
-        padding-top: 20px;
+    :root {
+        --section-gap: var(--space-9);
+        --page-top: var(--space-7);
+        --page-bottom: var(--space-10);
+    }
+
+    /* Keeps the install lines on one row: the larger container padding would otherwise wrap the last one. */
+    .term {
+        padding-inline: var(--space-3);
     }
 
     .page h1 {
@@ -1597,7 +1626,7 @@ td.col-num {
 
     th,
     td {
-        padding: .45em .4em;
+        padding: .6em .5em;
         font-size: 12px;
     }
 
