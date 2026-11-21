@@ -26,6 +26,9 @@ RewriteRule ^github/([-\d\w._]+\/[-\d\w._]+)/history\.json$ views/history_json.p
 RewriteRule ^github/([-\d\w._]+\/[-\d\w._]+)$ views/history.php?$1 [L,QSA]
 RewriteRule ^psalm_open_issues$ views/psalm_open_issues.php [L,QSA]
 
+# one-off schema maintenance, see views/maintenance_schema.php
+RewriteRule ^maintenance/schema$ views/maintenance_schema.php [L,QSA]
+
 # legacy
 RewriteRule ^telemetry$ hooks/psalm [L,QSA]
 
