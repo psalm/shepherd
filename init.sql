@@ -68,5 +68,6 @@ CREATE TABLE `shepherd_web`.`github_master_commits` (
   `created_on` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   UNIQUE KEY `git_commit` (`git_commit`),
+  KEY `repo_recent` (`owner_name`,`repo_name`,`id`),
   KEY `repo_history` (`owner_name`,`repo_name`,`created_on`,`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
