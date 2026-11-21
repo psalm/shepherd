@@ -3,7 +3,7 @@
  * and a navigator below it to pick the visible range.
  * Data comes from <repo>/history.json (columnar: t, c, e, s, ascending by time). All dates are UTC.
  *
- * The range is mirrored to the URL hash (#from=...&to=...). The commits table is rendered by the server
+ * The range is mirrored to the URL hash (#from=...&to=...). The reports table is rendered by the server
  * (?page=N); its pager links carry the current hash so paging keeps the range.
  */
 (function () {
@@ -16,8 +16,8 @@
         return;
     }
 
-    // The card ships hidden, so a blocked, missing or broken script never leaves a dead "Loading chart" card.
-    card.hidden = false;
+    // Tells the inline guard in history.php that this script loaded and parsed.
+    card.dataset.started = '1';
 
     const pagerLinks = Array.from(commits.querySelectorAll('.pager a[data-page]'));
     const MONO = '"IBM Plex Mono", ui-monospace, monospace';
@@ -33,8 +33,6 @@
 
     const el = {
         status: document.getElementById('chart-status'),
-        body: document.getElementById('chart-body'),
-        hint: document.getElementById('chart-hint'),
         main: document.getElementById('chart-main'),
         nav: document.getElementById('chart-nav'),
         tip: document.getElementById('chart-tip'),
@@ -43,8 +41,6 @@
         presets: Array.from(card.querySelectorAll('.presets button')),
         reset: card.querySelector('[data-reset]'),
         pills: Array.from(card.querySelectorAll('.pill')),
-        head: card.querySelector('.chart-head'),
-        legend: card.querySelector('.legend'),
     };
 
     const commitUrl = card.dataset.commitUrl || '';
@@ -888,7 +884,7 @@
         el.main.setAttribute('aria-label',
             'Type coverage and analysed expressions from ' + isoDate(state.min) + ' to ' + isoDate(state.max) + ' (UTC). '
             + 'At the end of the range type coverage is ' + fmtCov(D.c[i1]) + ' (low ' + fmtCov(lo) + ', high ' + fmtCov(hi) + ') '
-            + 'and analysed expressions are ' + fmtCompact(D.e[i1]) + '. The commits table lists every data point.');
+            + 'and analysed expressions are ' + fmtCompact(D.e[i1]) + '. The reports table lists every data point.');
     }
 
     // ---------- commits table ----------
@@ -898,16 +894,6 @@
         pagerLinks.forEach(function (link) {
             link.href = tablePath + '?page=' + link.dataset.page + hash;
         });
-    }
-
-    // Pager links point at the range hash instead of #commits, so the browser cannot scroll to the table itself.
-    // Scroll once the chart area has its final height; a reload keeps the browser's restored position.
-    function revealTable() {
-        const navigation = window.performance.getEntriesByType ? window.performance.getEntriesByType('navigation')[0] : null;
-        // Only a fresh navigation (pager click, link): reload and back/forward keep the browser's restored position.
-        if (new URLSearchParams(window.location.search).has('page') && navigation && navigation.type === 'navigate') {
-            commits.scrollIntoView();
-        }
     }
 
     // ---------- legend ----------
@@ -931,13 +917,10 @@
 
     // ---------- init ----------
 
+    // Failure is the only state that changes the card's height: a dead chart frame is worse than one shift.
     function showNote(text) {
-        el.head.hidden = true;
-        el.legend.hidden = true;
-        el.body.hidden = true;
-        el.hint.hidden = true;
+        card.classList.add('is-failed');
         el.status.hidden = false;
-        el.status.classList.add('is-short');
         el.status.textContent = text;
     }
 
@@ -955,8 +938,6 @@
         minSpan = Math.min(HOUR, (last - first) / 2);
 
         el.status.hidden = true;
-        el.body.hidden = false;
-        el.hint.hidden = false;
 
         const fromUrl = parseHash();
         let months = defaultMonths();
@@ -1076,7 +1057,6 @@
 
     if (typeof uPlot === 'undefined') {
         showNote('The chart library could not be loaded. The table below has the full history.');
-        revealTable();
         return;
     }
 
@@ -1089,6 +1069,5 @@
             } catch (error) {
                 drawFailed(error);
             }
-        }, loadFailed)
-        .then(revealTable);
+        }, loadFailed);
 }());

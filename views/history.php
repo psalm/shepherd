@@ -167,8 +167,7 @@ $renderNav();
 <?php if ($has_chart) : ?>
         <section
             id="chart-card"
-            class="chart-card"
-            hidden
+            class="chart-card needs-js"
             aria-labelledby="chart-heading"
             data-src="/github/<?= htmlspecialchars($repository) ?>/history.json?v=<?= $total_count ?>"
             data-commit-url="<?= htmlspecialchars($repository_url) ?>/commit/"
@@ -195,29 +194,42 @@ $renderNav();
                     <span class="sw" aria-hidden="true"></span><span class="lbl">Analysed Expressions</span><span class="v" data-latest="2"></span>
                 </button>
             </div>
-            <p class="chart-status" id="chart-status" role="status">Loading chart&hellip;</p>
-            <div class="chart-body" id="chart-body" hidden>
+            <div class="chart-body" id="chart-body">
                 <div class="chart-wrap">
                     <div class="chart-main" id="chart-main" role="img" aria-label="Type coverage and analysed expressions over time"></div>
                     <div class="chart-tip" id="chart-tip" hidden></div>
                 </div>
                 <div class="chart-nav" id="chart-nav"></div>
+                <p class="chart-status" id="chart-status" role="status">Loading chart&hellip;</p>
             </div>
-            <p class="chart-hint" id="chart-hint" hidden>
+            <p class="chart-hint" id="chart-hint">
                 <span class="mouse-only">Drag the lower navigator or its handles to change the range, drag on the chart to zoom. Click a point to open its commit. Reset restores the default range.</span>
                 <span class="touch-only">Drag the lower navigator or its handles to change the range. Tap a point for details.</span>
             </p>
         </section>
+        <script>
+            // The card is rendered at full size so loading does not shift the page. history.js reports its own
+            // failures; this covers history.js itself failing to load or parse, which would leave "Loading chart".
+            window.addEventListener('error', function (event) {
+                var card = document.getElementById('chart-card');
+                var src = (event.target && event.target.src) || event.filename || '';
+                if (card.dataset.started || src.indexOf('/assets/js/history.js') === -1) {
+                    return;
+                }
+                card.classList.add('is-failed');
+                document.getElementById('chart-status').textContent = 'The chart could not be loaded. The table below has the full history.';
+            }, true);
+        </script>
 <?php elseif ($total_count === 1) : ?>
         <p class="notice">Charts appear once there are at least two reports.</p>
 <?php endif; ?>
 
         <section id="commits" class="commits" aria-labelledby="commits-heading">
-            <h2 id="commits-heading">Commits (<b><?= number_format($total_count) ?></b>)</h2>
+            <h2 id="commits-heading">Reports (<b><?= number_format($total_count) ?></b>)</h2>
 
 <?php $renderPager('top'); ?>
 
-            <div class="table-scroll" role="region" aria-label="Commits table" tabindex="0">
+            <div class="table-scroll" role="region" aria-label="Reports table" tabindex="0">
                 <table>
                     <thead>
                         <tr>
@@ -243,6 +255,16 @@ $renderNav();
 
 <?php $renderPager('bottom'); ?>
         </section>
+        <script>
+            // Pager links carry the chart range in the hash instead of #commits, so scroll here, before the first
+            // paint: the page (and its view transition) lands on the table. Reload and back/forward keep their position.
+            (function () {
+                var navigation = window.performance.getEntriesByType ? window.performance.getEntriesByType('navigation')[0] : null;
+                if (new URLSearchParams(window.location.search).has('page') && navigation && navigation.type === 'navigate') {
+                    document.getElementById('commits').scrollIntoView();
+                }
+            }());
+        </script>
     </main>
 </body>
 </html>
