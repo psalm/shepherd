@@ -6,6 +6,7 @@ use PDO;
 use PDOException;
 use function array_fill;
 use function array_reverse;
+use function array_slice;
 use function count;
 use function current;
 use function explode;
@@ -19,6 +20,9 @@ use function strtotime;
 
 /**
  * @psalm-type HistoryRow = array{commit: string, coverage: float, expressions: int, created_at: int}
+ * @psalm-type HistoryPageRow = array{
+ *     commit: string, coverage: float, expressions: int, created_at: int, coverage_change: float|null
+ * }
  * @psalm-type HistoryPayload = array{t: list<int>, c: list<float>, e: list<int>, s: list<string>}
  * @psalm-type RecentRepository = array{
  *     name: string, commit: string, reported_at: int, coverage: float, level: int|null, expressions: int,
@@ -146,15 +150,26 @@ final class Api
     }
 
     /**
-     * One page of reports of a repository, newest first (ties by id DESC, like the badges).
+     * One page of reports of a repository, newest first (ties by id DESC, like the badges). coverage_change is
+     * the difference in percentage points to the previous report, null for the first report of the repository.
      *
      * @param positive-int $limit
      * @param non-negative-int $offset
-     * @return list<HistoryRow>
+     * @return list<HistoryPageRow>
      */
     public static function getHistoryPage(string $repository, int $limit, int $offset) : array
     {
-        return self::fetchHistory($repository, $limit, $offset);
+        // One extra row: the report before the oldest one on this page
+        $history = self::fetchHistory($repository, $limit + 1, $offset);
+        $page = [];
+
+        foreach (array_slice($history, 0, $limit) as $i => $row) {
+            $previous = $history[$i + 1] ?? null;
+            $row['coverage_change'] = $previous !== null ? $row['coverage'] - $previous['coverage'] : null;
+            $page[] = $row;
+        }
+
+        return $page;
     }
 
     public static function getHistoryCount(string $repository) : int

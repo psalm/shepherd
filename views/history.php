@@ -147,6 +147,11 @@ $renderNav();
             <img src="/github/<?= htmlspecialchars($repository) ?>/level.svg" alt="Psalm level badge" height="20">
         </p>
 
+        <p class="page-note">
+            Type coverage is the share of analysed expressions whose type Psalm could infer as something other than
+            <code>mixed</code>. Run <code>psalm --stats</code> to see it per file.
+        </p>
+
 <?php if ($has_chart) : ?>
         <section
             id="chart-card"
@@ -219,6 +224,7 @@ $renderNav();
                             <th scope="col" class="col-date">Date (UTC)</th>
                             <th scope="col">Commit</th>
                             <th scope="col" class="col-num">Type Coverage</th>
+                            <th scope="col" class="col-num" title="Percentage points since the previous report">Change</th>
                             <th scope="col" class="col-num">Analysed Expressions</th>
                         </tr>
                     </thead>
@@ -229,6 +235,7 @@ $renderNav();
                             <td class="col-date"><time datetime="<?= gmdate('Y-m-d\TH:i:s\Z', $timestamp) ?>"><?= gmdate('Y-m-d H:i:s', $timestamp) ?></time></td>
                             <td class="col-sha"><a href="<?= htmlspecialchars($repository_url . '/commit/' . $row['commit']) ?>"><?= htmlspecialchars(substr($row['commit'], 0, 7)) ?></a></td>
                             <td class="col-num"><?= sprintf('%.3f', $row['coverage']) ?>%</td>
+                            <td class="col-num"><?= Format::coverageChange($row['coverage_change']) ?></td>
                             <td class="col-num" title="<?= number_format($row['expressions']) ?>"><?= Format::compactNumber($row['expressions']) ?></td>
                         </tr>
                     <?php endforeach; ?>

@@ -18,7 +18,7 @@ use function str_ends_with;
 use function substr;
 
 /**
- * Pure presentation helpers for the home page (and the compact number on the history page).
+ * Pure presentation helpers for the home page and the history page.
  * Every method returns a string that is already safe to echo.
  */
 final class Format
@@ -188,6 +188,32 @@ final class Format
             $last[0],
             $last[1],
             $summary
+        );
+    }
+
+    /**
+     * Coverage change in percentage points with three decimals, as in the history table: "+0.012" (class
+     * change-up), "-0.340" (change-down), "0.000". Null (no earlier report) is a dash.
+     *
+     * @psalm-pure
+     */
+    public static function coverageChange(?float $change) : string
+    {
+        if ($change === null) {
+            return '<span class="change" title="First report">&ndash;</span>';
+        }
+
+        $rounded = round($change, 3);
+
+        if ($rounded === 0.0) {
+            return '<span class="change">0.000</span>';
+        }
+
+        return sprintf(
+            '<span class="change %s">%s%s</span>',
+            $rounded > 0 ? 'change-up' : 'change-down',
+            $rounded > 0 ? '+' : '-',
+            number_format(abs($rounded), 3, '.', '')
         );
     }
 

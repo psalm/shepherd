@@ -55,6 +55,26 @@ class FormatTest extends TestCase
     }
 
     /**
+     * @dataProvider providerCoverageChange
+     */
+    public function testCoverageChange(?float $input, string $expected) : void
+    {
+        $this->assertSame($expected, Format::coverageChange($input));
+    }
+
+    /** @return array<string, array{float|null, string}> */
+    public function providerCoverageChange() : array
+    {
+        return [
+            'first report' => [null, '<span class="change" title="First report">&ndash;</span>'],
+            'rise' => [0.7394, '<span class="change change-up">+0.739</span>'],
+            'drop' => [-0.0625, '<span class="change change-down">-0.063</span>'],
+            'rise below display precision' => [0.0004, '<span class="change">0.000</span>'],
+            'drop below display precision is not -0.000' => [-0.0004, '<span class="change">0.000</span>'],
+        ];
+    }
+
+    /**
      * @dataProvider providerCoverageBand
      */
     public function testCoverageBand(float $input, string $expected) : void
