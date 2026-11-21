@@ -5,10 +5,19 @@ use Psalm\Shepherd\DatabaseUnavailableException;
 
 require __DIR__ . '/../vendor/autoload.php';
 
-// One-off schema maintenance for a server without shell or SQL access: adds the repo_history index from init.sql (#39)
-// and reports the production type of psalm_reports.level (#38). Idempotent and takes no input. Remove once it has run.
+// One-off schema maintenance for a server without shell or SQL access: adds the github_master_commits indexes from
+// init.sql (#39) and reports the production type of psalm_reports.level (#38). Idempotent and takes no input.
+// Remove once it has run.
 
 const MAINTENANCE_LOCK = 'shepherd_schema_maintenance';
+
+// Must match init.sql. The home page looks up repo_recent by name, so keep that name. Keep repo_recent first too:
+// both indexes cover `WHERE owner_name, repo_name ORDER BY id`, MySQL takes the earlier one on a cost tie, and only
+// repo_recent serves that order without a filesort.
+const INDEXES = [
+    'repo_recent' => 'owner_name, repo_name, id',
+    'repo_history' => 'owner_name, repo_name, created_on, id',
+];
 
 header('Content-Type: application/json');
 header('Cache-Control: no-store');
@@ -41,16 +50,34 @@ try {
     return;
 }
 
-$indexColumns = static function () use ($pdo) : ?string {
-    $columns = $pdo->query(
-        "SELECT GROUP_CONCAT(COLUMN_NAME ORDER BY SEQ_IN_INDEX)
+/** @return array<string, string> index name => comma-separated columns, for the INDEXES that exist */
+$existingIndexes = static function () use ($pdo) : array {
+    /** @var array<string, string> */
+    return $pdo->query(
+        "SELECT INDEX_NAME, GROUP_CONCAT(COLUMN_NAME ORDER BY SEQ_IN_INDEX)
             FROM information_schema.STATISTICS
             WHERE TABLE_SCHEMA = DATABASE()
             AND TABLE_NAME = 'github_master_commits'
-            AND INDEX_NAME = 'repo_history'"
-    )->fetchColumn();
+            AND INDEX_NAME IN ('" . implode("', '", array_keys(INDEXES)) . "')
+            GROUP BY INDEX_NAME"
+    )->fetchAll(PDO::FETCH_KEY_PAIR);
+};
 
-    return is_string($columns) ? $columns : null;
+/**
+ * @param array<string, string> $existing
+ * @return array<string, array{status: string, columns: ?string}>
+ */
+$indexReport = static function (array $existing, string $missing_status) : array {
+    $report = [];
+
+    foreach (array_keys(INDEXES) as $name) {
+        $report[$name] = [
+            'status' => isset($existing[$name]) ? 'already exists' : $missing_status,
+            'columns' => $existing[$name] ?? null,
+        ];
+    }
+
+    return $report;
 };
 
 $level_column = $pdo->query(
@@ -68,18 +95,25 @@ $report = [
 
 // A second request must not queue another ALTER: a waiting ALTER holds up every query on the table behind it.
 if ((int) $pdo->query("SELECT GET_LOCK('" . MAINTENANCE_LOCK . "', 0)")->fetchColumn() !== 1) {
-    $respond(409, $report + ['repo_history' => 'another request is applying it, reload in a minute']);
+    $respond(409, $report + ['indexes' => 'another request is applying them, reload in a minute']);
 
     return;
 }
 
 try {
-    $existing = $indexColumns();
+    $before = $existingIndexes();
+    $missing = array_diff_key(INDEXES, $before);
 
-    if ($existing !== null) {
-        $respond(200, $report + ['repo_history' => 'already exists', 'repo_history_columns' => $existing]);
+    if (!$missing) {
+        $respond(200, $report + ['indexes' => $indexReport($before, 'already exists')]);
 
         return;
+    }
+
+    $add_clauses = [];
+
+    foreach ($missing as $name => $columns) {
+        $add_clauses[] = 'ADD INDEX ' . $name . ' (' . $columns . ')';
     }
 
     // Give up instead of blocking hook inserts if a long transaction holds the table.
@@ -88,24 +122,28 @@ try {
     $started = microtime(true);
 
     try {
-        // INPLACE with LOCK=NONE keeps the table writable while the index builds, or fails if this MySQL can't do that.
+        // INPLACE with LOCK=NONE keeps the table writable while the indexes build, or fails if this MySQL can't do that.
         $pdo->exec(
-            'ALTER TABLE github_master_commits
-                ADD INDEX repo_history (owner_name, repo_name, created_on, id),
-                ALGORITHM=INPLACE, LOCK=NONE'
+            'ALTER TABLE github_master_commits ' . implode(', ', $add_clauses) . ', ALGORITHM=INPLACE, LOCK=NONE'
         );
     } catch (PDOException $e) {
-        error_log('repo_history index failed - ' . $e->getMessage());
-        $respond(500, $report + ['repo_history' => 'failed', 'error' => $e->getMessage()]);
+        error_log('Schema maintenance failed - ' . $e->getMessage());
+        $respond(500, $report + ['indexes' => $indexReport($before, 'failed'), 'error' => $e->getMessage()]);
 
         return;
     }
 
-    $respond(200, $report + [
-        'repo_history' => 'created',
-        'repo_history_columns' => $indexColumns(),
-        'seconds' => round(microtime(true) - $started, 2),
-    ]);
+    $seconds = round(microtime(true) - $started, 2);
+    $after = $existingIndexes();
+    $indexes = $indexReport($after, 'missing after ALTER');
+
+    foreach (array_keys($missing) as $name) {
+        if (isset($after[$name])) {
+            $indexes[$name]['status'] = 'created';
+        }
+    }
+
+    $respond(200, $report + ['indexes' => $indexes, 'seconds' => $seconds]);
 } finally {
     $pdo->query("SELECT RELEASE_LOCK('" . MAINTENANCE_LOCK . "')");
 }
