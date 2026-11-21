@@ -1,31 +1,18 @@
 <?php
-require '../vendor/autoload.php';
+require __DIR__ . '/../vendor/autoload.php';
 $after = $_GET['after'] ?? null;
 $issue_data = Psalm\Shepherd\GithubApi::fetchPsalmIssuesData(is_string($after) ? $after : null);
-?>
-<html>
-<head>
-<title>Shepherd</title>
-<link rel="stylesheet" href="/assets/styles/main.css?2">
-<link rel="preconnect" href="https://fonts.gstatic.com">
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400&family=IBM+Plex+Sans&display=swap" rel="stylesheet">
-<meta name="viewport" content="initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
-<link rel="icon" type="image/png" href="/assets/img/favicon.png">
-</head>
-<body>
-    <nav>
-        <div class="container">
-            <h1><a href="/">Shepherd</a></h1>
-        </div>
-    </nav>
 
-    <div class="container front">
+(require __DIR__ . '/partials/head.php')('Shepherd');
+(require __DIR__ . '/partials/nav.php')();
+?>
+    <main id="main" class="container page" tabindex="-1">
         <div class="coverage_list">
             <?php foreach ($issue_data[0] as $issue_id => $changes) : ?>
-                <p><a href="https://github.com/vimeo/psalm/issues/<?= $issue_id ?>">Link to issue</a></p>
+                <p><a href="https://github.com/vimeo/psalm/issues/<?= htmlspecialchars((string) $issue_id) ?>">Link to issue</a></p>
 
                 <?php foreach ($changes as $psalm_link => [$current_result, $original_result]) : ?>
-                    <p><a href="<?=$psalm_link ?>">Psalm link</a></p>
+                    <p><a href="<?= htmlspecialchars((string) $psalm_link) ?>">Psalm link</a></p>
                     <p>Before:</p>
                     <pre><?= htmlentities($original_result) ?></pre>
                     <p>Current:</p>
@@ -34,9 +21,9 @@ $issue_data = Psalm\Shepherd\GithubApi::fetchPsalmIssuesData(is_string($after) ?
             <?php endforeach ?>
 
             <p>
-                <a href="/psalm_open_issues?after=<?= $issue_data[1] ?>">Next</a>
+                <a href="/psalm_open_issues?after=<?= htmlspecialchars(urlencode((string) $issue_data[1])) ?>">Next</a>
             </p>
         </div>
-    </div>
+    </main>
 </body>
 </html>
