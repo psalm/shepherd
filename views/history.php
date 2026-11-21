@@ -33,7 +33,7 @@ $page_title = 'Shepherd - ' . ($repository ?? 'unknown repository');
 
 if ($repository === null || $total_count === 0) {
     http_response_code(404);
-    $renderHead($page_title);
+    $renderHead($page_title, [], [], ['ibm-plex-sans-400'], '', 'project');
     $renderNav();
     ?>
     <main id="main" class="container page" tabindex="-1">
@@ -167,7 +167,8 @@ $renderHead(
         ? ['/assets/vendor/uplot/uPlot.iife.min.js', '/assets/js/history.js']
         : [],
     ['ibm-plex-sans-400'],
-    $page_description
+    $page_description,
+    'project'
 );
 $renderNav();
 ?>
