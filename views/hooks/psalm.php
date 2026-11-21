@@ -14,4 +14,8 @@ if (!is_array($payload['issues'] ?? null)
     Psalm\Shepherd\Hook::reject(400, 'Payload has no Psalm issues or type coverage');
 }
 
+if (!is_int($payload['level'] ?? 0)) {
+    Psalm\Shepherd\Hook::reject(400, 'Psalm level is not an integer');
+}
+
 Psalm\Shepherd\PsalmData::handlePayload($git_commit_hash, $payload);
