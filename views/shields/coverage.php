@@ -2,14 +2,10 @@
 
 require '../../vendor/autoload.php';
 
-$repository = $_SERVER['QUERY_STRING'] ?? '';
+$repository = Psalm\Shepherd\Api::extractRepository($_SERVER['QUERY_STRING'] ?? '');
 
-if (!preg_match('/^[-\d\w._]+\/[-\d\w._]+$/', $repository)) {
+if ($repository === null) {
     exit('Repository format not recognised');
-}
-
-if (strpos($repository, '..') !== false) {
-    exit('Unexpected values in repository name');
 }
 
 $pct = Psalm\Shepherd\Api::getTypeCoverage($repository);

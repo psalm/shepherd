@@ -2,14 +2,10 @@
 
 require '../vendor/autoload.php';
 
-$repository = $_SERVER['QUERY_STRING'] ?? '';
+$repository = Psalm\Shepherd\Api::extractRepository($_SERVER['QUERY_STRING'] ?? '');
 
-if (!preg_match('/^[-\d\w._]+\/[-\d\w._]+$/', $repository)) {
-    throw new UnexpectedValueException('Repsitory format not recognised');
-}
-
-if (strpos($repository, '..') !== false) {
-    throw new UnexpectedValueException('Unexpected values in repository name');
+if ($repository === null) {
+    throw new UnexpectedValueException('Repository format not recognised');
 }
 
 $level = Psalm\Shepherd\Api::getLevel($repository);
