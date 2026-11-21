@@ -52,6 +52,19 @@ $rows = Api::getHistoryPage($repository, HISTORY_PAGE_SIZE, ($page - 1) * HISTOR
 
 $has_chart = $total_count > 1;
 
+// Title and description of the page, from the newest report (the first row on page 1, else one extra row).
+$latest = $page === 1 ? ($rows[0] ?? null) : (Api::getHistoryPage($repository, 1, 0)[0] ?? null);
+$level = Api::getLevel($repository);
+$page_title = $repository . ($latest !== null ? ': ' . Format::coveragePercent($latest['coverage']) . ' type coverage' : '')
+    . ($level !== null ? ', Psalm level ' . $level : '') . ' · Shepherd';
+$page_description = $latest !== null
+    ? Format::compactNumber($latest['expressions']) . ' expressions analysed across ' . number_format($total_count)
+        . ($total_count === 1 ? ' report.' : ' reports.')
+    : '';
+
+$badge_markdown = "[![Psalm type coverage](https://shepherd.dev/github/$repository/coverage.svg)](https://shepherd.dev/github/$repository)\n"
+    . "[![Psalm level](https://shepherd.dev/github/$repository/level.svg)](https://shepherd.dev/github/$repository)";
+
 if ($has_chart) {
     // The chart's data request starts as soon as the headers arrive instead of after history.js has run.
     // Same URL as data-src below; the version is the report count, so a new report busts both caches.
@@ -140,8 +153,14 @@ $renderPager = static function (string $position) use ($page, $total_pages, $pag
 
 $renderHead(
     $page_title,
-    $has_chart ? ['/assets/vendor/uplot/uPlot.min.css'] : [],
-    $has_chart ? ['/assets/vendor/uplot/uPlot.iife.min.js', '/assets/js/history.js'] : []
+    $has_chart
+        ? ['/assets/vendor/uplot/uPlot.min.css']
+        : [],
+    $has_chart
+        ? ['/assets/vendor/uplot/uPlot.iife.min.js', '/assets/js/history.js', '/assets/js/copy.js']
+        : ['/assets/js/copy.js'],
+    ['ibm-plex-sans-400'],
+    $page_description
 );
 $renderNav();
 ?>
@@ -152,6 +171,17 @@ $renderNav();
             <img src="/github/<?= htmlspecialchars($repository) ?>/coverage.svg" alt="Type coverage badge" height="20">
             <img src="/github/<?= htmlspecialchars($repository) ?>/level.svg" alt="Psalm level badge" height="20">
         </p>
+
+        <details class="readme-details">
+            <summary>Add to README</summary>
+            <div class="snippet">
+                <div class="snippet-head">
+                    <span id="readme-badges-title">README badges (Markdown)</span>
+                    <button type="button" class="copy-btn" data-copy="readme-badges" aria-describedby="readme-badges-title" hidden>Copy</button>
+                </div>
+                <pre tabindex="0" aria-labelledby="readme-badges-title"><code id="readme-badges"><?= htmlspecialchars($badge_markdown) ?></code></pre>
+            </div>
+        </details>
 
         <p class="page-note">
             Type coverage is the share of analysed expressions whose type Psalm could infer as something other than
