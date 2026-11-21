@@ -26,7 +26,7 @@ return static function (
 ) : void {
     $cards = [
         'home' => ['/assets/img/og.png', 'Shepherd: Watch your PHP get stricter. Type coverage for PHP, by Psalm.'],
-        'project' => ['/assets/img/og-project.png', 'Shepherd: type coverage history of a PHP project, by Psalm.'],
+        'project' => ['/assets/img/og-project.png', 'The Shepherd sheep logo above the words Psalm type coverage.'],
     ];
     [$card_image, $card_alt] = $cards[$share_card];
     // Appends ?v=<mtime> so a changed asset is never served from a stale browser or CDN cache.
