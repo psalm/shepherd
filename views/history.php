@@ -225,11 +225,11 @@ $renderNav();
 <?php endif; ?>
 
         <section id="commits" class="commits" aria-labelledby="commits-heading">
-            <h2 id="commits-heading">Commits (<b><?= number_format($total_count) ?></b>)</h2>
+            <h2 id="commits-heading">Reports (<b><?= number_format($total_count) ?></b>)</h2>
 
 <?php $renderPager('top'); ?>
 
-            <div class="table-scroll" role="region" aria-label="Commits table" tabindex="0">
+            <div class="table-scroll" role="region" aria-label="Reports table" tabindex="0">
                 <table>
                     <thead>
                         <tr>

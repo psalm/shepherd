@@ -3,7 +3,7 @@
  * and a navigator below it to pick the visible range.
  * Data comes from <repo>/history.json (columnar: t, c, e, s, ascending by time). All dates are UTC.
  *
- * The range is mirrored to the URL hash (#from=...&to=...). The commits table is rendered by the server
+ * The range is mirrored to the URL hash (#from=...&to=...). The reports table is rendered by the server
  * (?page=N); its pager links carry the current hash so paging keeps the range.
  */
 (function () {
@@ -884,7 +884,7 @@
         el.main.setAttribute('aria-label',
             'Type coverage and analysed expressions from ' + isoDate(state.min) + ' to ' + isoDate(state.max) + ' (UTC). '
             + 'At the end of the range type coverage is ' + fmtCov(D.c[i1]) + ' (low ' + fmtCov(lo) + ', high ' + fmtCov(hi) + ') '
-            + 'and analysed expressions are ' + fmtCompact(D.e[i1]) + '. The commits table lists every data point.');
+            + 'and analysed expressions are ' + fmtCompact(D.e[i1]) + '. The reports table lists every data point.');
     }
 
     // ---------- commits table ----------
