@@ -90,8 +90,8 @@ final class Api
     }
 
     /**
-     * Extracts and validates the "owner/repo" name from the raw query string the history routes receive,
-     * e.g. "vimeo/psalm" or "vimeo/psalm&page=2" (the rewrite rules append extra params with QSA).
+     * Extracts and validates the "owner/repo" name from the raw query string the repository routes receive,
+     * e.g. "vimeo/psalm" or "vimeo/psalm&v=2" (the rewrite rules append the request's own query with QSA).
      * Returns null when it is not a well-formed repository name.
      * PHP would mangle dots in $_GET keys, so the repository is never read from $_GET.
      */
