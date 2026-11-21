@@ -5,8 +5,11 @@ namespace Psalm\Shepherd;
 use PDO;
 use PDOException;
 use function array_fill;
+use function array_filter;
+use function array_merge;
 use function array_reverse;
 use function array_slice;
+use function array_values;
 use function count;
 use function current;
 use function explode;
@@ -17,6 +20,8 @@ use function preg_match;
 use function strpos;
 use function strtolower;
 use function strtotime;
+use function time;
+use function usort;
 
 /**
  * @psalm-type HistoryRow = array{commit: string, coverage: float, expressions: int, created_at: int}
@@ -26,16 +31,31 @@ use function strtotime;
  * @psalm-type HistoryPayload = array{t: list<int>, c: list<float>, e: list<int>, s: list<string>}
  * @psalm-type RecentRepository = array{
  *     name: string, commit: string, reported_at: int, coverage: float, level: int|null, expressions: int,
- *     points: list<float>
+ *     change: float|null, points: list<float>
  * }
  * @psalm-type RecentActivity = array{repositories: list<RecentRepository>, sparklines: bool}
+ * @psalm-type Boards = array{
+ *     level1: list<RecentRepository>, coverage: list<RecentRepository>, largest: list<RecentRepository>,
+ *     sparklines: bool
+ * }
+ * @psalm-type ReportRow = array{
+ *     id: int|string, owner_name: string, repo_name: string, git_commit: string, reported_at: int|string,
+ *     mixed_count: int|string, nonmixed_count: int|string, level: int|string|null
+ * }
+ * @psalm-type SnapshotRow = array{
+ *     owner_name: string, repo_name: string, mixed_count: int|string|null, nonmixed_count: int|string|null,
+ *     level: int|string|null, reported_at: int|string|null
+ * }
  */
 final class Api
 {
     private const RECENT_TTL = 60;
-    private const RECENT_LIMIT = 12;
+    private const BOARDS_TTL = 300;
+    private const LIST_LIMIT = 10;
     private const RECENT_CANDIDATES = 16;
     private const SPARKLINE_POINTS = 24;
+    private const BOARD_MIN_EXPRESSIONS = 1000;
+    private const BOARD_MAX_AGE_DAYS = 90;
 
     public static function getTypeCoverage(string $repository) : ?string
     {
@@ -250,10 +270,11 @@ final class Api
      *
      * Order is by github_master_commits.id of a repository's latest report row, i.e. "last report received",
      * not by the commit's own date (created_on is supplied by the payload and can be old or skewed).
-     * The newest report of each repository gives its coverage, level, commit and time received. With sparklines enabled
-     * the 24 newest reports (oldest first) are returned as points. They are enabled only when the optional
-     * index repo_recent (owner_name, repo_name, id) exists on github_master_commits, because without it
-     * a repository with few reports makes its branch of the query scan the table.
+     * The newest report of each repository gives its coverage, level, commit, time received and the change
+     * in coverage since its previous report. With sparklines enabled the 24 newest reports (oldest first) are
+     * returned as points. They are enabled only when the optional index repo_recent (owner_name, repo_name, id)
+     * exists on github_master_commits, because without it a repository with few reports makes its branch of
+     * the query scan the table.
      *
      * @return RecentActivity
      * @throws DatabaseUnavailableException|PDOException when there is neither a database nor a cached copy
@@ -262,9 +283,28 @@ final class Api
     {
         /** @var RecentActivity */
         return FileCache::remember(
-            'home-recent-v2',
+            'home-recent-v3',
             self::RECENT_TTL,
             static fn() : array => self::loadRecentActivity()
+        );
+    }
+
+    /**
+     * The three static home page leaderboards, cached together for 300 s as one snapshot: level 1 club, highest
+     * coverage and largest codebases, ten repositories each, in the order of the tab. Only repositories with at
+     * least 1,000 expressions in their latest report and a report in the last 90 days take part; ties in
+     * coverage are broken by expressions.
+     *
+     * @return Boards
+     * @throws DatabaseUnavailableException|PDOException when there is neither a database nor a cached copy
+     */
+    public static function getBoards() : array
+    {
+        /** @var Boards */
+        return FileCache::remember(
+            'home-boards-v1',
+            self::BOARDS_TTL,
+            static fn() : array => self::loadBoards()
         );
     }
 
@@ -272,14 +312,7 @@ final class Api
     private static function loadRecentActivity() : array
     {
         $connection = DatabaseProvider::getConnection();
-
-        $sparklines = (bool) $connection->query(
-            'SELECT 1 FROM information_schema.STATISTICS
-                WHERE TABLE_SCHEMA = DATABASE()
-                AND TABLE_NAME = \'github_master_commits\'
-                AND INDEX_NAME = \'repo_recent\'
-                LIMIT 1'
-        )->fetchColumn();
+        $sparklines = self::hasRecentIndex($connection);
 
         // A few spare candidates: repositories without any report are skipped below.
         $candidates = $connection->query(
@@ -294,85 +327,267 @@ final class Api
             return ['repositories' => [], 'sparklines' => $sparklines];
         }
 
-        // The join sits inside each branch so that LIMIT counts reports, not commits that never got one.
-        // With the index present it is forced: repo_history also serves this ORDER BY, and a cost tie would
-        // otherwise be settled by index definition order.
-        // psalm_reports.created_on is set by MySQL (DEFAULT CURRENT_TIMESTAMP), so MySQL converts it to epoch.
-        $branch = 'SELECT m.id, m.owner_name, m.repo_name, m.git_commit, UNIX_TIMESTAMP(r.created_on) AS reported_at,
-                    r.mixed_count, r.nonmixed_count, r.level
-                FROM github_master_commits m' . ($sparklines ? ' USE INDEX (repo_recent)' : '')
+        /** @var non-empty-list<array{owner_name: string, repo_name: string}> $candidates */
+        $by_repository = self::fetchRecentReports($connection, $candidates, $sparklines);
+        $repositories = [];
+
+        foreach ($candidates as $candidate) {
+            $name = $candidate['owner_name'] . '/' . $candidate['repo_name'];
+            $repository = self::buildRepository($name, $by_repository[strtolower($name)] ?? []);
+
+            if ($repository === null) {
+                continue;
+            }
+
+            $repositories[] = $repository;
+
+            if (count($repositories) === self::LIST_LIMIT) {
+                break;
+            }
+        }
+
+        return ['repositories' => $repositories, 'sparklines' => $sparklines];
+    }
+
+    /** @return Boards */
+    private static function loadBoards() : array
+    {
+        $connection = DatabaseProvider::getConnection();
+        $sparklines = self::hasRecentIndex($connection);
+
+        // The newest commit of every repository: MAX(id) per repository is a group-by on the repo_recent index
+        // alone, and each of those commits finds its report through the unique git_commit key, so psalm_reports
+        // is never scanned. Every push to master is stored, also those CI never sent a report for (path filters,
+        // docs-only commits, a report still in flight): for those the newest REPORTED commit is looked up below.
+        // Only repositories whose newest commit is within the window can have a report within it.
+        /** @var list<SnapshotRow> $snapshot */
+        $snapshot = $connection->query(
+            'SELECT m.owner_name, m.repo_name, r.mixed_count, r.nonmixed_count, r.level,
+                    UNIX_TIMESTAMP(r.created_on) AS reported_at
+                FROM (SELECT MAX(id) AS id FROM github_master_commits GROUP BY owner_name, repo_name) latest
+                INNER JOIN github_master_commits m ON m.id = latest.id
+                LEFT JOIN psalm_reports r ON r.git_commit = m.git_commit
+                WHERE m.created_on >= NOW() - INTERVAL ' . self::BOARD_MAX_AGE_DAYS . ' DAY'
+        )->fetchAll(PDO::FETCH_ASSOC);
+
+        $unreported = [];
+        $latest_reports = [];
+
+        foreach ($snapshot as $row) {
+            if ($row['reported_at'] === null) {
+                $unreported[] = ['owner_name' => $row['owner_name'], 'repo_name' => $row['repo_name']];
+            } else {
+                $latest_reports[] = $row;
+            }
+        }
+
+        if ($unreported !== []) {
+            $latest_reports = array_merge(
+                $latest_reports,
+                self::fetchLatestReported($connection, $unreported, $sparklines)
+            );
+        }
+
+        // psalm_reports.created_on is set by MySQL, so reported_at is MySQL's epoch.
+        $since = time() - self::BOARD_MAX_AGE_DAYS * 86400;
+        $ranked = [];
+
+        foreach ($latest_reports as $row) {
+            $nonmixed = (int) $row['nonmixed_count'];
+            $total = (int) $row['mixed_count'] + $nonmixed;
+
+            if ($total < self::BOARD_MIN_EXPRESSIONS || (int) $row['reported_at'] < $since) {
+                continue;
+            }
+
+            $ranked[] = [
+                'name' => $row['owner_name'] . '/' . $row['repo_name'],
+                'owner_name' => $row['owner_name'],
+                'repo_name' => $row['repo_name'],
+                'coverage' => 100.0 * (float) $nonmixed / (float) $total,
+                'expressions' => $total,
+                'level' => $row['level'] === null ? null : (int) $row['level'],
+            ];
+        }
+
+        $by_coverage = $ranked;
+        usort($by_coverage, static fn(array $a, array $b) : int => [$b['coverage'], $b['expressions'], $a['name']]
+            <=> [$a['coverage'], $a['expressions'], $b['name']]);
+
+        $level1 = array_values(array_filter($by_coverage, static fn(array $row) : bool => $row['level'] === 1));
+
+        $largest = $ranked;
+        usort($largest, static fn(array $a, array $b) : int => [$b['expressions'], $a['name']]
+            <=> [$a['expressions'], $b['name']]);
+
+        $picks = [
+            'level1' => array_slice($level1, 0, self::LIST_LIMIT),
+            'coverage' => array_slice($by_coverage, 0, self::LIST_LIMIT),
+            'largest' => array_slice($largest, 0, self::LIST_LIMIT),
+        ];
+
+        // One query for the deltas and sparklines of the (at most 30) repositories on display.
+        $displayed = [];
+
+        foreach ($picks as $pick) {
+            foreach ($pick as $row) {
+                $displayed[strtolower($row['name'])] = [
+                    'owner_name' => $row['owner_name'],
+                    'repo_name' => $row['repo_name'],
+                ];
+            }
+        }
+
+        $boards = ['level1' => [], 'coverage' => [], 'largest' => [], 'sparklines' => $sparklines];
+
+        if ($displayed === []) {
+            return $boards;
+        }
+
+        $candidates = array_values($displayed);
+        $by_repository = self::fetchRecentReports($connection, $candidates, $sparklines);
+
+        foreach ($picks as $board => $pick) {
+            foreach ($pick as $row) {
+                $repository = self::buildRepository($row['name'], $by_repository[strtolower($row['name'])] ?? []);
+
+                if ($repository !== null) {
+                    $boards[$board][] = $repository;
+                }
+            }
+        }
+
+        return $boards;
+    }
+
+    /**
+     * The newest reported commit of each given repository in one UNION ALL query (one branch per repository).
+     * A repository without any report yields nothing.
+     *
+     * @param non-empty-list<array{owner_name: string, repo_name: string}> $repositories
+     * @return list<SnapshotRow>
+     */
+    private static function fetchLatestReported(PDO $connection, array $repositories, bool $sparklines) : array
+    {
+        // FORCE for the same reason as in fetchRecentReports; LIMIT 1 stops at the first commit with a report.
+        $branch = 'SELECT m.owner_name, m.repo_name, r.mixed_count, r.nonmixed_count, r.level,
+                    UNIX_TIMESTAMP(r.created_on) AS reported_at
+                FROM github_master_commits m' . ($sparklines ? ' FORCE INDEX (repo_recent)' : '')
                 . '
                 INNER JOIN psalm_reports r ON r.git_commit = m.git_commit
                 WHERE m.owner_name = ? AND m.repo_name = ?
                 ORDER BY m.id DESC
-                LIMIT ' . ($sparklines ? self::SPARKLINE_POINTS : 1);
+                LIMIT 1';
 
-        $stmt = $connection->prepare('(' . implode(') UNION ALL (', array_fill(0, count($candidates), $branch)) . ')');
+        $stmt = $connection->prepare(
+            '(' . implode(') UNION ALL (', array_fill(0, count($repositories), $branch)) . ')'
+        );
 
         $params = [];
 
-        /** @var array{owner_name: string, repo_name: string} $candidate */
-        foreach ($candidates as $candidate) {
-            $params[] = $candidate['owner_name'];
-            $params[] = $candidate['repo_name'];
+        foreach ($repositories as $repository) {
+            $params[] = $repository['owner_name'];
+            $params[] = $repository['repo_name'];
+        }
+
+        $stmt->execute($params);
+
+        /** @var list<SnapshotRow> */
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /** Asked once per request: the home page may rebuild both of its caches in the same request. */
+    private static function hasRecentIndex(PDO $connection) : bool
+    {
+        static $has_index = null;
+
+        return $has_index ??= (bool) $connection->query(
+            'SELECT 1 FROM information_schema.STATISTICS
+                WHERE TABLE_SCHEMA = DATABASE()
+                AND TABLE_NAME = \'github_master_commits\'
+                AND INDEX_NAME = \'repo_recent\'
+                LIMIT 1'
+        )->fetchColumn();
+    }
+
+    /**
+     * The newest reports of the given repositories (24 with sparklines, else the two a change needs) in one
+     * UNION ALL query, one branch per repository, keyed by the lowercased "owner/repo" and then by commit row id.
+     *
+     * @param non-empty-list<array{owner_name: string, repo_name: string}> $repositories
+     * @return array<string, array<int, ReportRow>>
+     */
+    private static function fetchRecentReports(PDO $connection, array $repositories, bool $sparklines) : array
+    {
+        // The join sits inside each branch so that LIMIT counts reports, not commits that never got one.
+        // With the index present it is forced (FORCE, not USE: the optimizer otherwise scans the whole table and
+        // sorts for a repository with thousands of reports): repo_history also serves this ORDER BY, and a cost
+        // tie would otherwise be settled by index definition order.
+        // psalm_reports.created_on is set by MySQL (DEFAULT CURRENT_TIMESTAMP), so MySQL converts it to epoch.
+        $branch = 'SELECT m.id, m.owner_name, m.repo_name, m.git_commit, UNIX_TIMESTAMP(r.created_on) AS reported_at,
+                    r.mixed_count, r.nonmixed_count, r.level
+                FROM github_master_commits m' . ($sparklines ? ' FORCE INDEX (repo_recent)' : '')
+                . '
+                INNER JOIN psalm_reports r ON r.git_commit = m.git_commit
+                WHERE m.owner_name = ? AND m.repo_name = ?
+                ORDER BY m.id DESC
+                LIMIT ' . ($sparklines ? self::SPARKLINE_POINTS : 2);
+
+        $stmt = $connection->prepare(
+            '(' . implode(') UNION ALL (', array_fill(0, count($repositories), $branch)) . ')'
+        );
+
+        $params = [];
+
+        foreach ($repositories as $repository) {
+            $params[] = $repository['owner_name'];
+            $params[] = $repository['repo_name'];
         }
 
         $stmt->execute($params);
 
         $by_repository = [];
 
-        /**
-         * @var array{
-         *     id: int|string, owner_name: string, repo_name: string, git_commit: string, reported_at: int|string,
-         *     mixed_count: int|string, nonmixed_count: int|string, level: int|string|null
-         * } $row
-         */
+        /** @var ReportRow $row */
         foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
             // MySQL compares names case-insensitively, so group on the lowercased name.
             $by_repository[strtolower($row['owner_name'] . '/' . $row['repo_name'])][(int) $row['id']] = $row;
         }
 
-        $repositories = [];
+        return $by_repository;
+    }
 
-        foreach ($candidates as $candidate) {
-            $name = $candidate['owner_name'] . '/' . $candidate['repo_name'];
+    /**
+     * @param array<int, ReportRow> $reports the reports of one repository, in any order
+     * @return RecentRepository|null null without reports
+     */
+    private static function buildRepository(string $name, array $reports) : ?array
+    {
+        krsort($reports);
 
-            $reports = $by_repository[strtolower($name)] ?? null;
+        $latest = current($reports);
 
-            if ($reports === null) {
-                continue;
-            }
-
-            krsort($reports);
-
-            $points = [];
-            $latest = current($reports);
-
-            if ($latest === false) {
-                continue;
-            }
-
-            foreach ($reports as $report) {
-                $nonmixed = (int) $report['nonmixed_count'];
-                $total = (int) $report['mixed_count'] + $nonmixed;
-                $points[] = $total ? 100.0 * (float) $nonmixed / (float) $total : 0.0;
-            }
-
-            $repositories[] = [
-                'name' => $name,
-                'commit' => $latest['git_commit'],
-                'reported_at' => (int) $latest['reported_at'],
-                'coverage' => $points[0],
-                'level' => $latest['level'] === null ? null : (int) $latest['level'],
-                'expressions' => (int) $latest['mixed_count'] + (int) $latest['nonmixed_count'],
-                'points' => array_reverse($points),
-            ];
-
-            if (count($repositories) === self::RECENT_LIMIT) {
-                break;
-            }
+        if ($latest === false) {
+            return null;
         }
 
-        return ['repositories' => $repositories, 'sparklines' => $sparklines];
+        $points = [];
+
+        foreach ($reports as $report) {
+            $nonmixed = (int) $report['nonmixed_count'];
+            $total = (int) $report['mixed_count'] + $nonmixed;
+            $points[] = $total ? 100.0 * (float) $nonmixed / (float) $total : 0.0;
+        }
+
+        return [
+            'name' => $name,
+            'commit' => $latest['git_commit'],
+            'reported_at' => (int) $latest['reported_at'],
+            'coverage' => $points[0],
+            'level' => $latest['level'] === null ? null : (int) $latest['level'],
+            'expressions' => (int) $latest['mixed_count'] + (int) $latest['nonmixed_count'],
+            'change' => isset($points[1]) ? $points[0] - $points[1] : null,
+            'points' => array_reverse($points),
+        ];
     }
 }

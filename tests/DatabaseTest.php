@@ -13,8 +13,11 @@ use Psalm\Shepherd\PsalmData;
 use ReflectionMethod;
 use ReflectionProperty;
 use function array_column;
+use function explode;
 use function file_get_contents;
 use function getenv;
+use function gmdate;
+use function sha1;
 
 /**
  * Loads init.sql into a real MySQL/MariaDB server and runs the application queries against it, so that
@@ -99,6 +102,76 @@ class DatabaseTest extends TestCase
         $this->assertCount(1, Api::getHistoryPayload('psalm/shepherd')['t']);
     }
 
+    public function testBoardsPickRepositoriesByTheRulesOfTheirTab(): void
+    {
+        $connection = DatabaseProvider::getConnection();
+        $store = static function (
+            string $name,
+            int $mixed,
+            int $nonmixed,
+            ?int $level,
+            int $age_days
+        ) use ($connection): void {
+            $commit = sha1($name . $mixed . $nonmixed);
+            [$owner, $repo] = explode('/', $name);
+
+            $repository = new GithubRepository($owner, $repo);
+
+            GithubData::setRepositoryForMasterCommit($commit, $repository, gmdate('Y-m-d H:i:s'));
+            PsalmData::savePsalmData($commit, [], $mixed, $nonmixed, $level);
+            $connection->exec(
+                'UPDATE psalm_reports SET created_on = NOW() - INTERVAL ' . $age_days . ' DAY'
+                . ' WHERE git_commit = ' . $connection->quote($commit)
+            );
+        };
+        // Every push to master is stored, also when CI never sends a report for it.
+        $push = static function (string $name): void {
+            [$owner, $repo] = explode('/', $name);
+
+            GithubData::setRepositoryForMasterCommit(
+                sha1($name . ' unreported'),
+                new GithubRepository($owner, $repo),
+                gmdate('Y-m-d H:i:s')
+            );
+        };
+
+        $store('a/strict-high', 50, 4950, 1, 1);
+        $store('a/strict-low', 200, 1800, 1, 2);
+        $store('a/big-loose', 18000, 72000, 3, 3);
+        $store('a/tiny', 0, 500, 1, 1);
+        $store('a/stale', 10, 9990, 1, 100);
+        $store('a/climbing', 2500, 2500, 2, 10);
+        $store('a/climbing', 2000, 3000, 2, 1);
+        $store('a/pending', 500, 9500, 2, 5);
+        $push('a/pending');
+        $push('a/ghost');
+
+        $boards = self::boards();
+
+        $this->assertTrue($boards['sparklines']);
+        $this->assertSame(['a/strict-high', 'a/strict-low'], array_column($boards['level1'], 'name'));
+        // a/pending: its newest commit has no report, so its latest reported numbers count. a/ghost has none at all.
+        $this->assertSame(
+            ['a/strict-high', 'a/pending', 'a/strict-low', 'a/big-loose', 'a/climbing'],
+            array_column($boards['coverage'], 'name')
+        );
+        // 5,000 expressions each for strict-high and climbing: the tie is settled by name
+        $this->assertSame(
+            ['a/big-loose', 'a/pending', 'a/climbing', 'a/strict-high', 'a/strict-low'],
+            array_column($boards['largest'], 'name')
+        );
+
+        $pending = $boards['coverage'][1];
+        $this->assertEqualsWithDelta(95.0, $pending['coverage'], 0.0001);
+        $this->assertSame(10000, $pending['expressions']);
+
+        $climbing = $boards['coverage'][4];
+        $this->assertEqualsWithDelta(60.0, $climbing['coverage'], 0.0001);
+        $this->assertEqualsWithDelta(10.0, $climbing['change'], 0.0001);
+        $this->assertSame([50.0, 60.0], $climbing['points']);
+        $this->assertNull($boards['level1'][0]['change'], 'one report only: nothing to compare with');
+    }
+
     /**
      * The home page query itself, without the 60 s file cache in the system temp dir.
      *
@@ -108,5 +181,27 @@ class DatabaseTest extends TestCase
     {
         /** @var array{repositories: list<array{name: string, level: int|null}>, sparklines: bool} */
         return (new ReflectionMethod(Api::class, 'loadRecentActivity'))->invoke(null);
+    }
+
+    /**
+     * The static leaderboards themselves, without the 300 s file cache in the system temp dir.
+     *
+     * @return array{
+     *     level1: list<array{
+     *         name: string, coverage: float, expressions: int, change: float|null, points: list<float>
+     *     }>,
+     *     coverage: list<array{
+     *         name: string, coverage: float, expressions: int, change: float|null, points: list<float>
+     *     }>,
+     *     largest: list<array{
+     *         name: string, coverage: float, expressions: int, change: float|null, points: list<float>
+     *     }>,
+     *     sparklines: bool
+     * }
+     */
+    private static function boards(): array
+    {
+        /** @var array{level1: list<array{name: string, coverage: float, expressions: int, change: float|null, points: list<float>}>, coverage: list<array{name: string, coverage: float, expressions: int, change: float|null, points: list<float>}>, largest: list<array{name: string, coverage: float, expressions: int, change: float|null, points: list<float>}>, sparklines: bool} */
+        return (new ReflectionMethod(Api::class, 'loadBoards'))->invoke(null);
     }
 }
