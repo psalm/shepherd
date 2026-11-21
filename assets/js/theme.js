@@ -60,17 +60,15 @@
     let current = load();
     apply(current);
 
+    // The button shows only the icon of the current theme: the name lives in aria-label and title.
     function describe(button, announce) {
-        const next = MODES[(MODES.indexOf(current) + 1) % MODES.length];
-        const label = button.querySelector('[data-theme-label]');
-        if (label) {
-            label.textContent = LABELS[current];
-        }
-        button.setAttribute('aria-label', 'Theme: ' + LABELS[current] + '. Switch to ' + LABELS[next] + '.');
+        const text = 'Theme: ' + LABELS[current];
+        button.setAttribute('aria-label', text);
+        button.setAttribute('title', text);
         if (announce) {
             const status = document.querySelector('[data-theme-status]');
             if (status) {
-                status.textContent = 'Theme: ' + LABELS[current];
+                status.textContent = text;
             }
         }
     }
