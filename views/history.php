@@ -138,7 +138,7 @@ $renderPager = static function (string $position) use ($page, $total_pages, $pag
                         <?php elseif ($item['kind'] === 'off') : ?>
                         <li><span class="pager-off" aria-disabled="true"><?= $item['text'] ?></span></li>
                         <?php else : ?>
-                        <li><a href="<?= $pageUrl($item['page']) ?>" data-page="<?= $item['page'] ?>"<?= $item['rel'] !== '' ? ' rel="' . $item['rel'] . '"' : '' ?><?= $item['current'] ? ' aria-current="page"' : '' ?> aria-label="<?= $item['label'] ?>"><?= $item['text'] ?></a></li>
+                        <li><a href="<?= htmlspecialchars($pageUrl($item['page'])) ?>" data-page="<?= $item['page'] ?>"<?= $item['rel'] !== '' ? ' rel="' . $item['rel'] . '"' : '' ?><?= $item['current'] ? ' aria-current="page"' : '' ?> aria-label="<?= $item['label'] ?>"><?= $item['text'] ?></a></li>
                         <?php endif; ?>
                     <?php endforeach; ?>
                     </ul>
