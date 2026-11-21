@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<files psalm-version="dev-master@12cffe105b8d78638f72b9c784d692245a1871bb">
+  <file src="src/Auth.php">
+    <DeprecatedFunction>
+      <code><![CDATA[curl_close($ch)]]></code>
+    </DeprecatedFunction>
+    <TaintedFile>
+      <code><![CDATA[curl_init($github_url . '/login/oauth/access_token')]]></code>
+    </TaintedFile>
+    <TaintedSSRF>
+      <code><![CDATA[curl_init($github_url . '/login/oauth/access_token')]]></code>
+    </TaintedSSRF>
+  </file>
+  <file src="src/GithubData.php">
+    <InvalidScalarArgument>
+      <code><![CDATA[$payload['head']['date'] ?? date('U')]]></code>
+    </InvalidScalarArgument>
+  </file>
+  <file src="src/PsalmData.php">
+    <InvalidScalarArgument>
+      <code><![CDATA[$payload['git']['head']['date'] ?? date('U')]]></code>
+    </InvalidScalarArgument>
+  </file>
+  <file src="views/auth/github.php">
+    <TaintedRedirect>
+      <code><![CDATA[header('Location: ' . $github_url . '/login/oauth/authorize?' . http_build_query($params))]]></code>
+    </TaintedRedirect>
+    <TaintedUrlComponent>
+      <code><![CDATA[header('Location: ' . $github_url . '/login/oauth/authorize?' . http_build_query($params))]]></code>
+    </TaintedUrlComponent>
+  </file>
+</files>
